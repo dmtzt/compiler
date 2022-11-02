@@ -1,0 +1,242 @@
+
+        cls._reserved = {
+            "alie": "ELSE",
+            "au": "OR",
+            "bul": "BOOL",
+            "dum": "WHILE",
+            "ekde": "FROM",
+            "ent": "INT",
+            "funkcio": "FUNCTION",
+            "komenco": "START",
+            "kar": "CHAR",
+            "kaj": "AND",
+            "legi": "READ",
+            "malvera": "BOOL_FALSE",
+            "ne": "NOT",
+            "reel": "REAL",
+            "skribi": "PRINT",
+            "se": "IF",
+            "tutmondaj": "GLOBAL",
+            "variabloj": "VARIABLES", 
+            "vera": "BOOL_TRUE",
+        }
+
+        cls._operators = {
+            "+": "PLUS",
+            "-": "MINUS",
+            "*": "TIMES",
+            "/": "DIVIDE",
+            "%": "MODULO",
+            "==": "EQUAL",
+            "!=": "NEQUAL",
+            "<=": "LTHAN_EQUAL",
+            ">=": "GTHAN_EQUAL",
+            "<": "LTHAN",
+            ">": "GTHAN",
+            "=": "ASGMT",
+            "(": "LPAREN",
+            ")": "RPAREN",
+            "[": "LBRACKET",
+            "]": "RBRACKET",
+            "{": "LBRACE",
+            "}": "RBRACE",
+            ":": "COLON",
+            ";": "SEMI",
+            ",": "COMMA",
+        }
+
+    def getReservedTypes(self):
+        return list(self._reserved.values())
+
+    
+    def getReservedValues(self):
+        return list(self._reserved.keys())
+
+    
+    def getOperatorsTypes(self):
+        return list(self._operators.values())
+
+    
+    def getOperatorsValues(self):
+        return list(self._operators.keys())
+
+    
+    def joinListAsString(self, l):
+        return ' '.join(l)
+
+
+    def test_lexer_produces_start_token(self):
+        testValue = "komenco"
+        testType = "START"
+
+        token = self.lexer.testSingleToken(testValue)
+        tokenType = self.lexer.getTokenType(token)
+
+        self.assertEqual(testType, tokenType)
+
+
+    def test_lexer_1(self):
+        """Lexer produces 'reserved' tokens"""
+        reservedValuesList = self.getReservedValues()
+        reservedValuesString = self.joinListAsString(reservedValuesList)
+
+        reservedTypesList = self.getReservedTypes()
+        
+        tokens = self.lexer.testMultipleTokens(reservedValuesString)
+        tokensTypeList = self.lexer.getTokensTypes(tokens)
+        
+        self.assertCountEqual(reservedTypesList, tokensTypeList)
+
+    
+    def test_lexer_produces_operator_tokens(self):
+        operatorsValuesList = self.getOperatorsValues()
+        operatorsValuesString = self.joinListAsString(operatorsValuesList)
+
+        operatorsTypesList = self.getOperatorsTypes()
+
+        tokens = self.lexer.testMultipleTokens(operatorsValuesString)
+        tokensTypeList = self.lexer.getTokensTypes(tokens)
+
+        self.assertCountEqual(operatorsTypesList, tokensTypeList)
+
+    
+    def test_lexer_produces_id_only_letters(self):
+        testValue = "count"
+        testType = "ID"
+
+        token = self.lexer.testSingleToken(testValue)
+        tokenType = self.lexer.getTokenType(token)
+
+        self.assertEqual(testType, tokenType)
+
+
+    def test_lexer_rejects_id_begins_with_digits(self):
+        testValue = "1a"
+
+        with self.assertRaises(LexError):
+            token = self.lexer.testSingleToken(testValue)
+            print(token)
+
+    
+    def test_lexer_produces_id_begins_with_letter_ends_with_digits(self):
+        testValue = "room123"
+        testType = "ID"
+
+        token = self.lexer.testSingleToken(testValue)
+        tokenType = self.lexer.getTokenType(token)
+
+        self.assertEqual(testType, tokenType)
+
+    
+    def test_lexer_produces_id_begins_with_letter_has_digits_combined(self):
+        testValue = "c0mpil3rs"
+        testType = "ID"
+
+        token = self.lexer.testSingleToken(testValue)
+        tokenType = self.lexer.getTokenType(token)
+
+        self.assertEqual(testType, tokenType)
+
+    
+    def test_lexer_produces_const_int(self):
+        testValue = "1240"
+        testType = "CONST_INT"
+
+        token = self.lexer.testSingleToken(testValue)
+        tokenType = self.lexer.getTokenType(token)
+
+        self.assertEqual(testType, tokenType)
+
+    
+    def test_lexer_produces_const_float(self):
+        testValue = "3.14"
+        testType = "CONST_FLOAT"
+
+        token = self.lexer.testSingleToken(testValue)
+        tokenType = self.lexer.getTokenType(token)
+
+        self.assertEqual(testType, tokenType)
+
+
+    def test_lexer_rejects_const_float_only_integer_part(self):
+        testValue = "1."
+
+        with self.assertRaises(LexError):
+            token = self.lexer.testSingleToken(testValue)
+            tokenType = self.lexer.getTokenType(token)
+            print(tokenType)
+
+
+    def test_lexer_rejects_const_float_only_decimal_part(self):
+        testValue = ".1"
+
+        with self.assertRaises(LexError):
+            self.lexer.testSingleToken(testValue)
+
+
+    def test_lexer_splits_negative_sign_const_int(self):
+        testValue = "-1"
+        testTypes = ["MINUS", "CONST_INT"]
+
+        tokens = self.lexer.testMultipleTokens(testValue)
+        tokensTypeList = self.lexer.getTokensTypes(tokens)
+
+        self.assertCountEqual(testTypes, tokensTypeList)
+
+
+    def test_lexer_splits_negative_sign_const_float(self):
+        testValue = "-2.15"
+        testTypes = ["MINUS", "CONST_FLOAT"]
+
+        tokens = self.lexer.testMultipleTokens(testValue)
+        tokensTypeList = self.lexer.getTokensTypes(tokens)
+
+        self.assertCountEqual(testTypes, tokensTypeList)
+
+
+    def test_lexer_produces_const_int_const_float(self):
+        testValue = "10 8.12"
+        testTypes = ["CONST_INT", "CONST_FLOAT"]
+
+        tokens = self.lexer.testMultipleTokens(testValue)
+        tokensTypeList = self.lexer.getTokensTypes(tokens)
+
+        self.assertCountEqual(testTypes, tokensTypeList)
+
+    
+    def test_lexer_produces_lower_char(self):
+        testValue = "'a'"
+        testType = 'CONST_CHAR'
+
+        token = self.lexer.testSingleToken(testValue)
+        tokenType = self.lexer.getTokenType(token)
+
+        self.assertEqual(testType, tokenType)
+
+    
+    def test_lexer_produces_upper_char(self):
+        testValue = "'A'"
+        testType = 'CONST_CHAR'
+
+        token = self.lexer.testSingleToken(testValue)
+        tokenType = self.lexer.getTokenType(token)
+
+        self.assertEqual(testType, tokenType)
+
+    
+    def test_lexer_produces_digit_char(self):
+        testValue = "'1'"
+        testType = 'CONST_CHAR'
+
+        token = self.lexer.testSingleToken(testValue)
+        tokenType = self.lexer.getTokenType(token)
+
+        self.assertEqual(testType, tokenType)
+
+
+    def test_lexer_rejects_non_one_sized_char(self):
+        testValue = "'1Az'"
+        
+        with self.assertRaises(LexError):
+            self.lexer.testSingleToken(testValue)
+    

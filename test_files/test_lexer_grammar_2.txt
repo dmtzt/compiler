@@ -1,0 +1,7 @@
+tutmondaj variabloj:
+    ent x;
+
+komenco()
+{
+    
+}

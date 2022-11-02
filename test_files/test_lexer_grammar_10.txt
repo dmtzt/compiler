@@ -1,0 +1,11 @@
+funkcio malplena fun()
+lokaj variabloj:
+    ent i;
+{
+    
+}
+
+komenco()
+{
+    
+}

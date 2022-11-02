@@ -1,0 +1,24 @@
+funkcio ent fun_ent()
+{
+
+}
+
+funkcio reel fun_reel()
+{
+
+}
+
+funkcio kar fun_kar()
+{
+
+}
+
+funkcio bul fun_bul()
+{
+
+}
+
+komenco()
+{
+    
+}

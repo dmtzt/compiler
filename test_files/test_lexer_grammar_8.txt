@@ -1,0 +1,9 @@
+funkcio malplena fun_ent(ent e, reel r, kar k, bul b)
+{
+
+}
+
+komenco()
+{
+    
+}

@@ -1,0 +1,12 @@
+tutmondaj variabloj:
+    ent x;
+
+funkcio malplena fun()
+{
+
+}
+
+komenco()
+{
+
+}

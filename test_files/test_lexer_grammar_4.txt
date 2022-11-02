@@ -1,0 +1,10 @@
+tutmondaj variabloj:
+    ent i;
+    reel r;
+    kar k;
+    bul b;
+
+komenco()
+{
+    
+}

@@ -18,19 +18,20 @@ class Lexer(object):
         "legi": "READ",
         "lokaj": "LOCAL",
         "malplena": "VOID",
-        "malvera": "BOOL_FALSE",
+        "malvera": "FALSE",
         "ne": "NOT",
         "reel": "REAL",
+        "redonu": "RETURN",
         "skribi": "PRINT",
         "se": "IF",
         "tutmondaj": "GLOBAL",
         "variabloj": "VARIABLES", 
-        "vera": "BOOL_TRUE",
+        "vera": "TRUE",
     }
 
     tokens = [
         "ID",
-        "CONST_FLOAT",
+        "CONST_REAL",
         "CONST_INT",
         "CONST_CHAR",
         "CONST_STRING",
@@ -89,7 +90,7 @@ class Lexer(object):
         return t
 
 
-    def t_CONST_FLOAT(self, t):
+    def t_CONST_REAL(self, t):
         r"\d+\.\d+"
         t.value = float(t.value)
         return t

@@ -20,14 +20,15 @@ class TestLexerReserved(unittest.TestCase):
             "legi": "READ",
             "lokaj": "LOCAL",
             "malplena": "VOID",
-            "malvera": "BOOL_FALSE",
+            "malvera": "FALSE",
             "ne": "NOT",
             "reel": "REAL",
+            "redonu": "RETURN",
             "skribi": "PRINT",
             "se": "IF",
             "tutmondaj": "GLOBAL",
             "variabloj": "VARIABLES", 
-            "vera": "BOOL_TRUE",
+            "vera": "TRUE",
         }
 
     def get_reserved_types(self):

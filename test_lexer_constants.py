@@ -20,9 +20,9 @@ class TestLexerConstants(unittest.TestCase):
 
 
     def test_lexer_constants_2(self):
-        """Lexer parses a CONST_FLOAT"""
+        """Lexer parses a CONST_REAL"""
         test_value = "2.3"
-        test_type = "CONST_FLOAT"
+        test_type = "CONST_REAL"
 
         token = self.lexer.scan_single_token(test_value)
         token_type = self.lexer.get_token_type(token)
@@ -33,9 +33,9 @@ class TestLexerConstants(unittest.TestCase):
 
     
     def test_lexer_constants_3(self):
-        """Lexer parses a CONST_INT, followed by a CONST_FLOAT"""
+        """Lexer parses a CONST_INT, followed by a CONST_REAL"""
         test_value = "1 2.3"
-        test_types = ["CONST_INT", "CONST_FLOAT"]
+        test_types = ["CONST_INT", "CONST_REAL"]
 
         tokens = self.lexer.scan_multiple_tokens(test_value)
         token_types = self.lexer.get_tokens_types(tokens)
@@ -46,9 +46,9 @@ class TestLexerConstants(unittest.TestCase):
 
     
     def test_lexer_constants_4(self):
-        """Lexer parses a CONST_FLOAT, followed by a CONST_INT"""
+        """Lexer parses a CONST_REAL, followed by a CONST_INT"""
         test_value = "2.3 1"
-        test_types = ["CONST_FLOAT", "CONST_INT"]
+        test_types = ["CONST_REAL", "CONST_INT"]
 
         tokens = self.lexer.scan_multiple_tokens(test_value)
         token_types = self.lexer.get_tokens_types(tokens)
@@ -72,9 +72,9 @@ class TestLexerConstants(unittest.TestCase):
 
     
     def test_lexer_constants_6(self):
-        """Lexer parses a CONST_FLOAT surrounded by whitespace"""
+        """Lexer parses a CONST_REAL surrounded by whitespace"""
         test_value = " 20.5 "
-        test_type = "CONST_FLOAT"
+        test_type = "CONST_REAL"
 
         token = self.lexer.scan_single_token(test_value)
         token_type = self.lexer.get_token_type(token)
@@ -98,9 +98,9 @@ class TestLexerConstants(unittest.TestCase):
 
 
     def test_lexer_constants_7(self):
-        """Lexer parses and splits a MINUS and a CONST_FLOAT"""
+        """Lexer parses and splits a MINUS and a CONST_REAL"""
         test_value = "-9.8"
-        test_types = ["MINUS", "CONST_FLOAT"]
+        test_types = ["MINUS", "CONST_REAL"]
 
         token = self.lexer.scan_multiple_tokens(test_value)
         token_types = self.lexer.get_tokens_types(token)

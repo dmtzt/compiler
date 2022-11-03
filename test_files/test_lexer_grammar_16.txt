@@ -1,0 +1,9 @@
+komenco()
+lokaj variabloj:
+    ent a, b[1], c[2][3];
+    reel m, n[1], o[2][3];
+    kar x, y[1], z[2][3];
+    bul p, q[1], r[2][3];
+{
+    
+}

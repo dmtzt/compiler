@@ -1,0 +1,6 @@
+komenco()
+lokaj variabloj:
+    ent a, b[10], c[20][30];
+{
+    
+}

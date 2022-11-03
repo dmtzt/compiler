@@ -1,0 +1,4 @@
+komenco()
+{
+    a = legi();
+}

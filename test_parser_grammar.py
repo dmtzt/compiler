@@ -167,5 +167,129 @@ class TestLexerGrammar(unittest.TestCase):
         self.assertEqual(result, None)
 
 
+    def test_lexer_grammar_13(self):
+        """Parser accepts (1): 
+            - Empty entry point definition with local integer variable and a vector (1D) in a single line"""
+        test_name = 'test_lexer_grammar_13'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
+    
+    def test_lexer_grammar_14(self):
+        """Parser accepts (1): 
+            - Empty entry point definition with local integer variable, a vector (1D), and a matrix (2D) in a single line"""
+        test_name = 'test_lexer_grammar_14'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
+    
+    def test_lexer_grammar_15(self):
+        """Parser accepts (1): 
+            - Empty entry point definition with a  local matrix (2D), a vector (1D), and integer variable in a single line"""
+        test_name = 'test_lexer_grammar_15'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
+
+    def test_lexer_grammar_16(self):
+        """Parser accepts (4): 
+            - Empty entry point definition with:
+                - Local integer variable, a vector (1D), and a matrix (2D) in a single line
+                - Local real variable, a vector (1D), and a matrix (2D) in a single line
+                - Local char variable, a vector (1D), and a matrix (2D) in a single line
+                - Local bool variable, a vector (1D), and a matrix (2D) in a single line"""
+        test_name = 'test_lexer_grammar_16'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
+    
+    def test_lexer_grammar_17(self):
+        """Parser accepts (1): 
+            - Entry point definition with an assignment statement of an integer to a variable"""
+        test_name = 'test_lexer_grammar_17'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
+    
+    def test_lexer_grammar_18(self):
+        """Parser accepts (1): 
+            - Entry point definition with an assignment statement of an integer to a vector index defined by a constant"""
+        test_name = 'test_lexer_grammar_18'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
+    
+    def test_lexer_grammar_19(self):
+        """Parser accepts (1): 
+            - Entry point definition with an assignment statement of an integer to a MATRIX index defined by constants"""
+        test_name = 'test_lexer_grammar_19'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
+    
+    def test_lexer_grammar_20(self):
+        """Parser accepts (1): 
+            - Entry point definition with an assignment statement of the read function to a MATRIX index defined by constants"""
+        test_name = 'test_lexer_grammar_20'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
+
+    def test_lexer_grammar_21(self):
+        """Parser accepts (1): 
+            - Entry point definition with a function call with no parameters"""
+        test_name = 'test_lexer_grammar_21'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
+    
+    def test_lexer_grammar_22(self):
+        """Parser accepts (1): 
+            - Entry point definition with a function call with 1 integer"""
+        test_name = 'test_lexer_grammar_22'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
+    def test_lexer_grammar_23(self):
+        """Parser accepts (1): 
+            - Entry point definition with a function call with 1 integer, 1 real, 1 char, 1 bool"""
+        test_name = 'test_lexer_grammar_23'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,14 @@
+funkcio ent sum(ent a, reel b, kar c, bul d)
+lokaj variabloj:
+    ent l;
+    reel m;
+    kar n;
+    bul o;
+{
+
+}
+
+komenco()
+{
+
+}

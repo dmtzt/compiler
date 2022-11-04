@@ -1,15 +1,13 @@
 import unittest
 from pathlib import Path
 
-from compiler.lexer import Lexer
 from compiler.parser import Parser
 
 class TestLexerGrammar(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.lexer = Lexer()
         cls.parser = Parser()
-        cls.dir_files = Path('./test_files')
+        cls.dir_files = Path('./test_files/lexer')
 
 
     def read_test_file(self, test_name: str) -> str:
@@ -284,6 +282,15 @@ class TestLexerGrammar(unittest.TestCase):
         """Parser accepts (1): 
             - Entry point definition with a function call with 1 integer, 1 real, 1 char, 1 bool"""
         test_name = 'test_lexer_grammar_23'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
+    
+    def test_lexer_grammar_24(self):
+        test_name = 'test_lexer_grammar_24'
         text = self.read_test_file(test_name)
 
         result = self.parser.parse(text)

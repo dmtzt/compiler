@@ -1,0 +1,20 @@
+tutmondaj variabloj:
+    ent a, b, c, d;
+    reel x;
+    kar y;
+    bul z;
+
+funkcio ent sum()
+{
+
+}
+
+komenco()
+lokaj variabloj:
+    ent l;
+    reel m;
+    kar n;
+    bul o;
+{
+
+}

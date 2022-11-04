@@ -1,0 +1,9 @@
+funkcio ent sum()
+{
+
+}
+
+komenco()
+{
+
+}

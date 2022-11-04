@@ -1,0 +1,12 @@
+tutmondaj variabloj:
+    ent a;
+
+funkcio ent sum()
+{
+
+}
+
+komenco()
+{
+
+}

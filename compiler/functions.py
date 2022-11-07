@@ -30,28 +30,40 @@ class Function():
     def insert_variable(self, id: str, variable: Variable) -> None:
         self._variable_table.insert_variable(id, variable)
 
+    
+    def get_variable(self, variable_id):
+        return self._variable_table.get_variable(variable_id)
+
 
     def __str__(self) -> str:
         return f'Function(id={self.__id}, return_type={self.__return_type}, variables={self._variable_table.__str__()})'
 
 
 class FunctionDirectory():
+    # FIX: operations that involve global variables
     def __init__(self) -> None:
         self._directory : dict[str, Function] = {}
 
     
     def insert_function(self, id: str, function: Function) -> None:
         if id in self._directory:
-            raise FunctionAlreadyDeclaredException()
+            raise FunctionAlreadyDefinedException()
 
         self._directory[id] = function
 
 
     def insert_function_variable(self, function_id: str, variable_id: str, variable: Variable) -> None:
         if function_id not in self._directory:
-            raise FunctionNotFoundException(function_id)
+            raise FunctionUndefinedException(function_id)
 
         self._directory[function_id].insert_variable(variable_id, variable)
+
+    
+    def get_function_variable(self, function_id: str, variable_id: str) -> Variable:
+        if function_id not in self._directory:
+            raise FunctionUndefinedException(function_id)
+
+        return self._directory[function_id].get_variable(variable_id)
 
     
     def __str__(self) -> str:
@@ -68,7 +80,7 @@ class FunctionDirectory():
 class Builder(ABC):
     @property
     @abstractmethod
-    def product(self) -> Function:
+    def build(self) -> Function:
         pass
 
 
@@ -91,7 +103,7 @@ class FunctionBuilder(Builder):
         self.__function = Function()
 
 
-    def product(self) -> Function:
+    def build(self) -> Function:
         product = self.__function
         self.reset()
         return product
@@ -153,9 +165,13 @@ class InsertVariableToFunctionCommand(Command):
         self._directory.insert_function_variable(self._function_id, self._variable_id, self._variable)
 
 
-class FunctionAlreadyDeclaredException(RuntimeError):
+class FunctionAlreadyDefinedException(RuntimeError):
     pass
 
 
-class FunctionNotFoundException(RuntimeError):
+class FunctionUndefinedException(RuntimeError):
+    pass
+
+
+class VariableUndefinedException(RuntimeError):
     pass

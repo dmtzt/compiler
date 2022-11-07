@@ -1,31 +1,40 @@
-from collections import deque
+from collections import defaultdict
 
 from ply import yacc
 
 from .lexer import Lexer
-from .command import Command
 from .functions import FunctionBuilder
 from .functions import FunctionDirector
 from .functions import FunctionDirectory
-from .functions import InsertFunctionToDirectoryCommand
-from .functions import InsertVariableToFunctionCommand
+from .quadruples import Quadruple
+from .quadruples import QuadrupleList
+from .stacks import OperandStack
+from .stacks import OperatorStack
 from .variables import SemanticTable
+from .variables import Type
+from .variables import Variable
 from .variables import VariableBuilder
+from .variables import Operator
+
 
 # class Parser(object):
 #     tokens = Lexer.tokens
 
-#     def __init__(self):
+#     def __init__(self) -> None:
 #         self.lexer = Lexer()
 #         self.parser = yacc.yacc(module=self)
-        
+
 
 #     def parse(self, input):
 #         return self.parser.parse(input)
 
     
 #     def p_program(self, p):
-#         '''program : start'''
+#         '''program : init start'''
+
+
+#     def p_init(self, p):
+#         '''init :'''
 
 
 #     def p_start_1(self, p):
@@ -45,11 +54,11 @@ from .variables import VariableBuilder
 
 
 #     def p_global_variables_declaration(self, p):
-#         '''global_variables_declaration : GLOBAL parsed_global variables_declaration'''
+#         '''global_variables_declaration : GLOBAL parsed_global_scope variables_declaration'''
 
     
-#     def p_parsed_global(self, p):
-#         '''parsed_global :'''
+#     def p_parsed_global_scope(self, p):
+#         '''parsed_global_scope :'''
 
     
 #     def p_functions_definition_1(self, p):
@@ -61,39 +70,47 @@ from .variables import VariableBuilder
 
     
 #     def p_single_function_definition_primitive_type_1(self, p):
-#         '''single_function_definition : FUNCTION type ID parsed_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
+#         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
 
 
 #     def p_single_function_definition_primitive_type_2(self, p):
-#         '''single_function_definition : FUNCTION type ID parsed_id LPAREN function_definition_params RPAREN instruction_block'''
+#         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN function_definition_params RPAREN instruction_block'''
 
     
 #     def p_single_function_definition_primitive_type_3(self, p):
-#         '''single_function_definition : FUNCTION type ID parsed_id LPAREN RPAREN local_variables_declaration instruction_block'''
+#         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN RPAREN local_variables_declaration instruction_block'''
 
     
 #     def p_single_function_definition_primitive_type_4(self, p):
-#         '''single_function_definition : FUNCTION type ID parsed_id LPAREN RPAREN instruction_block'''
-
-    
-#     def p_parsed_id(self, p):
-#         '''parsed_id :'''
+#         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN RPAREN instruction_block'''
 
 
 #     def p_single_function_definition_void_type_1(self, p):
-#         '''single_function_definition : FUNCTION VOID ID LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
+#         '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
 
 
 #     def p_single_function_definition_void_type_2(self, p):
-#         '''single_function_definition : FUNCTION VOID ID LPAREN function_definition_params RPAREN instruction_block'''
+#         '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN function_definition_params RPAREN instruction_block'''
 
 
 #     def p_single_function_definition_void_type_3(self, p):
-#         '''single_function_definition : FUNCTION VOID ID LPAREN RPAREN local_variables_declaration instruction_block'''
+#         '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN RPAREN local_variables_declaration instruction_block'''
 
     
 #     def p_single_function_definition_void_type_4(self, p):
-#         '''single_function_definition : FUNCTION VOID ID LPAREN RPAREN instruction_block'''
+#         '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN RPAREN instruction_block'''
+
+
+#     def p_parsed_function_id(self, p):
+#         '''parsed_function_id :'''
+
+
+#     def p_parsed_function_return_type(self, p):
+#         '''parsed_function_return_type :'''
+
+    
+#     def p_parsed_function_void_return_type(self, p):
+#         '''parsed_function_void_return_type  :'''
 
 
 #     def p_function_definition_params_1(self, p):
@@ -109,19 +126,19 @@ from .variables import VariableBuilder
 
     
 #     def p_entry_point_definition_1(self, p):
-#         '''entry_point_definition : START LPAREN RPAREN local_variables_declaration instruction_block'''
+#         '''entry_point_definition : START parsed_main_id LPAREN RPAREN local_variables_declaration instruction_block'''
 
     
 #     def p_entry_point_definition_2(self, p):
-#         '''entry_point_definition : START LPAREN RPAREN instruction_block'''
+#         '''entry_point_definition : START parsed_main_id LPAREN RPAREN instruction_block'''
+
+ 
+#     def p_parsed_main_id(self, p):
+#         '''parsed_main_id :'''
 
 
 #     def p_local_variables_declaration(self, p):
-#         '''local_variables_declaration : LOCAL parsed_local variables_declaration'''
-
-    
-#     def p_parsed_local(self, p):
-#         '''parsed_local :'''
+#         '''local_variables_declaration : LOCAL variables_declaration'''
 
     
 #     def p_variables_declaration(self, p):
@@ -180,7 +197,7 @@ from .variables import VariableBuilder
 #         '''statements : statements single_statement'''
 
     
-#     def p_statements_1(self, p):
+#     def p_statements_2(self, p):
 #         '''statements : single_statement'''
 
 
@@ -220,20 +237,28 @@ from .variables import VariableBuilder
 #         '''assignment : variable_access ASGMT read'''
 
 
-#     def p_variable_access_1(self, p):
-#         '''variable_access : ID dim_access dim_access'''
+#     def p_variable_access(self, p):
+#         '''variable_access : ID parsed_id_variable_access dims_access'''
 
     
-#     def p_variable_access_2(self, p):
-#         '''variable_access : ID dim_access'''
+#     def p_parsed_id_variable_access(self, p):
+#         '''parsed_id_variable_access :'''
+
+
+#     def p_dims_access_1(self, p):
+#         '''dims_access : single_dim_access single_dim_access'''
+
+
+#     def p_dims_access_2(self, p):
+#         '''dims_access : single_dim_access'''
 
     
-#     def p_variable_access_3(self, p):
-#         '''variable_access : ID'''
+#     def p_dims_access_3(self, p):
+#         '''dims_access : empty'''
 
 
-#     def p_dim_access(self, p):
-#         '''dim_access : LBRACKET expr RBRACKET'''
+#     def p_single_dim_access(self, p):
+#         '''single_dim_access : LBRACKET expr RBRACKET'''
 
     
 #     def p_function_call_1(self, p):
@@ -369,11 +394,19 @@ from .variables import VariableBuilder
 
 
 #     def p_additive_expr_1(self, p):
-#         '''additive_expr : multiplicative_expr PLUS multiplicative_expr'''
+#         '''additive_expr : additive_expr PLUS parsed_plus multiplicative_expr'''
+    
+
+#     def p_parsed_plus(self, p):
+#         '''parsed_plus :'''
 
     
 #     def p_additive_expr_2(self, p):
-#         '''additive_expr : multiplicative_expr MINUS multiplicative_expr'''
+#         '''additive_expr : additive_expr MINUS parsed_minus multiplicative_expr'''
+
+    
+#     def p_parsed_minus(self, p):
+#         '''parsed_minus :'''
 
     
 #     def p_additive_expr_3(self, p):
@@ -381,15 +414,27 @@ from .variables import VariableBuilder
 
 
 #     def p_multiplicative_expr_1(self, p):
-#         '''multiplicative_expr : unary_expr TIMES unary_expr'''
+#         '''multiplicative_expr : multiplicative_expr TIMES parsed_times unary_expr'''
+
+    
+#     def p_parsed_times(self, p):
+#         '''parsed_times :'''
 
     
 #     def p_multiplicative_expr_2(self, p):
-#         '''multiplicative_expr : unary_expr DIVIDE unary_expr'''
+#         '''multiplicative_expr : multiplicative_expr DIVIDE parsed_divide unary_expr'''
+
+    
+#     def p_parsed_divide(self, p):
+#         '''parsed_divide :'''
 
 
 #     def p_multiplicative_expr_3(self, p):
-#         '''multiplicative_expr : unary_expr MODULO unary_expr'''
+#         '''multiplicative_expr : multiplicative_expr MODULO parsed_modulo unary_expr'''
+
+    
+#     def p_parsed_modulo(self, p):
+#         '''parsed_modulo :'''
 
 
 #     def p_multiplicative_expr_4(self, p):
@@ -467,6 +512,11 @@ from .variables import VariableBuilder
 #     def p_type_4(self, p):
 #         '''type : BOOL'''
 
+    
+#     def p_empty(self, p):
+#         'empty :'
+#         pass
+
 
 #     def p_error(self, p):
 #         if p:
@@ -479,22 +529,36 @@ from .variables import VariableBuilder
 
 class ParserCodeGenerator(object):
     tokens = Lexer.tokens
-    
-    def reset(self):
+
+    def __init__(self) -> None:
         self.lexer = Lexer()
         self.parser = yacc.yacc(module=self)
 
         self.function_builder = FunctionBuilder()
         self.function_director = FunctionDirector()
-        self.function_directory = FunctionDirectory()
-
         self.variable_builder = VariableBuilder()
-
         self.semantic_table = SemanticTable()
-        
+
+        self.function_directory = None
+        self.operator_stack = None
+        self.operand_stack = None
+        self.avail_counter = None
+        self.quadruple_list = None
+
         self.function_director.builder = self.function_builder
 
-        self.variable_declaration_scope = None
+    
+    def reset(self):
+        self.function_directory = FunctionDirectory()
+        self.operator_stack = OperatorStack()
+        self.operand_stack = OperandStack()
+        self.avail_counter = defaultdict(int)
+        self.quadruple_list = QuadrupleList()
+
+        self.function_builder.reset()
+        self.variable_builder.reset()
+
+        self.function_scope = None
         self.shared_variable_declaration_type = None
 
 
@@ -506,6 +570,9 @@ class ParserCodeGenerator(object):
     def p_program(self, p):
         '''program : init start'''
         print(self.function_directory.__str__())
+        print(self.quadruple_list.__str__())
+        # print(self.operator_stack.__str__())
+        # print(self.operand_stack.__str__())
 
 
     def p_init(self, p):
@@ -536,7 +603,7 @@ class ParserCodeGenerator(object):
     
     def p_parsed_global_scope(self, p):
         '''parsed_global_scope :'''
-        self.set_variable_declaration_scope('global')
+        self.set_function_scope('global')
 
     
     def p_functions_definition_1(self, p):
@@ -583,12 +650,11 @@ class ParserCodeGenerator(object):
         '''parsed_function_id :'''
         function_id = p[-1]
         self.function_builder.set_id(function_id)
-        self.set_variable_declaration_scope(function_id)
+        self.set_function_scope(function_id)
 
-        function = self.function_builder.product()
-        
-        cmd = InsertFunctionToDirectoryCommand(self.function_directory, function_id, function)
-        self.executeCommand(cmd)
+        function = self.function_builder.build()
+
+        self.function_directory.insert_function(function_id, function)
 
 
     def p_parsed_function_return_type(self, p):
@@ -619,11 +685,10 @@ class ParserCodeGenerator(object):
         self.variable_builder.set_type(variable_type)
         self.variable_builder.set_id(variable_id)
 
-        variable = self.variable_builder.product()
-        variable_declaration_scope = self.get_variable_declaration_scope()
+        variable = self.variable_builder.build()
+        variable_declaration_scope = self.get_function_scope()
 
-        cmd = InsertVariableToFunctionCommand(self.function_directory, variable_declaration_scope, variable_id, variable)
-        self.executeCommand(cmd)
+        self.function_directory.insert_function_variable(variable_declaration_scope, variable_id, variable)
 
     
     def p_entry_point_definition_1(self, p):
@@ -633,10 +698,10 @@ class ParserCodeGenerator(object):
     def p_entry_point_definition_2(self, p):
         '''entry_point_definition : START parsed_main_id LPAREN RPAREN instruction_block'''
 
-    
+ 
     def p_parsed_main_id(self, p):
         '''parsed_main_id :'''
-        self.set_variable_declaration_scope('main')
+        self.set_function_scope('main')
 
 
     def p_local_variables_declaration(self, p):
@@ -689,12 +754,12 @@ class ParserCodeGenerator(object):
         self.variable_builder.set_id(variable_id)
         self.variable_builder.set_type(variable_type)
         
-        variable = self.variable_builder.product()
-        variable_declaration_scope = self.get_variable_declaration_scope()
+        variable = self.variable_builder.build()
+        variable_declaration_scope = self.get_function_scope()
+        function_id = variable_declaration_scope
 
-        cmd = InsertVariableToFunctionCommand(self.function_directory, variable_declaration_scope, variable_id, variable)
-        self.executeCommand(cmd)
-                           
+        self.function_directory.insert_function_variable(function_id, variable_id, variable)
+
 
     def p_dim_definition(self, p):
         '''dim_definition : LBRACKET CONST_INT RBRACKET'''
@@ -745,27 +810,47 @@ class ParserCodeGenerator(object):
 
     
     def p_assignment_1(self, p):
-        '''assignment : variable_access ASGMT expr SEMI'''
+        '''assignment : variable_access ASGMT parsed_asgmt expr SEMI'''
+        self.create_assignment_quadruple()
 
 
     def p_assignment_2(self, p):
-        '''assignment : variable_access ASGMT read'''
-
-
-    def p_variable_access_1(self, p):
-        '''variable_access : ID dim_access dim_access'''
+        '''assignment : variable_access ASGMT parsed_asgmt read'''
 
     
-    def p_variable_access_2(self, p):
-        '''variable_access : ID dim_access'''
+    def p_parsed_asgmt(self, p):
+        '''parsed_asgmt :'''
+        self.operator_stack.push(Operator.ASGMT)
+
+
+    def p_variable_access(self, p):
+        '''variable_access : ID parsed_id_variable_access dims_access'''
 
     
-    def p_variable_access_3(self, p):
-        '''variable_access : ID'''
+    def p_parsed_id_variable_access(self, p):
+        '''parsed_id_variable_access :'''
+        variable_id = p[-1]
+        function_id = self.function_scope
+
+        variable = self.function_directory.get_function_variable(function_id, variable_id)
+
+        self.operand_stack.push(variable)
 
 
-    def p_dim_access(self, p):
-        '''dim_access : LBRACKET expr RBRACKET'''
+    def p_dims_access_1(self, p):
+        '''dims_access : single_dim_access single_dim_access'''
+
+
+    def p_dims_access_2(self, p):
+        '''dims_access : single_dim_access'''
+
+    
+    def p_dims_access_3(self, p):
+        '''dims_access : empty'''
+
+
+    def p_single_dim_access(self, p):
+        '''single_dim_access : LBRACKET expr RBRACKET'''
 
     
     def p_function_call_1(self, p):
@@ -901,11 +986,27 @@ class ParserCodeGenerator(object):
 
 
     def p_additive_expr_1(self, p):
-        '''additive_expr : multiplicative_expr PLUS multiplicative_expr'''
+        '''additive_expr : additive_expr PLUS parsed_plus multiplicative_expr'''
+        top_operator = self.operator_stack.top()
+        if top_operator == Operator.PLUS:
+            self.create_arithmetic_quadruple(top_operator)
+    
+
+    def p_parsed_plus(self, p):
+        '''parsed_plus :'''
+        self.operator_stack.push(Operator.PLUS)
 
     
     def p_additive_expr_2(self, p):
-        '''additive_expr : multiplicative_expr MINUS multiplicative_expr'''
+        '''additive_expr : additive_expr MINUS parsed_minus multiplicative_expr'''
+        top_operator = self.operator_stack.top()
+        if top_operator == Operator.MINUS:
+            self.create_arithmetic_quadruple(top_operator)
+
+    
+    def p_parsed_minus(self, p):
+        '''parsed_minus :'''
+        self.operator_stack.push(Operator.MINUS)
 
     
     def p_additive_expr_3(self, p):
@@ -913,15 +1014,39 @@ class ParserCodeGenerator(object):
 
 
     def p_multiplicative_expr_1(self, p):
-        '''multiplicative_expr : unary_expr TIMES unary_expr'''
+        '''multiplicative_expr : multiplicative_expr TIMES parsed_times unary_expr'''
+        top_operator = self.operator_stack.top()
+        if top_operator == Operator.TIMES:
+            self.create_arithmetic_quadruple(top_operator)
+
+    
+    def p_parsed_times(self, p):
+        '''parsed_times :'''
+        self.operator_stack.push(Operator.TIMES)
 
     
     def p_multiplicative_expr_2(self, p):
-        '''multiplicative_expr : unary_expr DIVIDE unary_expr'''
+        '''multiplicative_expr : multiplicative_expr DIVIDE parsed_divide unary_expr'''
+        top_operator = self.operator_stack.top()
+        if top_operator == Operator.DIVIDE:
+            self.create_arithmetic_quadruple(top_operator)
+
+    
+    def p_parsed_divide(self, p):
+        '''parsed_divide :'''
+        self.operator_stack.push(Operator.DIVIDE)
 
 
     def p_multiplicative_expr_3(self, p):
-        '''multiplicative_expr : unary_expr MODULO unary_expr'''
+        '''multiplicative_expr : multiplicative_expr MODULO parsed_modulo unary_expr'''
+        top_operator = self.operator_stack.top()
+        if top_operator == Operator.MODULO:
+            self.create_arithmetic_quadruple(top_operator)
+
+    
+    def p_parsed_modulo(self, p):
+        '''parsed_modulo :'''
+        self.operator_stack.push(Operator.MODULO)
 
 
     def p_multiplicative_expr_4(self, p):
@@ -986,22 +1111,27 @@ class ParserCodeGenerator(object):
     
     def p_type_1(self, p):
         '''type : INT'''
-        p[0] = 'int'
+        p[0] = Type.INT
 
 
     def p_type_2(self, p):
         '''type : REAL'''
-        p[0] = 'real'
+        p[0] = Type.REAL
 
 
     def p_type_3(self, p):
         '''type : CHAR'''
-        p[0] = 'char'
+        p[0] = Type.CHAR
 
 
     def p_type_4(self, p):
         '''type : BOOL'''
-        p[0] = 'bool'
+        p[0] = Type.BOOL
+
+    
+    def p_empty(self, p):
+        'empty :'
+        pass
 
 
     def p_error(self, p):
@@ -1015,30 +1145,74 @@ class ParserCodeGenerator(object):
 
     def create_global_scope(self):
         self.function_director.build_global_scope()
-        function = self.function_builder.product()
+        function = self.function_builder.build()
 
-        cmd = InsertFunctionToDirectoryCommand(self.function_directory, function.get_id(), function)
-        self.executeCommand(cmd)
+        self.function_directory.insert_function(function.get_id(), function)
     
 
     def create_main_function(self):
         self.function_director.build_main_function()
-        function = self.function_builder.product()
+        function = self.function_builder.build()
 
-        cmd = InsertFunctionToDirectoryCommand(self.function_directory, function.get_id(), function)
-        self.executeCommand(cmd)
+        self.function_directory.insert_function(function.get_id(), function)
 
     
-    def executeCommand(self, command: Command):
-        command.execute()
+    def create_next_temp_variable(self, variable_type: Type) -> Variable:
+        count = self.avail_counter[variable_type]
+        variable_id = f't_{variable_type.name}_{count}'
+
+        self.variable_builder.set_id(variable_id)
+        self.variable_builder.set_type(variable_type)
+        variable = self.variable_builder.build()
+        return variable
+
+    
+    def create_assignment_quadruple(self):
+        operator = self.operator_stack.pop()
+        right_operand = self.operand_stack.pop()
+        left_operand = self.operand_stack.pop()
+
+        result_type = self.semantic_table.search_operation_result_type(
+            right_operand.get_type(),
+            left_operand.get_type(),
+            operator
+        )
+
+        if result_type == Type.ERROR:
+            raise TypeMismatchException()
+
+        quadruple = Quadruple(operator, right_operand, None, left_operand)
+        self.quadruple_list.insert_quadruple(quadruple)
+
+    
+    def create_arithmetic_quadruple(self, operator: Operator) -> None:
+        self.operator_stack.pop()
+        right_operand = self.operand_stack.pop()
+        left_operand = self.operand_stack.pop()
+
+        result_type = self.semantic_table.search_operation_result_type(
+            right_operand.get_type(),
+            left_operand.get_type(),
+            operator
+        )
+
+        if result_type == Type.ERROR:
+            raise TypeMismatchException()
+
+        result_variable = self.create_next_temp_variable(result_type)
+        quadruple = Quadruple(operator, left_operand, right_operand, result_variable)
+        
+        self.quadruple_list.insert_quadruple(quadruple)
+        self.operand_stack.push(result_variable)
+        self.avail_counter[result_type] += 1
 
 
-    def set_variable_declaration_scope(self, scope: str) -> None:
-        self.variable_declaration_scope = scope
+    def set_function_scope(self, scope: str) -> None:
+        self.function_scope = scope
 
 
-    def get_variable_declaration_scope(self) -> str:
-        return self.variable_declaration_scope
+    def get_function_scope(self) -> str:
+        return self.function_scope
 
     
     def set_shared_variable_type(self, type: str) -> None:
@@ -1048,7 +1222,9 @@ class ParserCodeGenerator(object):
     def get_shared_variable_type(self) -> str:
         return self.shared_variable_declaration_type
 
-    
+
+class TypeMismatchException(RuntimeError):
+    pass
 
 
 class SyntaxError(Exception):

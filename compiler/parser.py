@@ -1,5 +1,4 @@
 from collections import defaultdict
-from collections import deque
 
 from ply import yacc
 
@@ -576,7 +575,6 @@ class ParserCodeGenerator(object):
 
         self.function_scope = None
         self.shared_variable_declaration_type = None
-        self.print_params_queue = deque()
 
 
     def parse(self, file_data: str):
@@ -668,8 +666,8 @@ class ParserCodeGenerator(object):
         return ReadQuadruple(storage_variable)
 
     
-    def generate_print_quadruple(self, printed_variable: Variable) -> PrintQuadruple:
-        return PrintQuadruple(printed_variable)
+    def generate_print_quadruple(self, print_param: Variable) -> PrintQuadruple:
+        return PrintQuadruple(print_param)
     
     
     def insert_function_to_directory(self, function_id: str, function: Function) -> None:
@@ -746,16 +744,16 @@ class ParserCodeGenerator(object):
         return self.operator_stack.pop()
 
     
-    def push_print_param_queue(self, param: Variable) -> None:
-        self.print_params_queue(param)
+    def push_print_param_queue(self, print_param: Variable) -> None:
+        self.print_param_queue.append(print_param)
 
     
     def pop_print_param_queue(self) -> Variable:
-        return self.print_params_queue.popleft()
+        return self.print_param_queue.popleft()
 
     
     def print_param_queue_is_empty(self) -> bool:
-        return False if self.print_params_queue else True
+        return bool(self.print_param_queue)
 
 
     def increment_program_counter(self) -> None:
@@ -1129,6 +1127,12 @@ class ParserCodeGenerator(object):
     
     def p_print_1(self, p):
         '''print : PRINT LPAREN print_params RPAREN SEMI'''
+        # while not self.print_param_queue_is_empty():
+        #     print_param = self.pop_print_param_queue()
+        #     quadruple = self.generate_print_quadruple(print_param)
+
+        #     self.insert_print_quadruple(quadruple)
+        #     self.increment_program_counter()
 
     
     def p_print_2(self, p):
@@ -1145,6 +1149,11 @@ class ParserCodeGenerator(object):
     
     def p_single_print_param_1(self, p):
         '''single_print_param : expr'''
+        print_param = self.pop_operand_stack()
+        quadruple = self.generate_print_quadruple(print_param)
+
+        self.insert_print_quadruple(quadruple)
+        self.increment_program_counter()
 
     
     def p_conditional_1(self, p):

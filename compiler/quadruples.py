@@ -120,12 +120,12 @@ class ReadQuadruple():
 
 class PrintQuadruple():
     def __init__(self, printed_variable: Variable) -> None:
-        self._operator = Operator.READ
+        self._operator = Operator.PRINT
         self._printed_variable = printed_variable
 
     
     def __str__(self) -> str:
-        return f'ReadQuadruple(op={self._operator} temp_var={self._printed_variable.__str__()})'
+        return f'PrintQuadruple(op={self._operator} temp_var={self._printed_variable.__str__()})'
 
 
 class QuadrupleList():

@@ -1,0 +1,15 @@
+komenco()
+lokaj variabloj:
+    ent a, b, c, d;
+{
+    se (a > b)
+    {
+        a = b;
+    }
+    alie
+    {
+        c = d;
+    }
+
+    a = d;
+}

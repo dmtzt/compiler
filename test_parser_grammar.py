@@ -297,6 +297,15 @@ class TestLexerGrammar(unittest.TestCase):
         
         self.assertEqual(result, None)
 
+    
+    def test_lexer_grammar_25(self):
+        test_name = 'test_lexer_grammar_25'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+        
+        self.assertEqual(result, None)
+
 
 if __name__ == '__main__':
     unittest.main()

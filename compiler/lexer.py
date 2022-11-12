@@ -92,13 +92,11 @@ class Lexer(object):
 
     def t_CONST_REAL(self, t):
         r"\d+\.\d+"
-        t.value = float(t.value)
         return t
 
 
     def t_CONST_INT(self, t):
         r"\d+"
-        t.value = int(t.value)
         return t
 
     
@@ -110,11 +108,6 @@ class Lexer(object):
     def t_CONST_STRING(self, t):
         r'"([^"\\]|\\.)*"'
         return t
-
-
-    # def t_COMMENT(self, t):
-    #     r'[#].*'
-    #     pass
 
 
     def t_newline(self, t):

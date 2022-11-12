@@ -35,6 +35,7 @@ class OperatorStack():
 
     
     def push(self, operator: Operator) -> None:
+        print(self.__str__())
         self._stack.append(operator)
 
     
@@ -48,3 +49,31 @@ class OperatorStack():
     
     def __str__(self) -> str:
         return f'OperatorStack(stack={self._stack})'
+
+
+class JumpStack():
+    def __init__(self) -> None:
+        self._stack = list()
+
+    
+    def push(self, jump: int) -> None:
+        self._stack.append(jump)
+
+    
+    def pop(self) -> int:
+        return self._stack.pop()
+
+    
+    def top(self) -> int:
+        return self._stack[-1]
+
+    
+    def __str__(self) -> str:
+        s = 'JumpStack(stack='
+
+        for item in self._stack:
+            s += f'{item}'
+
+        s += ')'
+
+        return s

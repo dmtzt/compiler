@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
-from enum import auto, Enum
-from typing import Union
+from enum import Enum
 
 class Type(Enum):
     ERROR = -1
@@ -8,24 +7,33 @@ class Type(Enum):
     REAL = 1
     CHAR = 2
     BOOL = 3
+    STRING = 4
 
 
 class Operator(Enum):
-    def _generate_next_value_(name, start, count, last_values):
-        return count
+    ASGMT = 0
 
-    ASGMT = auto()
-    PLUS = auto()
-    MINUS = auto()
-    TIMES = auto()
-    DIVIDE = auto()
-    MODULO = auto()
-    EQUAL = auto()
-    NEQUAL = auto()
-    LTHAN_EQUAL = auto()
-    GTHAN_EQUAL = auto()
-    LTHAN = auto()
-    GTHAN = auto()
+    PLUS = 1
+    MINUS = 2
+    TIMES = 3
+    DIVIDE = 4
+    MODULO = 5
+
+    EQUAL = 6
+    NEQUAL = 7
+    LTHAN_EQUAL = 8
+    GTHAN_EQUAL = 9
+    LTHAN = 10
+    GTHAN = 11
+
+    STORE_CONSTANT = 12
+
+    GOTO = 13
+    GOTOF = 14
+    GOTOT = 15
+
+    READ = 16
+    PRINT = 17
 
     @classmethod
     def arithmetic_operators(cls):
@@ -36,10 +44,16 @@ class Operator(Enum):
         return cls.EQUAL, cls.NEQUAL, cls.LTHAN_EQUAL, cls.GTHAN_EQUAL, cls.LTHAN, cls.GTHAN
 
 
+class Boolean(Enum):
+    FALSE = 0
+    TRUE = 1
+
+
 class Variable:
     def __init__(self):
         self.__id = None
         self.__type = None
+        self.__virtual_memory_address = None
 
 
     def set_id(self, id: str) -> None:
@@ -50,6 +64,10 @@ class Variable:
         self.__type = type
 
 
+    def set_virtual_memory_address(self, virtual_memory_address: int) -> None:
+        self.__virtual_memory_address = virtual_memory_address
+
+
     def get_id(self) -> str:
         return self.__id
 
@@ -57,9 +75,13 @@ class Variable:
     def get_type(self) -> Type:
         return self.__type
 
+    
+    def get_virtual_memory_address(self) -> int:
+        return self.__virtual_memory_address
+
 
     def __str__(self) -> str:
-        return f'Variable(id={self.__id} type={self.__type})'
+        return f'Variable(id={self.__id} type={self.__type}, addr={self.__virtual_memory_address})'
 
 
 class Builder(ABC):
@@ -76,6 +98,11 @@ class Builder(ABC):
 
     @abstractmethod
     def set_type(self, type: Type) -> None:
+        pass
+
+
+    @abstractmethod
+    def set_virtual_memory_address(self, virtual_memory_address: int) -> None:
         pass
 
     
@@ -100,6 +127,10 @@ class VariableBuilder(Builder):
 
     def set_type(self, type: Type) -> None:
         self.__variable.set_type(type)
+
+    
+    def set_virtual_memory_address(self, virtual_memory_address: int) -> None:
+        self.__variable.set_virtual_memory_address(virtual_memory_address)
 
 
 class VariableTable():

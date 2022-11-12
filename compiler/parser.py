@@ -1,15 +1,25 @@
 from collections import defaultdict
+from collections import deque
 
 from ply import yacc
 
 from .lexer import Lexer
+from .functions import Function
 from .functions import FunctionBuilder
 from .functions import FunctionDirector
 from .functions import FunctionDirectory
-from .quadruples import Quadruple
+from .quadruples import ArithmeticQuadruple
+from .quadruples import AssignmentQuadruple
+from .quadruples import ConstantStorageQuadruple
+from .quadruples import ControlTransferQuadruple
+from .quadruples import PrintQuadruple
+from .quadruples import ReadQuadruple
+from .quadruples import RelationalQuadruple
 from .quadruples import QuadrupleList
+from .stacks import JumpStack
 from .stacks import OperandStack
 from .stacks import OperatorStack
+from .variables import Boolean
 from .variables import SemanticTable
 from .variables import Type
 from .variables import Variable
@@ -539,20 +549,26 @@ class ParserCodeGenerator(object):
         self.variable_builder = VariableBuilder()
         self.semantic_table = SemanticTable()
 
+        self.program_counter = None
         self.function_directory = None
+        self.jump_stack = None
         self.operator_stack = None
         self.operand_stack = None
         self.avail_counter = None
+        self.constant_counter = None
         self.quadruple_list = None
 
         self.function_director.builder = self.function_builder
 
     
     def reset(self):
+        self.program_counter = 0
         self.function_directory = FunctionDirectory()
+        self.jump_stack = JumpStack()
         self.operator_stack = OperatorStack()
         self.operand_stack = OperandStack()
         self.avail_counter = defaultdict(int)
+        self.constant_counter = defaultdict(int)
         self.quadruple_list = QuadrupleList()
 
         self.function_builder.reset()
@@ -560,19 +576,240 @@ class ParserCodeGenerator(object):
 
         self.function_scope = None
         self.shared_variable_declaration_type = None
+        self.print_params_queue = deque()
 
 
-    def parse(self, input):
+    def parse(self, file_data: str):
         self.reset()
-        return self.parser.parse(input)
+        return self.parser.parse(file_data)
+
+
+    def create_global_scope(self):
+        self.function_director.build_global_scope()
+        function = self.function_builder.build()
+
+        self.insert_function_to_directory(function.get_id(), function)
+
+
+    def create_main_function(self):
+        self.function_director.build_main_function()
+        function = self.function_builder.build()
+
+        self.insert_function_to_directory(function.get_id(), function)
+
+    
+    def generate_assignment_quadruple(self, value_variable: Variable, storage_variable: Variable) -> AssignmentQuadruple:
+        operator = Operator.ASGMT
+
+        result_type = self.get_operation_result_type(storage_variable, value_variable, operator)
+
+        if result_type == Type.ERROR:
+            raise TypeMismatchError()
+
+        return AssignmentQuadruple(operator, value_variable, storage_variable)
+
+    
+    def generate_arithmetic_quadruple(self, operator: Operator, left_operand: Variable, right_operand: Variable) -> ArithmeticQuadruple:
+        result_type = self.get_operation_result_type(left_operand, right_operand, operator)
+
+        if result_type == Type.ERROR:
+            raise TypeMismatchError()
+
+        temporal_storage_variable = self.create_temporal_variable(result_type)
+        self.push_operand_stack(temporal_storage_variable)
+        self.increment_avail_counter(result_type)
+
+        return ArithmeticQuadruple(operator, left_operand, right_operand, temporal_storage_variable)
+
+
+    def generate_relational_quadruple(self, operator: Operator, left_operand: Variable, right_operand: Variable) -> RelationalQuadruple:
+        result_type = self.get_operation_result_type(left_operand, right_operand, operator)
+
+        if result_type == Type.ERROR:
+            raise TypeMismatchError()
+
+        temporal_storage_variable = self.create_temporal_variable(result_type)
+        self.push_operand_stack(temporal_storage_variable)
+        self.increment_avail_counter(result_type)
+
+        return RelationalQuadruple(operator, left_operand, right_operand, temporal_storage_variable)
+
+
+    def generate_conditional_control_transfer_quadruple(self, operator: Operator, boolean_variable: Variable) -> ControlTransferQuadruple:
+        boolean_variable_type = boolean_variable.get_type()
+        program_count = None
+
+        if boolean_variable_type != Type.BOOL:
+            raise TypeMismatchError()
+
+        return ControlTransferQuadruple(operator, boolean_variable, program_count)
+
+
+    def generate_unconditional_control_transfer_quadruple(self, operator: Operator) -> ControlTransferQuadruple:
+        boolean_variable = None
+        program_count = None
+
+        return ControlTransferQuadruple(operator, boolean_variable, program_count)
+
+    
+    def generate_constant_storage_quadruple(self, constant_value: str, constant_type: Type) -> ConstantStorageQuadruple:
+        storage_variable = self.create_constant_variable(constant_type)
+        self.push_operand_stack(storage_variable)
+        self.increment_constant_counter(constant_type)
+        
+        return ConstantStorageQuadruple(constant_value, storage_variable)
+
+    
+    def insert_constant_storage_quadruple(self, quadruple: ConstantStorageQuadruple) -> None:
+        self.quadruple_list.insert_constant_storage_quadruple(quadruple)
+
+
+    def generate_read_quadruple(self, storage_variable: Variable) -> ReadQuadruple:
+        return ReadQuadruple(storage_variable)
+
+    
+    def generate_print_quadruple(self, printed_variable: Variable) -> PrintQuadruple:
+        return PrintQuadruple(printed_variable)
+    
+    
+    def insert_function_to_directory(self, function_id: str, function: Function) -> None:
+        self.function_directory.insert_function(function_id, function)
+
+    
+    def insert_assignment_quadruple(self, quadruple: AssignmentQuadruple) -> None:
+        self.quadruple_list.insert_assignment_quadruple(quadruple)
+
+    
+    def insert_arithmetic_quadruple(self, quadruple: ArithmeticQuadruple) -> None:
+        self.quadruple_list.insert_arithmetic_quadruple(quadruple)
+
+
+    def insert_relational_quadruple(self, quadruple: RelationalQuadruple) -> None:
+        self.quadruple_list.insert_relational_quadruple(quadruple)
+
+    
+    def insert_control_transfer_quadruple(self, quadruple: ControlTransferQuadruple) -> None:
+        self.quadruple_list.insert_control_transfer_quadruple(quadruple)
+
+    
+    def insert_read_quadruple(self, quadruple: ReadQuadruple) -> None:
+        self.quadruple_list.insert_read_quadruple(quadruple)
+
+    
+    def insert_print_quadruple(self, quadruple: PrintQuadruple) -> None:
+        self.quadruple_list.insert_print_quadruple(quadruple)
+
+    
+    def fill_control_transfer_quadruple(self, quadruple_number: int, program_count: int) -> None:
+        self.quadruple_list.fill_control_transfer_quadruple(quadruple_number, program_count)
+
+    
+    def push_previous_count_to_jump_stack(self) -> None:
+        self.jump_stack.push(self.program_counter - 1)
+
+
+    def create_temporal_variable(self, variable_type: Type) -> Variable:
+        count = self.avail_counter[variable_type]
+        variable_id = f't_{variable_type.name}_{count}'
+
+        self.variable_builder.set_id(variable_id)
+        self.variable_builder.set_type(variable_type)
+        variable = self.variable_builder.build()
+
+        return variable
+
+    
+    def create_constant_variable(self, variable_type: Type) -> Variable:
+        count = self.constant_counter[variable_type]
+        variable_id = f'c_{variable_type.name}_{count}'
+
+        self.variable_builder.set_id(variable_id)
+        self.variable_builder.set_type(variable_type)
+        variable = self.variable_builder.build()
+
+        return variable
+
+    
+    def push_operand_stack(self, operand: Variable) -> None:
+        self.operand_stack.push(operand)
+
+    
+    def pop_operand_stack(self) -> Variable:
+        return self.operand_stack.pop()
+
+    
+    def push_operator_stack(self, operator: Operator) -> None:
+        self.operator_stack.push(operator)
+
+    
+    def pop_operator_stack(self) -> Operator:
+        return self.operator_stack.pop()
+
+    
+    def push_print_param_queue(self, param: Variable) -> None:
+        self.print_params_queue(param)
+
+    
+    def pop_print_param_queue(self) -> Variable:
+        return self.print_params_queue.popleft()
+
+    
+    def print_param_queue_is_empty(self) -> bool:
+        return False if self.print_params_queue else True
+
+
+    def increment_program_counter(self) -> None:
+        self.program_counter += 1
+        print(self.quadruple_list.__str__())
+        print('Program count:', self.program_counter)
+        print(self.jump_stack.__str__())
+
+    
+    def increment_avail_counter(self, type: Type) -> None:
+        self.avail_counter[type] += 1
+
+    
+    def increment_constant_counter(self, type: Type) -> None:
+        self.constant_counter[type] += 1
+
+    
+    def get_operation_result_type(
+        self,
+        left_operand: Variable,
+        right_operand: Variable,
+        operator: Operator
+    ) -> Type:
+
+        return self.semantic_table.search_operation_result_type(
+            left_operand.get_type(),
+            right_operand.get_type(),
+            operator
+        )
+    
+    def get_program_count(self) -> int:
+        return self.program_counter
+
+
+    def set_function_scope(self, scope: str) -> None:
+        self.function_scope = scope
+
+
+    def get_function_scope(self) -> str:
+        return self.function_scope
+
+    
+    def set_shared_variable_type(self, type: str) -> None:
+        self.shared_variable_declaration_type = type
+
+    
+    def get_shared_variable_type(self) -> str:
+        return self.shared_variable_declaration_type
 
     
     def p_program(self, p):
         '''program : init start'''
         print(self.function_directory.__str__())
         print(self.quadruple_list.__str__())
-        # print(self.operator_stack.__str__())
-        # print(self.operand_stack.__str__())
 
 
     def p_init(self, p):
@@ -789,8 +1026,8 @@ class ParserCodeGenerator(object):
         '''single_statement : function_call'''
 
 
-    def p_single_statement_3(self, p):
-        '''single_statement : read'''
+    # def p_single_statement_3(self, p):
+    #     '''single_statement : read'''
 
 
     def p_single_statement_4(self, p):
@@ -811,11 +1048,21 @@ class ParserCodeGenerator(object):
     
     def p_assignment_1(self, p):
         '''assignment : variable_access ASGMT parsed_asgmt expr SEMI'''
-        self.create_assignment_quadruple()
+        value_variable = self.pop_operand_stack()
+        storage_variable = self.pop_operand_stack()
+
+        quadruple = self.generate_assignment_quadruple(value_variable, storage_variable)
+        self.insert_assignment_quadruple(quadruple)
+        self.increment_program_counter()
 
 
     def p_assignment_2(self, p):
-        '''assignment : variable_access ASGMT parsed_asgmt read'''
+        '''assignment : variable_access ASGMT parsed_asgmt READ LPAREN RPAREN SEMI'''
+        storage_variable = self.pop_operand_stack()
+
+        quadruple = self.generate_read_quadruple(storage_variable)
+        self.insert_assignment_quadruple(quadruple)
+        self.increment_program_counter()
 
     
     def p_parsed_asgmt(self, p):
@@ -873,8 +1120,11 @@ class ParserCodeGenerator(object):
         '''single_function_call_param : expr'''
 
      
-    def p_read(self, p):
-        '''read : READ LPAREN RPAREN SEMI'''
+    # def p_read(self, p):
+    #     '''read : READ LPAREN RPAREN SEMI'''
+    #     quadruple = self.generate_read_quadruple()
+    #     self.insert_read_quadruple(quadruple)
+    #     self.increment_program_counter()
 
     
     def p_print_1(self, p):
@@ -897,16 +1147,49 @@ class ParserCodeGenerator(object):
         '''single_print_param : expr'''
 
     
-    def p_single_print_param_2(self, p):
-        '''single_print_param : CONST_STRING'''
-
-    
     def p_conditional_1(self, p):
-        '''conditional : IF LPAREN expr RPAREN instruction_block ELSE instruction_block'''
+        '''conditional : IF LPAREN expr RPAREN parsed_if_expression instruction_block ELSE parsed_else instruction_block'''
+        print('Here 2')
+        quadruple_number = self.jump_stack.pop()
+        program_count = self.program_counter
+
+        self.fill_control_transfer_quadruple(quadruple_number, program_count)
 
     
     def p_conditional_2(self, p):
-        '''conditional : IF LPAREN expr RPAREN instruction_block'''
+        '''conditional : IF LPAREN expr RPAREN parsed_if_expression instruction_block'''
+        print('Here 1')
+        quadruple_number = self.jump_stack.pop()
+        program_count = self.program_counter
+
+        self.fill_control_transfer_quadruple(quadruple_number, program_count)
+
+    
+    def p_parsed_if_expression(self, p):
+        '''parsed_if_expression :'''
+        operator = Operator.GOTOF
+        boolean_variable = self.pop_operand_stack()
+
+        quadruple = self.generate_conditional_control_transfer_quadruple(operator, boolean_variable)
+        self.insert_control_transfer_quadruple(quadruple)
+        self.increment_program_counter()
+        
+        self.push_previous_count_to_jump_stack()
+
+    
+    def p_parsed_else(self, p):
+        '''parsed_else :'''
+        operator = Operator.GOTO
+
+        quadruple = self.generate_unconditional_control_transfer_quadruple(operator)
+        self.insert_control_transfer_quadruple(quadruple)
+        self.increment_program_counter()
+
+        #
+        quadruple_number = self.jump_stack.pop()
+        program_count = self.program_counter
+        self.push_previous_count_to_jump_stack()
+        self.fill_control_transfer_quadruple(quadruple_number, program_count)
 
     
     def p_loop_1(self, p):
@@ -954,11 +1237,39 @@ class ParserCodeGenerator(object):
 
 
     def p_equality_expr_1(self, p):
-        '''equality_expr : relational_expr EQUAL relational_expr'''
+        '''equality_expr : relational_expr EQUAL parsed_equal relational_expr'''
+        operator = self.operator_stack.top()
+        if operator == Operator.EQUAL:
+            self.pop_operator_stack()
+            right_operand = self.pop_operand_stack()
+            left_operand = self.pop_operand_stack()
+
+            quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand)
+            self.insert_arithmetic_quadruple(quadruple)
+            self.increment_program_counter()
+
+    
+    def p_parsed_equal(self, p):
+        '''parsed_equal :'''
+        self.operator_stack.push(Operator.EQUAL)
 
 
     def p_equality_expr_2(self, p):
-        '''equality_expr : relational_expr NEQUAL relational_expr'''
+        '''equality_expr : relational_expr NEQUAL parsed_nequal relational_expr'''
+        operator = self.operator_stack.top()
+        if operator == Operator.NEQUAL:
+            self.pop_operator_stack()
+            right_operand = self.pop_operand_stack()
+            left_operand = self.pop_operand_stack()
+
+            quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand)
+            self.insert_arithmetic_quadruple(quadruple)
+            self.increment_program_counter()
+
+    
+    def p_parsed_nequal(self, p):
+        '''parsed_nequal :'''
+        self.operator_stack.push(Operator.NEQUAL)
 
 
     def p_equality_expr_3(self, p):
@@ -966,19 +1277,75 @@ class ParserCodeGenerator(object):
 
 
     def p_relational_expr_1(self, p):
-        '''relational_expr : additive_expr LTHAN_EQUAL additive_expr'''
+        '''relational_expr : additive_expr LTHAN_EQUAL parsed_lthan_equal additive_expr'''
+        operator = self.operator_stack.top()
+        if operator == Operator.NEQUAL:
+            self.pop_operator_stack()
+            right_operand = self.pop_operand_stack()
+            left_operand = self.pop_operand_stack()
+
+            quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand)
+            self.insert_arithmetic_quadruple(quadruple)
+            self.increment_program_counter()
+
+    
+    def p_parsed_lthan_equal(self, p):
+        '''parsed_lthan_equal :'''
+        self.operator_stack.push(Operator.LTHAN_EQUAL)
 
     
     def p_relational_expr_2(self, p):
-        '''relational_expr : additive_expr LTHAN additive_expr'''
+        '''relational_expr : additive_expr LTHAN parsed_lthan additive_expr'''
+        operator = self.operator_stack.top()
+        if operator == Operator.LTHAN_EQUAL:
+            self.pop_operator_stack()
+            right_operand = self.pop_operand_stack()
+            left_operand = self.pop_operand_stack()
+
+            quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand)
+            self.insert_relational_quadruple(quadruple)
+            self.increment_program_counter()
+
+    
+    def p_parsed_lthan(self, p):
+        '''parsed_lthan :'''
+        self.operator_stack.push(Operator.LTHAN)
 
     
     def p_relational_expr_3(self, p):
-        '''relational_expr : additive_expr GTHAN_EQUAL additive_expr'''
+        '''relational_expr : additive_expr GTHAN_EQUAL parsed_gthan_equal additive_expr'''
+        operator = self.operator_stack.top()
+        if operator == Operator.GTHAN_EQUAL:
+            self.pop_operator_stack()
+            right_operand = self.pop_operand_stack()
+            left_operand = self.pop_operand_stack()
+
+            quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand)
+            self.insert_arithmetic_quadruple(quadruple)
+            self.increment_program_counter()
+
+    
+    def p_parsed_gthan_equal(self, p):
+        '''parsed_gthan_equal :'''
+        self.operator_stack.push(Operator.GTHAN_EQUAL)
 
     
     def p_relational_expr_4(self, p):
-        '''relational_expr : additive_expr GTHAN additive_expr'''
+        '''relational_expr : additive_expr GTHAN parsed_gthan additive_expr'''
+        operator = self.operator_stack.top()
+        if operator == Operator.GTHAN:
+            self.pop_operator_stack()
+            right_operand = self.pop_operand_stack()
+            left_operand = self.pop_operand_stack()
+
+            quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand)
+            self.insert_arithmetic_quadruple(quadruple)
+            self.increment_program_counter()
+
+    
+    def p_parsed_gthan(self, p):
+        '''parsed_gthan :'''
+        self.operator_stack.push(Operator.GTHAN)
 
     
     def p_relational_expr_5(self, p):
@@ -987,9 +1354,15 @@ class ParserCodeGenerator(object):
 
     def p_additive_expr_1(self, p):
         '''additive_expr : additive_expr PLUS parsed_plus multiplicative_expr'''
-        top_operator = self.operator_stack.top()
-        if top_operator == Operator.PLUS:
-            self.create_arithmetic_quadruple(top_operator)
+        operator = self.operator_stack.top()
+        if operator == Operator.PLUS:
+            self.pop_operator_stack()
+            right_operand = self.pop_operand_stack()
+            left_operand = self.pop_operand_stack()
+
+            quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand)
+            self.insert_arithmetic_quadruple(quadruple)
+            self.increment_program_counter()
     
 
     def p_parsed_plus(self, p):
@@ -999,9 +1372,15 @@ class ParserCodeGenerator(object):
     
     def p_additive_expr_2(self, p):
         '''additive_expr : additive_expr MINUS parsed_minus multiplicative_expr'''
-        top_operator = self.operator_stack.top()
-        if top_operator == Operator.MINUS:
-            self.create_arithmetic_quadruple(top_operator)
+        operator = self.operator_stack.top()
+        if operator == Operator.MINUS:
+            self.pop_operator_stack()
+            right_operand = self.pop_operand_stack()
+            left_operand = self.pop_operand_stack()
+
+            quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand)
+            self.insert_arithmetic_quadruple(quadruple)
+            self.increment_program_counter()
 
     
     def p_parsed_minus(self, p):
@@ -1015,9 +1394,15 @@ class ParserCodeGenerator(object):
 
     def p_multiplicative_expr_1(self, p):
         '''multiplicative_expr : multiplicative_expr TIMES parsed_times unary_expr'''
-        top_operator = self.operator_stack.top()
-        if top_operator == Operator.TIMES:
-            self.create_arithmetic_quadruple(top_operator)
+        operator = self.operator_stack.top()
+        if operator == Operator.TIMES:
+            self.pop_operator_stack()
+            right_operand = self.pop_operand_stack()
+            left_operand = self.pop_operand_stack()
+
+            quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand)
+            self.insert_arithmetic_quadruple(quadruple)
+            self.increment_program_counter()
 
     
     def p_parsed_times(self, p):
@@ -1027,9 +1412,15 @@ class ParserCodeGenerator(object):
     
     def p_multiplicative_expr_2(self, p):
         '''multiplicative_expr : multiplicative_expr DIVIDE parsed_divide unary_expr'''
-        top_operator = self.operator_stack.top()
-        if top_operator == Operator.DIVIDE:
-            self.create_arithmetic_quadruple(top_operator)
+        operator = self.operator_stack.top()
+        if operator == Operator.DIVIDE:
+            self.pop_operator_stack()
+            right_operand = self.pop_operand_stack()
+            left_operand = self.pop_operand_stack()
+
+            quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand)
+            self.insert_arithmetic_quadruple(quadruple)
+            self.increment_program_counter()
 
     
     def p_parsed_divide(self, p):
@@ -1039,9 +1430,15 @@ class ParserCodeGenerator(object):
 
     def p_multiplicative_expr_3(self, p):
         '''multiplicative_expr : multiplicative_expr MODULO parsed_modulo unary_expr'''
-        top_operator = self.operator_stack.top()
-        if top_operator == Operator.MODULO:
-            self.create_arithmetic_quadruple(top_operator)
+        operator = self.operator_stack.top()
+        if operator == Operator.MODULO:
+            self.pop_operator_stack()
+            right_operand = self.pop_operand_stack()
+            left_operand = self.pop_operand_stack()
+
+            quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand) 
+            self.insert_arithmetic_quadruple(quadruple)
+            self.increment_program_counter()
 
     
     def p_parsed_modulo(self, p):
@@ -1087,26 +1484,62 @@ class ParserCodeGenerator(object):
 
     def p_constant_1(self, p):
         '''constant : CONST_INT'''
+        constant_value = p[1]
+        constant_type = Type.INT
+
+        quadruple = self.generate_constant_storage_quadruple(constant_value, constant_type)
+        self.insert_constant_storage_quadruple(quadruple)
+        self.increment_program_counter()
 
                 
     def p_constant_2(self, p):
         '''constant : CONST_REAL'''
+        constant_value = p[1]
+        constant_type = Type.REAL
+
+        quadruple = self.generate_constant_storage_quadruple(constant_value, constant_type)
+        self.insert_constant_storage_quadruple(quadruple)
+        self.increment_program_counter()
 
 
     def p_constant_3(self, p):
         '''constant : CONST_CHAR'''
+        constant_value = p[1]
+        constant_type = Type.CHAR
+
+        quadruple = self.generate_constant_storage_quadruple(constant_value, constant_type)
+        self.insert_constant_storage_quadruple(quadruple)
+        self.increment_program_counter()
+
+
+    def p_constant_4(self, p):
+        '''constant : CONST_STRING'''
+        constant_value = p[1]
+        constant_type = Type.STRING
+
+        quadruple = self.generate_constant_storage_quadruple(constant_value, constant_type)
+        self.insert_constant_storage_quadruple(quadruple)
+        self.increment_program_counter()
 
     
-    def p_constant_4(self, p):
+    def p_constant_5(self, p):
         '''constant : constant_bool'''
+        constant_value = p[1]
+        constant_type = Type.BOOL
+
+        quadruple = self.generate_constant_storage_quadruple(constant_value, constant_type)
+        self.insert_constant_storage_quadruple(quadruple)
+        self.increment_program_counter()
 
     
     def p_constant_bool_1(self, p):
         '''constant_bool : TRUE'''
+        p[0] = Boolean.TRUE
 
     
     def p_constant_bool_2(self, p):
         '''constant_bool : FALSE'''
+        p[0] = Boolean.FALSE
 
     
     def p_type_1(self, p):
@@ -1143,89 +1576,9 @@ class ParserCodeGenerator(object):
           raise SyntaxError('Error at EOF')
 
 
-    def create_global_scope(self):
-        self.function_director.build_global_scope()
-        function = self.function_builder.build()
-
-        self.function_directory.insert_function(function.get_id(), function)
-    
-
-    def create_main_function(self):
-        self.function_director.build_main_function()
-        function = self.function_builder.build()
-
-        self.function_directory.insert_function(function.get_id(), function)
-
-    
-    def create_next_temp_variable(self, variable_type: Type) -> Variable:
-        count = self.avail_counter[variable_type]
-        variable_id = f't_{variable_type.name}_{count}'
-
-        self.variable_builder.set_id(variable_id)
-        self.variable_builder.set_type(variable_type)
-        variable = self.variable_builder.build()
-        return variable
-
-    
-    def create_assignment_quadruple(self):
-        operator = self.operator_stack.pop()
-        right_operand = self.operand_stack.pop()
-        left_operand = self.operand_stack.pop()
-
-        result_type = self.semantic_table.search_operation_result_type(
-            right_operand.get_type(),
-            left_operand.get_type(),
-            operator
-        )
-
-        if result_type == Type.ERROR:
-            raise TypeMismatchException()
-
-        quadruple = Quadruple(operator, right_operand, None, left_operand)
-        self.quadruple_list.insert_quadruple(quadruple)
-
-    
-    def create_arithmetic_quadruple(self, operator: Operator) -> None:
-        self.operator_stack.pop()
-        right_operand = self.operand_stack.pop()
-        left_operand = self.operand_stack.pop()
-
-        result_type = self.semantic_table.search_operation_result_type(
-            right_operand.get_type(),
-            left_operand.get_type(),
-            operator
-        )
-
-        if result_type == Type.ERROR:
-            raise TypeMismatchException()
-
-        result_variable = self.create_next_temp_variable(result_type)
-        quadruple = Quadruple(operator, left_operand, right_operand, result_variable)
-        
-        self.quadruple_list.insert_quadruple(quadruple)
-        self.operand_stack.push(result_variable)
-        self.avail_counter[result_type] += 1
-
-
-    def set_function_scope(self, scope: str) -> None:
-        self.function_scope = scope
-
-
-    def get_function_scope(self) -> str:
-        return self.function_scope
-
-    
-    def set_shared_variable_type(self, type: str) -> None:
-        self.shared_variable_declaration_type = type
-
-    
-    def get_shared_variable_type(self) -> str:
-        return self.shared_variable_declaration_type
-
-
-class TypeMismatchException(RuntimeError):
+class TypeMismatchError(RuntimeError):
     pass
 
 
-class SyntaxError(Exception):
+class SyntaxError(RuntimeError):
     pass

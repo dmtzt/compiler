@@ -643,9 +643,17 @@ class ParserCodeGenerator(object):
         return ControlTransferQuadruple(operator, boolean_variable, program_count)
 
 
-    def generate_unconditional_control_transfer_quadruple(self, operator: Operator) -> ControlTransferQuadruple:
+    def generate_empty_unconditional_control_transfer_quadruple(self) -> ControlTransferQuadruple:
+        operator: Operator.GOTO
         boolean_variable = None
         program_count = None
+
+        return ControlTransferQuadruple(operator, boolean_variable, program_count)
+
+    
+    def generate_filled_unconditional_control_transfer_quadruple(self, program_count) -> ControlTransferQuadruple:
+        operator = Operator.GOTO
+        boolean_variable = None
 
         return ControlTransferQuadruple(operator, boolean_variable, program_count)
 
@@ -702,7 +710,11 @@ class ParserCodeGenerator(object):
         self.quadruple_list.fill_control_transfer_quadruple(quadruple_number, program_count)
 
     
-    def push_previous_count_to_jump_stack(self) -> None:
+    def push_current_count_jump_stack(self) -> None:
+        self.jump_stack.push(self.program_counter)
+
+
+    def push_previous_count_jump_stack(self) -> None:
         self.jump_stack.push(self.program_counter - 1)
 
 
@@ -744,16 +756,12 @@ class ParserCodeGenerator(object):
         return self.operator_stack.pop()
 
     
-    def push_print_param_queue(self, print_param: Variable) -> None:
-        self.print_param_queue.append(print_param)
+    def push_jump_stack(self, quadruple_number: int) -> None:
+        self.jump_stack.push(quadruple_number)
 
     
-    def pop_print_param_queue(self) -> Variable:
-        return self.print_param_queue.popleft()
-
-    
-    def print_param_queue_is_empty(self) -> bool:
-        return bool(self.print_param_queue)
+    def pop_jump_stack(self) -> int:
+        return self.jump_stack.pop()
 
 
     def increment_program_counter(self) -> None:
@@ -784,7 +792,7 @@ class ParserCodeGenerator(object):
             operator
         )
     
-    def get_program_count(self) -> int:
+    def get_program_counter(self) -> int:
         return self.program_counter
 
 
@@ -1024,23 +1032,19 @@ class ParserCodeGenerator(object):
         '''single_statement : function_call'''
 
 
-    # def p_single_statement_3(self, p):
-    #     '''single_statement : read'''
-
-
-    def p_single_statement_4(self, p):
+    def p_single_statement_3(self, p):
         '''single_statement : print'''
 
 
-    def p_single_statement_5(self, p):
+    def p_single_statement_4(self, p):
         '''single_statement : conditional'''
 
 
-    def p_single_statement_6(self, p):
+    def p_single_statement_5(self, p):
         '''single_statement : loop'''
 
 
-    def p_single_statement_7(self, p):
+    def p_single_statement_6(self, p):
         '''single_statement : return'''
 
     
@@ -1117,22 +1121,9 @@ class ParserCodeGenerator(object):
     def p_single_function_call_param(self, p):
         '''single_function_call_param : expr'''
 
-     
-    # def p_read(self, p):
-    #     '''read : READ LPAREN RPAREN SEMI'''
-    #     quadruple = self.generate_read_quadruple()
-    #     self.insert_read_quadruple(quadruple)
-    #     self.increment_program_counter()
-
     
     def p_print_1(self, p):
         '''print : PRINT LPAREN print_params RPAREN SEMI'''
-        # while not self.print_param_queue_is_empty():
-        #     print_param = self.pop_print_param_queue()
-        #     quadruple = self.generate_print_quadruple(print_param)
-
-        #     self.insert_print_quadruple(quadruple)
-        #     self.increment_program_counter()
 
     
     def p_print_2(self, p):
@@ -1157,25 +1148,25 @@ class ParserCodeGenerator(object):
 
     
     def p_conditional_1(self, p):
-        '''conditional : IF LPAREN expr RPAREN parsed_if_expression instruction_block ELSE parsed_else instruction_block'''
+        '''conditional : IF LPAREN expr RPAREN parsed_if_expr instruction_block ELSE parsed_else instruction_block'''
         print('Here 2')
-        quadruple_number = self.jump_stack.pop()
+        quadruple_number = self.pop_jump_stack()
         program_count = self.program_counter
 
         self.fill_control_transfer_quadruple(quadruple_number, program_count)
 
     
     def p_conditional_2(self, p):
-        '''conditional : IF LPAREN expr RPAREN parsed_if_expression instruction_block'''
+        '''conditional : IF LPAREN expr RPAREN parsed_if_expr instruction_block'''
         print('Here 1')
-        quadruple_number = self.jump_stack.pop()
+        quadruple_number = self.pop_jump_stack()
         program_count = self.program_counter
 
         self.fill_control_transfer_quadruple(quadruple_number, program_count)
 
     
-    def p_parsed_if_expression(self, p):
-        '''parsed_if_expression :'''
+    def p_parsed_if_expr(self, p):
+        '''parsed_if_expr :'''
         operator = Operator.GOTOF
         boolean_variable = self.pop_operand_stack()
 
@@ -1183,21 +1174,19 @@ class ParserCodeGenerator(object):
         self.insert_control_transfer_quadruple(quadruple)
         self.increment_program_counter()
         
-        self.push_previous_count_to_jump_stack()
+        self.push_previous_count_jump_stack()
 
     
     def p_parsed_else(self, p):
         '''parsed_else :'''
-        operator = Operator.GOTO
-
-        quadruple = self.generate_unconditional_control_transfer_quadruple(operator)
+        quadruple = self.generate_empty_unconditional_control_transfer_quadruple()
         self.insert_control_transfer_quadruple(quadruple)
         self.increment_program_counter()
 
         #
-        quadruple_number = self.jump_stack.pop()
+        quadruple_number = self.pop_jump_stack()
         program_count = self.program_counter
-        self.push_previous_count_to_jump_stack()
+        self.push_previous_count_jump_stack()
         self.fill_control_transfer_quadruple(quadruple_number, program_count)
 
     
@@ -1210,7 +1199,32 @@ class ParserCodeGenerator(object):
 
     
     def p_while(self, p):
-        '''while : WHILE LPAREN expr RPAREN instruction_block'''
+        '''while : WHILE parsed_while LPAREN expr parsed_while_expr RPAREN instruction_block'''
+        fill_quadruple_number = self.pop_jump_stack()
+        unconditional_transfer_quadruple_number = self.pop_jump_stack()
+
+        quadruple = self.generate_filled_unconditional_control_transfer_quadruple(unconditional_transfer_quadruple_number)
+        self.insert_control_transfer_quadruple(quadruple)
+        self.increment_program_counter()
+
+        program_counter = self.get_program_counter()
+        self.fill_control_transfer_quadruple(fill_quadruple_number, program_counter)
+
+    
+    def p_parsed_while(self, p):
+        '''parsed_while :'''
+        self.push_current_count_jump_stack()
+
+    
+    def p_parsed_while_expr(self, p):
+        '''parsed_while_expr :'''
+        operator = Operator.GOTOF
+        boolean_variable = self.pop_operand_stack()
+
+        quadruple = self.generate_conditional_control_transfer_quadruple(operator, boolean_variable)
+        self.insert_control_transfer_quadruple(quadruple)
+        self.increment_program_counter()
+        self.push_previous_count_jump_stack()
 
     
     def p_for_1(self, p):

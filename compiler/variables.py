@@ -19,21 +19,28 @@ class Operator(Enum):
     DIVIDE = 4
     MODULO = 5
 
-    EQUAL = 6
-    NEQUAL = 7
-    LTHAN_EQUAL = 8
-    GTHAN_EQUAL = 9
-    LTHAN = 10
-    GTHAN = 11
+    UNARY_PLUS = 6
+    UNARY_MINUS = 7
 
-    STORE_CONSTANT = 12
+    EQUAL = 8
+    NEQUAL = 9
+    LTHAN_EQUAL = 10
+    GTHAN_EQUAL = 11
+    LTHAN = 12
+    GTHAN = 13
 
-    GOTO = 13
-    GOTOF = 14
-    GOTOT = 15
+    AND = 14
+    OR = 15
+    NOT = 16
 
-    READ = 16
-    PRINT = 17
+    STORE_CONSTANT = 17
+
+    GOTO = 18
+    GOTOF = 19
+    GOTOT = 20
+
+    READ = 21
+    PRINT = 22
 
     @classmethod
     def arithmetic_operators(cls):

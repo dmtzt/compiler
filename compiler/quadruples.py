@@ -27,6 +27,22 @@ class ArithmeticQuadruple():
         return f'ArithmeticQuadruple(op={self._operator} left={self._left_operand.__str__()} right={self._right_operand.__str__()} temp_var={self._temporal_storage_variable.__str__()})'
 
 
+class UnaryArithmeticQuadruple():
+    def __init__(
+        self,
+        operator: Operator,
+        value_variable: Variable,
+        temporal_storage_variable: Variable
+    ) -> None:
+        self._operator = operator
+        self._value_variable = value_variable
+        self._temporal_storage_variable = temporal_storage_variable
+
+    
+    def __str__(self) -> str:
+        return f'UnaryArithmeticQuadruple(op={self._operator} value_var={self._value_variable.__str__()} temp_var={self._temporal_storage_variable.__str__()})'
+
+
 class RelationalQuadruple():
     def __init__(
         self,
@@ -134,6 +150,10 @@ class QuadrupleList():
 
     
     def insert_arithmetic_quadruple(self, quadruple: ArithmeticQuadruple) -> None:
+        self._list.append(quadruple)
+
+    
+    def insert_unary_arithmetic_quadruple(self, quadruple: UnaryArithmeticQuadruple) -> None:
         self._list.append(quadruple)
 
     

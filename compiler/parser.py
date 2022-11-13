@@ -15,6 +15,7 @@ from .quadruples import PrintQuadruple
 from .quadruples import ReadQuadruple
 from .quadruples import RelationalQuadruple
 from .quadruples import QuadrupleList
+from .quadruples import UnaryArithmeticQuadruple
 from .stacks import JumpStack
 from .stacks import OperandStack
 from .stacks import OperatorStack
@@ -619,6 +620,16 @@ class ParserCodeGenerator(object):
 
         return ArithmeticQuadruple(operator, left_operand, right_operand, temporal_storage_variable)
 
+    
+    def generate_unary_arithmetic_quadruple(self, operator: Operator, value_variable: Variable) -> UnaryArithmeticQuadruple:
+        value_type = value_variable.get_type()
+
+        temporal_storage_variable = self.create_temporal_variable(value_type)
+        self.push_operand_stack(temporal_storage_variable)
+        self.increment_avail_counter(value_type)
+
+        return UnaryArithmeticQuadruple(operator, value_variable, temporal_storage_variable)
+
 
     def generate_relational_quadruple(self, operator: Operator, left_operand: Variable, right_operand: Variable) -> RelationalQuadruple:
         result_type = self.get_operation_result_type(left_operand, right_operand, operator)
@@ -688,6 +699,10 @@ class ParserCodeGenerator(object):
     
     def insert_arithmetic_quadruple(self, quadruple: ArithmeticQuadruple) -> None:
         self.quadruple_list.insert_arithmetic_quadruple(quadruple)
+
+    
+    def insert_unary_arithmetic_quadruple(self, quadruple: UnaryArithmeticQuadruple) -> None:
+        self.quadruple_list.insert_unary_arithmetic_quadruple(quadruple)
 
 
     def insert_relational_quadruple(self, quadruple: RelationalQuadruple) -> None:
@@ -791,6 +806,7 @@ class ParserCodeGenerator(object):
             right_operand.get_type(),
             operator
         )
+
     
     def get_program_counter(self) -> int:
         return self.program_counter
@@ -1475,10 +1491,22 @@ class ParserCodeGenerator(object):
     
     def p_unary_expr_1(self, p):
         '''unary_expr : MINUS postfix_expr'''
+        operator = Operator.UNARY_MINUS
+        value_variable = self.pop_operand_stack()
+
+        quadruple = self.generate_unary_arithmetic_quadruple(operator, value_variable)
+        self.insert_unary_arithmetic_quadruple(quadruple)
+        self.increment_program_counter()
 
     
     def p_unary_expr_2(self, p):
         '''unary_expr : PLUS postfix_expr'''
+        operator = Operator.PLUS
+        value_variable = self.pop_operand_stack()
+
+        quadruple = self.generate_unary_arithmetic_quadruple(operator, value_variable)
+        self.insert_unary_arithmetic_quadruple(quadruple)
+        self.increment_program_counter()
 
     
     def p_unary_expr_3(self, p):

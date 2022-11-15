@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import Enum
 
 class Type(Enum):
@@ -56,39 +57,11 @@ class Boolean(Enum):
     TRUE = 1
 
 
+@dataclass
 class Variable:
-    def __init__(self):
-        self.__id = None
-        self.__type = None
-        self.__virtual_memory_address = None
-
-
-    def set_id(self, id: str) -> None:
-        self.__id = id
-
-
-    def set_type(self, type: Type) -> None:
-        self.__type = type
-
-
-    def set_virtual_memory_address(self, virtual_memory_address: int) -> None:
-        self.__virtual_memory_address = virtual_memory_address
-
-
-    def get_id(self) -> str:
-        return self.__id
-
-
-    def get_type(self) -> Type:
-        return self.__type
-
-    
-    def get_virtual_memory_address(self) -> int:
-        return self.__virtual_memory_address
-
-
-    def __str__(self) -> str:
-        return f'Variable(id={self.__id} type={self.__type}, addr={self.__virtual_memory_address})'
+    id: str
+    type: Type
+    virtual_memory_address: int
 
 
 class Builder(ABC):
@@ -119,7 +92,7 @@ class VariableBuilder(Builder):
 
     
     def reset(self) -> None:
-        self.__variable = Variable()
+        self.__variable = Variable(None, None, None)
 
 
     def build(self) -> Variable:
@@ -129,15 +102,15 @@ class VariableBuilder(Builder):
 
 
     def set_id(self, id: str) -> None:
-        self.__variable.set_id(id)
+        self.__variable.id = id
 
 
     def set_type(self, type: Type) -> None:
-        self.__variable.set_type(type)
+        self.__variable.type = type
 
     
     def set_virtual_memory_address(self, virtual_memory_address: int) -> None:
-        self.__variable.set_virtual_memory_address(virtual_memory_address)
+        self.__variable.virtual_memory_address = virtual_memory_address
 
 
 class VariableTable():

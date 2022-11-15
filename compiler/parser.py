@@ -808,6 +808,18 @@ class ParserCodeGenerator(object):
         )
 
     
+    def for_index_init(self, variable_id: str, variable_type: Type) -> None:
+        self.variable_builder.set_id(variable_id)
+        self.variable_builder.set_type(variable_type)
+        
+        index_variable = self.variable_builder.build()
+        value_variable = self.pop_operand_stack()
+
+        quadruple = self.generate_assignment_quadruple(value_variable, index_variable)
+        self.insert_quadruple(quadruple)
+        self.increment_program_counter()
+    
+
     def get_program_counter(self) -> int:
         return self.program_counter
 
@@ -1249,6 +1261,76 @@ class ParserCodeGenerator(object):
     
     def p_for_2(self, p):
         '''for : FROM LPAREN ID ASGMT CONST_INT COLON CONST_INT RPAREN instruction_block'''
+        '''for : FROM LPAREN for_init COLON for_end_value_no_step RPAREN instruction_block'''
+        fill_quadruple_number = self.pop_jump_stack()
+        unconditional_transfer_quadruple_number = self.pop_jump_stack()
+
+        quadruple = self.generate_filled_unconditional_control_transfer_quadruple(unconditional_transfer_quadruple_number)
+        self.insert_quadruple(quadruple)
+        self.increment_program_counter()
+
+        program_counter = self.get_program_counter()
+        self.fill_control_transfer_quadruple(fill_quadruple_number, program_counter)
+        
+
+        # program_counter = self.get_program_counter()
+        # fill_quadruple_number = self.pop_jump_stack()
+
+        # self.fill_control_transfer_quadruple(fill_quadruple_number, program_counter)
+        
+        # control_transfer_quadruple = self.generate_filled_unconditional_control_transfer_quadruple(quadruple_number)
+        # self.insert_quadruple(control_transfer_quadruple)
+
+        # quadruple_number = self.pop_jump_stack()
+        
+
+
+    
+    def p_for_init_index(self, p):
+        '''for_init : ID ASGMT CONST_INT'''
+        index_variable_id = p[1]
+        index_variable_type = Type.INT
+
+        constant_value = p[3]
+        constant_type = Type.INT
+
+        constant_storage_quadruple = self.generate_constant_storage_quadruple(constant_value, constant_type)
+        self.insert_quadruple(constant_storage_quadruple)
+        self.increment_program_counter()
+
+        constant_variable = self.pop_operand_stack()
+        index_variable = self.create_function_variable(index_variable_id, index_variable_type)
+        self.push_operand_stack(index_variable)
+        assignment_quadruple = self.generate_assignment_quadruple(constant_variable, index_variable)
+        self.insert_quadruple(assignment_quadruple)
+        self.increment_program_counter()
+
+    
+    def p_for_end_value_no_step(self, p):
+        '''for_end_value_no_step : expr'''
+        operator = Operator.GOTOF
+
+        end_value_variable = self.pop_operand_stack()
+        index_variable = self.pop_operand_stack()
+
+        self.push_current_count_jump_stack()
+        
+        relational_quadruple = self.generate_relational_quadruple(Operator.LTHAN, index_variable, end_value_variable)
+        self.insert_quadruple(relational_quadruple)
+        self.increment_program_counter()
+
+        boolean_variable = self.operand_stack.pop()
+        control_transfer_quadruple = self.generate_conditional_control_transfer_quadruple(operator, boolean_variable)
+        self.insert_quadruple(control_transfer_quadruple)
+        self.increment_program_counter()
+
+    
+    def p_for_increment_1(self, p):
+        '''for_increment : CONST_INT'''
+
+    
+    def p_for_increment_2(self, p):
+        '''for_increment : MINUS CONST_INT'''
 
     
     def p_return_1(self, p):

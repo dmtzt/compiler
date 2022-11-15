@@ -43,6 +43,9 @@ class Operator(Enum):
     READ = 21
     PRINT = 22
 
+    END = 23
+
+
     @classmethod
     def arithmetic_operators(cls):
         return cls.PLUS, cls.MINUS, cls.TIMES, cls.DIVIDE, cls.MODULO

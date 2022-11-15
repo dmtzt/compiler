@@ -11,6 +11,7 @@ from .quadruples import ArithmeticQuadruple
 from .quadruples import AssignmentQuadruple
 from .quadruples import ConstantStorageQuadruple
 from .quadruples import ControlTransferQuadruple
+from .quadruples import EndProgramQuadruple
 from .quadruples import PrintQuadruple
 from .quadruples import ReadQuadruple
 from .quadruples import RelationalQuadruple
@@ -175,6 +176,11 @@ class ParserCodeGenerator(object):
         return PrintQuadruple(operator, print_param)
 
     
+    def generate_end_program_quadruple(self) -> EndProgramQuadruple:
+        operator = Operator.END
+        return EndProgramQuadruple(operator)
+
+    
     def insert_quadruple(self, quadruple: Quadruple) -> None:
         self.quadruple_list.insert_quadruple(quadruple)
 
@@ -316,6 +322,10 @@ class ParserCodeGenerator(object):
     
     def p_program(self, p):
         '''program : init start'''
+        end_program_quadruple = self.generate_end_program_quadruple()
+        self.insert_quadruple(end_program_quadruple)
+        self.increment_program_counter()
+
         print(self.function_directory.__str__())
         print(self.quadruple_list.__str__())
 

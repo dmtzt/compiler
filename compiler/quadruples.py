@@ -94,6 +94,14 @@ class PrintQuadruple(Quadruple):
         return f'{self.operator.name} {self.printed_variable}'
 
 
+@dataclass
+class EndProgramQuadruple(Quadruple):
+    operator: Operator
+
+    def __str__(self) -> str:
+        return f'{self.operator.name}'
+
+
 class QuadrupleList():
     def __init__(self) -> None:
         self._list = deque()

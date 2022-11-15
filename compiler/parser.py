@@ -14,6 +14,7 @@ from .quadruples import ControlTransferQuadruple
 from .quadruples import PrintQuadruple
 from .quadruples import ReadQuadruple
 from .quadruples import RelationalQuadruple
+from .quadruples import Quadruple
 from .quadruples import QuadrupleList
 from .quadruples import UnaryArithmeticQuadruple
 from .stacks import JumpStack
@@ -622,7 +623,7 @@ class ParserCodeGenerator(object):
 
     
     def generate_unary_arithmetic_quadruple(self, operator: Operator, value_variable: Variable) -> UnaryArithmeticQuadruple:
-        value_type = value_variable.get_type()
+        value_type = value_variable.type
 
         temporal_storage_variable = self.create_temporal_variable(value_type)
         self.push_operand_stack(temporal_storage_variable)
@@ -645,7 +646,7 @@ class ParserCodeGenerator(object):
 
 
     def generate_conditional_control_transfer_quadruple(self, operator: Operator, boolean_variable: Variable) -> ControlTransferQuadruple:
-        boolean_variable_type = boolean_variable.get_type()
+        boolean_variable_type = boolean_variable.type
         program_count = None
 
         if boolean_variable_type != Type.BOOL:
@@ -670,55 +671,30 @@ class ParserCodeGenerator(object):
 
     
     def generate_constant_storage_quadruple(self, constant_value: str, constant_type: Type) -> ConstantStorageQuadruple:
+        operator = Operator.STORE_CONSTANT
         storage_variable = self.create_constant_variable(constant_type)
         self.push_operand_stack(storage_variable)
         self.increment_constant_counter(constant_type)
         
-        return ConstantStorageQuadruple(constant_value, storage_variable)
+        return ConstantStorageQuadruple(operator, constant_value, storage_variable)
 
     
-    def insert_constant_storage_quadruple(self, quadruple: ConstantStorageQuadruple) -> None:
-        self.quadruple_list.insert_constant_storage_quadruple(quadruple)
-
-
     def generate_read_quadruple(self, storage_variable: Variable) -> ReadQuadruple:
-        return ReadQuadruple(storage_variable)
+        operator = Operator.READ
+        return ReadQuadruple(operator, storage_variable)
 
     
     def generate_print_quadruple(self, print_param: Variable) -> PrintQuadruple:
-        return PrintQuadruple(print_param)
+        operator = Operator.PRINT
+        return PrintQuadruple(operator, print_param)
+
     
+    def insert_quadruple(self, quadruple: Quadruple) -> None:
+        self.quadruple_list.insert_quadruple(quadruple)
+
     
     def insert_function_to_directory(self, function_id: str, function: Function) -> None:
         self.function_directory.insert_function(function_id, function)
-
-    
-    def insert_assignment_quadruple(self, quadruple: AssignmentQuadruple) -> None:
-        self.quadruple_list.insert_assignment_quadruple(quadruple)
-
-    
-    def insert_arithmetic_quadruple(self, quadruple: ArithmeticQuadruple) -> None:
-        self.quadruple_list.insert_arithmetic_quadruple(quadruple)
-
-    
-    def insert_unary_arithmetic_quadruple(self, quadruple: UnaryArithmeticQuadruple) -> None:
-        self.quadruple_list.insert_unary_arithmetic_quadruple(quadruple)
-
-
-    def insert_relational_quadruple(self, quadruple: RelationalQuadruple) -> None:
-        self.quadruple_list.insert_relational_quadruple(quadruple)
-
-    
-    def insert_control_transfer_quadruple(self, quadruple: ControlTransferQuadruple) -> None:
-        self.quadruple_list.insert_control_transfer_quadruple(quadruple)
-
-    
-    def insert_read_quadruple(self, quadruple: ReadQuadruple) -> None:
-        self.quadruple_list.insert_read_quadruple(quadruple)
-
-    
-    def insert_print_quadruple(self, quadruple: PrintQuadruple) -> None:
-        self.quadruple_list.insert_print_quadruple(quadruple)
 
     
     def fill_control_transfer_quadruple(self, quadruple_number: int, program_count: int) -> None:
@@ -741,6 +717,13 @@ class ParserCodeGenerator(object):
         self.variable_builder.set_type(variable_type)
         variable = self.variable_builder.build()
 
+        return variable
+
+    
+    def create_function_variable(self, variable_id: str, variable_type: Type) -> Variable:
+        self.variable_builder.set_id(variable_id)
+        self.variable_builder.set_type(variable_type)
+        variable = self.variable_builder.build()
         return variable
 
     
@@ -781,9 +764,6 @@ class ParserCodeGenerator(object):
 
     def increment_program_counter(self) -> None:
         self.program_counter += 1
-        print(self.quadruple_list.__str__())
-        print('Program count:', self.program_counter)
-        print(self.jump_stack.__str__())
 
     
     def increment_avail_counter(self, type: Type) -> None:
@@ -802,8 +782,8 @@ class ParserCodeGenerator(object):
     ) -> Type:
 
         return self.semantic_table.search_operation_result_type(
-            left_operand.get_type(),
-            right_operand.get_type(),
+            left_operand.type,
+            right_operand.type,
             operator
         )
 
@@ -842,7 +822,7 @@ class ParserCodeGenerator(object):
     
     def p_program(self, p):
         '''program : init start'''
-        print(self.function_directory.__str__())
+        # print(self.function_directory.__str__())
         print(self.quadruple_list.__str__())
 
 
@@ -1082,7 +1062,7 @@ class ParserCodeGenerator(object):
         storage_variable = self.pop_operand_stack()
 
         quadruple = self.generate_assignment_quadruple(value_variable, storage_variable)
-        self.insert_assignment_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
 
@@ -1091,7 +1071,7 @@ class ParserCodeGenerator(object):
         storage_variable = self.pop_operand_stack()
 
         quadruple = self.generate_read_quadruple(storage_variable)
-        self.insert_assignment_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
     
@@ -1171,7 +1151,7 @@ class ParserCodeGenerator(object):
         print_param = self.pop_operand_stack()
         quadruple = self.generate_print_quadruple(print_param)
 
-        self.insert_print_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
     
@@ -1199,7 +1179,7 @@ class ParserCodeGenerator(object):
         boolean_variable = self.pop_operand_stack()
 
         quadruple = self.generate_conditional_control_transfer_quadruple(operator, boolean_variable)
-        self.insert_control_transfer_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
         
         self.push_previous_count_jump_stack()
@@ -1208,7 +1188,7 @@ class ParserCodeGenerator(object):
     def p_parsed_else(self, p):
         '''parsed_else :'''
         quadruple = self.generate_empty_unconditional_control_transfer_quadruple()
-        self.insert_control_transfer_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
         #
@@ -1232,7 +1212,7 @@ class ParserCodeGenerator(object):
         unconditional_transfer_quadruple_number = self.pop_jump_stack()
 
         quadruple = self.generate_filled_unconditional_control_transfer_quadruple(unconditional_transfer_quadruple_number)
-        self.insert_control_transfer_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
         program_counter = self.get_program_counter()
@@ -1250,17 +1230,16 @@ class ParserCodeGenerator(object):
         boolean_variable = self.pop_operand_stack()
 
         quadruple = self.generate_conditional_control_transfer_quadruple(operator, boolean_variable)
-        self.insert_control_transfer_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
         self.push_previous_count_jump_stack()
 
     
     def p_for_1(self, p):
-        '''for : FROM LPAREN ID ASGMT CONST_INT COLON CONST_INT COLON CONST_INT RPAREN instruction_block'''
+        '''for : FROM LPAREN for_init COLON for_increment COLON CONST_INT RPAREN instruction_block'''
 
     
     def p_for_2(self, p):
-        '''for : FROM LPAREN ID ASGMT CONST_INT COLON CONST_INT RPAREN instruction_block'''
         '''for : FROM LPAREN for_init COLON for_end_value_no_step RPAREN instruction_block'''
         fill_quadruple_number = self.pop_jump_stack()
         unconditional_transfer_quadruple_number = self.pop_jump_stack()
@@ -1366,7 +1345,7 @@ class ParserCodeGenerator(object):
             left_operand = self.pop_operand_stack()
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand)
-            self.insert_arithmetic_quadruple(quadruple)
+            self.insert_quadruple(quadruple)
             self.increment_program_counter()
 
     
@@ -1384,7 +1363,7 @@ class ParserCodeGenerator(object):
             left_operand = self.pop_operand_stack()
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand)
-            self.insert_arithmetic_quadruple(quadruple)
+            self.insert_quadruple(quadruple)
             self.increment_program_counter()
 
     
@@ -1406,7 +1385,7 @@ class ParserCodeGenerator(object):
             left_operand = self.pop_operand_stack()
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand)
-            self.insert_arithmetic_quadruple(quadruple)
+            self.insert_quadruple(quadruple)
             self.increment_program_counter()
 
     
@@ -1424,7 +1403,7 @@ class ParserCodeGenerator(object):
             left_operand = self.pop_operand_stack()
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand)
-            self.insert_relational_quadruple(quadruple)
+            self.insert_quadruple(quadruple)
             self.increment_program_counter()
 
     
@@ -1442,7 +1421,7 @@ class ParserCodeGenerator(object):
             left_operand = self.pop_operand_stack()
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand)
-            self.insert_arithmetic_quadruple(quadruple)
+            self.insert_quadruple(quadruple)
             self.increment_program_counter()
 
     
@@ -1460,7 +1439,7 @@ class ParserCodeGenerator(object):
             left_operand = self.pop_operand_stack()
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand)
-            self.insert_arithmetic_quadruple(quadruple)
+            self.insert_quadruple(quadruple)
             self.increment_program_counter()
 
     
@@ -1482,7 +1461,7 @@ class ParserCodeGenerator(object):
             left_operand = self.pop_operand_stack()
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand)
-            self.insert_arithmetic_quadruple(quadruple)
+            self.insert_quadruple(quadruple)
             self.increment_program_counter()
     
 
@@ -1500,7 +1479,7 @@ class ParserCodeGenerator(object):
             left_operand = self.pop_operand_stack()
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand)
-            self.insert_arithmetic_quadruple(quadruple)
+            self.insert_quadruple(quadruple)
             self.increment_program_counter()
 
     
@@ -1522,7 +1501,7 @@ class ParserCodeGenerator(object):
             left_operand = self.pop_operand_stack()
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand)
-            self.insert_arithmetic_quadruple(quadruple)
+            self.insert_quadruple(quadruple)
             self.increment_program_counter()
 
     
@@ -1540,7 +1519,7 @@ class ParserCodeGenerator(object):
             left_operand = self.pop_operand_stack()
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand)
-            self.insert_arithmetic_quadruple(quadruple)
+            self.insert_quadruple(quadruple)
             self.increment_program_counter()
 
     
@@ -1558,7 +1537,7 @@ class ParserCodeGenerator(object):
             left_operand = self.pop_operand_stack()
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand) 
-            self.insert_arithmetic_quadruple(quadruple)
+            self.insert_quadruple(quadruple)
             self.increment_program_counter()
 
     
@@ -1577,7 +1556,7 @@ class ParserCodeGenerator(object):
         value_variable = self.pop_operand_stack()
 
         quadruple = self.generate_unary_arithmetic_quadruple(operator, value_variable)
-        self.insert_unary_arithmetic_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
     
@@ -1587,7 +1566,7 @@ class ParserCodeGenerator(object):
         value_variable = self.pop_operand_stack()
 
         quadruple = self.generate_unary_arithmetic_quadruple(operator, value_variable)
-        self.insert_unary_arithmetic_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
     
@@ -1621,7 +1600,7 @@ class ParserCodeGenerator(object):
         constant_type = Type.INT
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_type)
-        self.insert_constant_storage_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
                 
@@ -1631,7 +1610,7 @@ class ParserCodeGenerator(object):
         constant_type = Type.REAL
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_type)
-        self.insert_constant_storage_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
 
@@ -1641,7 +1620,7 @@ class ParserCodeGenerator(object):
         constant_type = Type.CHAR
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_type)
-        self.insert_constant_storage_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
 
@@ -1651,7 +1630,7 @@ class ParserCodeGenerator(object):
         constant_type = Type.STRING
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_type)
-        self.insert_constant_storage_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
     
@@ -1661,7 +1640,7 @@ class ParserCodeGenerator(object):
         constant_type = Type.BOOL
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_type)
-        self.insert_constant_storage_quadruple(quadruple)
+        self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
     

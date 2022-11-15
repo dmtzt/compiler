@@ -21,7 +21,7 @@ class ArithmeticQuadruple(Quadruple):
     temporal_storage_variable: Variable
 
     def __str__(self) -> str:
-        return f'{self.operator} {self.left_operand} {self.right_operand} {self.temporal_storage_variable}'
+        return f'{self.operator.name} {self.left_operand} {self.right_operand} {self.temporal_storage_variable}'
 
 
 @dataclass
@@ -31,7 +31,7 @@ class UnaryArithmeticQuadruple(Quadruple):
     temporal_storage_variable: Variable
 
     def __str__(self) -> str:
-        return f'{self.operator} {self.value_variable} {self.temporal_storage_variable}'
+        return f'{self.operator.name} {self.value_variable} {self.temporal_storage_variable}'
 
 
 @dataclass
@@ -42,7 +42,7 @@ class RelationalQuadruple(Quadruple):
     temporal_storage_variable: Variable
 
     def __str__(self) -> str:
-        return f'{self.operator} {self.left_operand} {self.right_operand} {self.temporal_storage_variable}'
+        return f'{self.operator.name} {self.left_operand} {self.right_operand} {self.temporal_storage_variable}'
 
 
 @dataclass
@@ -52,7 +52,7 @@ class AssignmentQuadruple(Quadruple):
     storage_variable: Variable
 
     def __str__(self) -> str:
-        return f'{self.operator} {self.value_variable} {self.storage_variable}'
+        return f'{self.operator.name} {self.value_variable} {self.storage_variable}'
 
 
 @dataclass
@@ -62,7 +62,7 @@ class ControlTransferQuadruple(Quadruple):
     program_count: int
 
     def __str__(self) -> str:
-        return f'{self.operator} {self.boolean_variable} {self.program_count}'
+        return f'{self.operator.name} {self.boolean_variable} {self.program_count}'
 
 
 @dataclass
@@ -72,7 +72,7 @@ class ConstantStorageQuadruple(Quadruple):
     storage_variable: Variable
 
     def __str__(self) -> str:
-        return f'{self.operator} {self.constant_value} {self.storage_variable}'
+        return f'{self.operator.name} {self.constant_value} {self.storage_variable}'
 
 
 @dataclass
@@ -82,7 +82,7 @@ class ReadQuadruple(Quadruple):
 
 
     def __str__(self) -> str:
-        return f'{self.operator} {self.storage_variable}'
+        return f'{self.operator.name} {self.storage_variable}'
 
 
 @dataclass
@@ -91,7 +91,7 @@ class PrintQuadruple(Quadruple):
     printed_variable: Variable
 
     def __str__(self) -> str:
-        return f'{self.operator} {self.printed_variable}'
+        return f'{self.operator.name} {self.printed_variable}'
 
 
 class QuadrupleList():

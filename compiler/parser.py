@@ -7,10 +7,12 @@ from .functions import Function
 from .functions import FunctionBuilder
 from .functions import FunctionDirector
 from .functions import FunctionDirectory
+from .functions import VirtualMemoryAddress
 from .quadruples import ArithmeticQuadruple
 from .quadruples import AssignmentQuadruple
 from .quadruples import ConstantStorageQuadruple
 from .quadruples import ControlTransferQuadruple
+from .quadruples import EndFunctionQuadruple
 from .quadruples import EndProgramQuadruple
 from .quadruples import PrintQuadruple
 from .quadruples import ReadQuadruple
@@ -76,17 +78,21 @@ class ParserCodeGenerator(object):
 
 
     def create_global_scope(self):
-        self.function_director.build_global_scope()
-        function = self.function_builder.build()
+        function_id = self.get_global_scope_name()
+        function_return_type = Type.VOID
+        function_start_quadruple_number = 0
 
-        self.insert_function_to_directory(function.get_id(), function)
+        function = self.build_function(function_id, function_return_type, function_start_quadruple_number)
+        self.insert_function_to_directory(function_id, function)
 
 
     def create_main_function(self):
-        self.function_director.build_main_function()
-        function = self.function_builder.build()
+        function_id = self.get_main_function_name()
+        function_return_type = Type.VOID
+        function_start_quadruple_number = self.get_program_counter()
 
-        self.insert_function_to_directory(function.get_id(), function)
+        function = self.build_function(function_id, function_return_type, function_start_quadruple_number)
+        self.insert_function_to_directory(function_id, function)
 
     
     def generate_assignment_quadruple(
@@ -146,7 +152,7 @@ class ParserCodeGenerator(object):
 
         return ControlTransferQuadruple(operator, boolean_variable, program_count)
 
-    
+
     def generate_filled_unconditional_control_transfer_quadruple(
         self,
         program_count: int
@@ -156,7 +162,7 @@ class ParserCodeGenerator(object):
 
         return ControlTransferQuadruple(operator, boolean_variable, program_count)
 
-    
+
     def generate_constant_storage_quadruple(
         self,
         constant_value: str,
@@ -174,6 +180,10 @@ class ParserCodeGenerator(object):
     def generate_print_quadruple(self, print_param: Variable) -> PrintQuadruple:
         operator = Operator.PRINT
         return PrintQuadruple(operator, print_param)
+
+    
+    def generate_end_function_quadruple(self) -> EndFunctionQuadruple:
+        return EndFunctionQuadruple()
 
     
     def generate_end_program_quadruple(self) -> EndProgramQuadruple:
@@ -209,33 +219,75 @@ class ParserCodeGenerator(object):
         self.jump_stack.push(self.program_counter - 1)
 
 
-    def create_temporal_variable(self, variable_type: Type) -> Variable:
-        count = self.avail_counter[variable_type]
-        variable_id = f't_{variable_type.name}_{count}'
-
-        self.variable_builder.set_id(variable_id)
-        self.variable_builder.set_type(variable_type)
-        variable = self.variable_builder.build()
+    def create_temporal_variable(self, function_id: str, variable_type: Type) -> Variable:
+        count = self.get_function_temporal_variable_counter(function_id, variable_type)
+        self.increment_function_temporal_variable_counter(function_id, variable_type)
+        
+        variable_id = self.get_temporal_variable_name(variable_type, count)
+        variable_virtual_memory_address = count + VirtualMemoryAddress.get_temporal_base_virtual_memory_address(variable_type)
+        variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
 
         return variable
 
     
-    def create_named_variable(self, variable_id: str, variable_type: Type) -> Variable:
+    def create_constant_variable(self, function_id: str, variable_type: Type) -> Variable:
+        count = self.get_function_constant_variable_counter(function_id, variable_type)
+        self.increment_function_constant_variable_counter(function_id, variable_type)
+
+        variable_id = self.get_constant_variable_name(variable_type, count)
+        variable_virtual_memory_address = count + VirtualMemoryAddress.get_constant_base_virtual_memory_address(variable_type)
+        variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
+
+        return variable
+
+    
+    def create_pointer_variable(self, function_id: str, variable_type: Type) -> Variable:
+        count = self.get_function_pointer_variable_counter(function_id, variable_type)
+        self.increment_function_pointer_variable_counter(function_id, variable_type)
+
+        variable_id = self.get_pointer_variable_name(variable_type, count)
+        variable_virtual_memory_address = count + VirtualMemoryAddress.get_pointer_base_virtual_memory_address(variable_type)
+        variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
+
+        return variable
+
+    
+    def build_function(self, function_id: str, function_return_type, function_start_quadruple_number: int) -> Function:
+        self.function_builder.set_id(function_id)
+        self.function_builder.set_return_type(function_return_type)
+        self.function_builder.set_start_quadruple_number(function_start_quadruple_number)
+
+        function = self.function_builder.build()
+        return function
+
+
+    def build_variable(self, variable_id: str, variable_type: Type, variable_virtual_memory_address: int) -> Variable:
         self.variable_builder.set_id(variable_id)
         self.variable_builder.set_type(variable_type)
+        self.variable_builder.set_virtual_memory_address(variable_virtual_memory_address)
+        
         variable = self.variable_builder.build()
         return variable
 
     
-    def create_constant_variable(self, variable_type: Type) -> Variable:
-        count = self.constant_counter[variable_type]
-        variable_id = f'c_{variable_type.name}_{count}'
+    def get_global_scope_name(self) -> str:
+        return 'global'
 
-        self.variable_builder.set_id(variable_id)
-        self.variable_builder.set_type(variable_type)
-        variable = self.variable_builder.build()
+    
+    def get_main_function_name(self) -> str:
+        return 'main'
 
-        return variable
+    
+    def get_temporal_variable_name(self, type: Type, count: int) -> str:
+        return f't_{type.name}_{count}'
+
+    
+    def get_constant_variable_name(self, type: Type, count: int) -> str:
+        return f'c_{type.name}_{count}'
+
+    
+    def get_pointer_variable_name(self, type: Type, count: int) -> str:
+        return f'p_{type.name}_{count}'
 
     
     def push_operand_stack(self, operand: Variable) -> None:
@@ -266,11 +318,11 @@ class ParserCodeGenerator(object):
         self.program_counter += 1
 
     
-    def increment_temporal_counter(self, type: Type) -> None:
+    def increment_function_temporal_variable_counter(self, type: Type) -> None:
         self.avail_counter[type] += 1
 
     
-    def increment_constant_counter(self, type: Type) -> None:
+    def increment_function_constant_variable_counter(self, type: Type) -> None:
         self.constant_counter[type] += 1
 
     
@@ -292,20 +344,52 @@ class ParserCodeGenerator(object):
         return self.program_counter
 
 
-    def set_function_scope(self, scope: str) -> None:
-        self.function_scope = scope
+    def set_function_scope(self, function_id: str) -> None:
+        self.function_scope = function_id
 
 
     def get_function_scope(self) -> str:
         return self.function_scope
 
     
-    def set_shared_variable_type(self, type: str) -> None:
+    def set_shared_variable_type(self, type: Type) -> None:
         self.shared_variable_declaration_type = type
 
     
-    def get_shared_variable_type(self) -> str:
+    def get_shared_variable_type(self) -> Type:
         return self.shared_variable_declaration_type
+
+    
+    def increment_function_local_variable_counter(self, function_id: str, type: Type) -> None:
+        self.function_directory.increment_function_local_variable_counter(function_id, type)
+
+    
+    def increment_function_constant_variable_counter(self, function_id: str, type: Type) -> None:
+        self.function_directory.increment_function_constant_variable_counter(function_id, type)
+
+    
+    def increment_function_temporal_variable_counter(self, function_id: str, type: Type) -> None:
+        self.function_directory.increment_function_temporal_variable_counter(function_id, type)
+
+    
+    def increment_function_pointer_variable_counter(self, function_id: str, type: Type) -> None:
+        self.function_directory.increment_function_pointer_variable_counter(function_id, type)
+
+    
+    def get_function_local_variable_counter(self, function_id: str, type: Type) -> int:
+        return self.function_directory.get_function_local_variable_counter(function_id, type)
+
+
+    def get_function_constant_variable_counter(self, function_id: str, type: Type) -> int:
+        return self.function_directory.get_function_constant_variable_counter(function_id, type)
+
+    
+    def get_function_temporal_variable_counter(self, function_id: str, type: Type) -> int:
+        return self.function_directory.get_function_temporal_variable_counter(function_id, type)
+
+    
+    def get_function_pointer_variable_counter(self, function_id: str, type: Type) -> int:
+        return self.function_directory.get_function_pointer_variable_counter(function_id, type)
 
     
     def p_program(self, p):
@@ -321,7 +405,6 @@ class ParserCodeGenerator(object):
     def p_init(self, p):
         '''init :'''
         self.create_global_scope()
-        self.create_main_function()
 
 
     def p_start_1(self, p):
@@ -359,45 +442,71 @@ class ParserCodeGenerator(object):
     
     def p_single_function_definition_primitive_type_1(self, p):
         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
+        end_function_quadruple = self.generate_end_function_quadruple()
+        self.insert_quadruple(end_function_quadruple)
+        self.increment_program_counter()
 
 
     def p_single_function_definition_primitive_type_2(self, p):
         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN function_definition_params RPAREN instruction_block'''
+        end_function_quadruple = self.generate_end_function_quadruple()
+        self.insert_quadruple(end_function_quadruple)
+        self.increment_program_counter()
 
     
     def p_single_function_definition_primitive_type_3(self, p):
         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN RPAREN local_variables_declaration instruction_block'''
+        end_function_quadruple = self.generate_end_function_quadruple()
+        self.insert_quadruple(end_function_quadruple)
+        self.increment_program_counter()
 
     
     def p_single_function_definition_primitive_type_4(self, p):
         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN RPAREN instruction_block'''
+        end_function_quadruple = self.generate_end_function_quadruple()
+        self.insert_quadruple(end_function_quadruple)
+        self.increment_program_counter()
 
 
     def p_single_function_definition_void_type_1(self, p):
         '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
+        end_function_quadruple = self.generate_end_function_quadruple()
+        self.insert_quadruple(end_function_quadruple)
+        self.increment_program_counter()
 
 
     def p_single_function_definition_void_type_2(self, p):
         '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN function_definition_params RPAREN instruction_block'''
+        end_function_quadruple = self.generate_end_function_quadruple()
+        self.insert_quadruple(end_function_quadruple)
+        self.increment_program_counter()
 
 
     def p_single_function_definition_void_type_3(self, p):
         '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN RPAREN local_variables_declaration instruction_block'''
+        end_function_quadruple = self.generate_end_function_quadruple()
+        self.insert_quadruple(end_function_quadruple)
+        self.increment_program_counter()
 
     
     def p_single_function_definition_void_type_4(self, p):
         '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN RPAREN instruction_block'''
+        end_function_quadruple = self.generate_end_function_quadruple()
+        self.insert_quadruple(end_function_quadruple)
+        self.increment_program_counter()
 
 
     def p_parsed_function_id(self, p):
         '''parsed_function_id :'''
         function_id = p[-1]
+        function_start_quadruple_number = self.get_program_counter()
+        
         self.function_builder.set_id(function_id)
-        self.set_function_scope(function_id)
-
+        self.function_builder.set_start_quadruple_number(function_start_quadruple_number)
         function = self.function_builder.build()
 
         self.function_directory.insert_function(function_id, function)
+        self.set_function_scope(function_id)
 
 
     def p_parsed_function_return_type(self, p):
@@ -408,7 +517,7 @@ class ParserCodeGenerator(object):
     
     def p_parsed_function_void_return_type(self, p):
         '''parsed_function_void_return_type  :'''
-        function_return_type = 'void'
+        function_return_type = Type.VOID
         self.function_builder.set_return_type(function_return_type)
 
 
@@ -444,6 +553,7 @@ class ParserCodeGenerator(object):
  
     def p_parsed_main_id(self, p):
         '''parsed_main_id :'''
+        self.create_main_function()
         self.set_function_scope('main')
 
 
@@ -494,13 +604,13 @@ class ParserCodeGenerator(object):
         variable_id = p[1]
         variable_type = self.get_shared_variable_type()
 
-        self.variable_builder.set_id(variable_id)
-        self.variable_builder.set_type(variable_type)
-        
-        variable = self.variable_builder.build()
-        variable_declaration_scope = self.get_function_scope()
-        function_id = variable_declaration_scope
+        function_id = self.get_function_scope()
+        print(function_id, variable_type)
+        function_local_variable_counter = self.get_function_local_variable_counter(function_id, variable_type)
 
+        variable_virtual_memory_address = function_local_variable_counter + VirtualMemoryAddress.get_local_base_virtual_memory_address(variable_type)
+
+        variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
         self.function_directory.insert_function_variable(function_id, variable_id, variable)
 
 
@@ -736,7 +846,7 @@ class ParserCodeGenerator(object):
         operator = Operator.PLUS
 
         updated_index_variable = self.create_temporal_variable(result_type)
-        self.increment_temporal_counter(result_type)
+        self.increment_function_temporal_variable_counter(result_type)
 
         addition_quadruple = self.generate_arithmetic_quadruple(operator, index_variable, step_variable, updated_index_variable)
         self.insert_quadruple(addition_quadruple)
@@ -765,7 +875,7 @@ class ParserCodeGenerator(object):
         operator = Operator.PLUS
 
         updated_index_variable = self.create_temporal_variable(result_type)
-        self.increment_temporal_counter(result_type)
+        self.increment_function_temporal_variable_counter(result_type)
 
         addition_quadruple = self.generate_arithmetic_quadruple(operator, index_variable, step_variable, updated_index_variable)
         self.insert_quadruple(addition_quadruple)
@@ -795,7 +905,7 @@ class ParserCodeGenerator(object):
         initial_value = p[3]
         initial_value_type = Type.INT
         initial_value_variable = self.create_constant_variable(initial_value_type)
-        self.increment_constant_counter(initial_value_type)
+        self.increment_function_constant_variable_counter(initial_value_type)
 
         initial_value_storage_quadruple = self.generate_constant_storage_quadruple(initial_value, initial_value_variable)
         self.insert_quadruple(initial_value_storage_quadruple)
@@ -823,14 +933,14 @@ class ParserCodeGenerator(object):
         absolute_initial_value = p[4]
         initial_value_type = Type.INT
         absolute_initial_value_variable = self.create_temporal_variable(initial_value_type)
-        self.increment_temporal_counter(initial_value_type)
+        self.increment_function_temporal_variable_counter(initial_value_type)
 
         absolute_initial_value_storage_quadruple = self.generate_constant_storage_quadruple(absolute_initial_value, absolute_initial_value_variable)
         self.insert_quadruple(absolute_initial_value_storage_quadruple)
         self.increment_program_counter()
 
         initial_value_variable = self.create_constant_variable(initial_value_type)
-        self.increment_constant_counter(initial_value_type)
+        self.increment_function_constant_variable_counter(initial_value_type)
 
         unary_minus_operator = Operator.UNARY_MINUS
         unary_minus_quadruple = self.generate_unary_arithmetic_quadruple(unary_minus_operator, absolute_initial_value_variable, initial_value_variable)
@@ -855,7 +965,7 @@ class ParserCodeGenerator(object):
         limit_type = Type.INT
         limit_value = p[1]
         limit_variable = self.create_constant_variable(limit_type)
-        self.increment_constant_counter(limit_type)
+        self.increment_function_constant_variable_counter(limit_type)
 
         limit_storage_quadruple = self.generate_constant_storage_quadruple(limit_value, limit_variable)
         self.insert_quadruple(limit_storage_quadruple)
@@ -869,14 +979,14 @@ class ParserCodeGenerator(object):
         limit_type = Type.INT
         absolute_limit_value = p[2]
         absolute_limit_variable = self.create_temporal_variable(limit_type)
-        self.increment_temporal_counter(limit_type)
+        self.increment_function_temporal_variable_counter(limit_type)
 
         absolute_limit_storage_quadruple = self.generate_constant_storage_quadruple(absolute_limit_value, absolute_limit_variable)
         self.insert_quadruple(absolute_limit_storage_quadruple)
         self.increment_program_counter()
 
         limit_variable = self.create_constant_variable(limit_type)
-        self.increment_constant_counter(limit_type)
+        self.increment_function_constant_variable_counter(limit_type)
 
         unary_minus_operator = Operator.UNARY_MINUS
         quadruple = self.generate_unary_arithmetic_quadruple(unary_minus_operator, absolute_limit_variable, limit_variable)
@@ -891,7 +1001,7 @@ class ParserCodeGenerator(object):
         step_type = Type.INT
         step_value = '1'
         step_variable = self.create_constant_variable(step_type)
-        self.increment_constant_counter(step_type)
+        self.increment_function_constant_variable_counter(step_type)
 
         step_storage_quadruple = self.generate_constant_storage_quadruple(step_value, step_variable)
         self.insert_quadruple(step_storage_quadruple)
@@ -902,7 +1012,7 @@ class ParserCodeGenerator(object):
         
         boolean_type = Type.BOOL
         boolean_variable = self.create_temporal_variable(boolean_type)
-        self.increment_temporal_counter(boolean_type)
+        self.increment_function_temporal_variable_counter(boolean_type)
 
         self.push_current_count_jump_stack()
         relational_operator = Operator.LTHAN_EQUAL
@@ -926,7 +1036,7 @@ class ParserCodeGenerator(object):
         step_type = Type.INT
         step_value = p[1]
         step_variable = self.create_constant_variable(step_type)
-        self.increment_constant_counter(step_type)
+        self.increment_function_constant_variable_counter(step_type)
 
         step_storage_quadruple = self.generate_constant_storage_quadruple(step_value, step_variable)
         self.insert_quadruple(step_storage_quadruple)
@@ -937,7 +1047,7 @@ class ParserCodeGenerator(object):
         
         boolean_type = Type.BOOL
         boolean_variable = self.create_temporal_variable(boolean_type)
-        self.increment_temporal_counter(boolean_type)
+        self.increment_function_temporal_variable_counter(boolean_type)
 
         self.push_current_count_jump_stack()
         relational_operator = Operator.LTHAN_EQUAL
@@ -961,14 +1071,14 @@ class ParserCodeGenerator(object):
         step_type = Type.INT
         absolute_step_value = p[2]
         absolute_step_variable = self.create_temporal_variable(step_type)
-        self.increment_temporal_counter(step_type)
+        self.increment_function_temporal_variable_counter(step_type)
         
         absolute_step_storage_quadruple = self.generate_constant_storage_quadruple(absolute_step_value, absolute_step_variable)
         self.insert_quadruple(absolute_step_storage_quadruple)
         self.increment_program_counter()
 
         step_variable = self.create_constant_variable(step_type)
-        self.increment_constant_counter(step_type)
+        self.increment_function_constant_variable_counter(step_type)
 
         unary_minus_operator = Operator.UNARY_MINUS
         unary_minus_quadruple = self.generate_unary_arithmetic_quadruple(unary_minus_operator, absolute_step_variable, step_variable)
@@ -980,7 +1090,7 @@ class ParserCodeGenerator(object):
         
         boolean_type = Type.BOOL
         boolean_variable = self.create_temporal_variable(boolean_type)
-        self.increment_temporal_counter(boolean_type)
+        self.increment_function_temporal_variable_counter(boolean_type)
 
         self.push_current_count_jump_stack()
         relational_operator = Operator.GTHAN_EQUAL
@@ -1036,7 +1146,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_temporal_counter(result_type)
+            self.increment_function_temporal_variable_counter(result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1062,7 +1172,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_temporal_counter(result_type)
+            self.increment_function_temporal_variable_counter(result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1092,7 +1202,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_temporal_counter(result_type)
+            self.increment_function_temporal_variable_counter(result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1118,7 +1228,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_temporal_counter(result_type)
+            self.increment_function_temporal_variable_counter(result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1144,7 +1254,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_temporal_counter(result_type)
+            self.increment_function_temporal_variable_counter(result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1170,7 +1280,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_temporal_counter(result_type)
+            self.increment_function_temporal_variable_counter(result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1200,7 +1310,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_temporal_counter(result_type)
+            self.increment_function_temporal_variable_counter(result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1226,7 +1336,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_temporal_counter(result_type)
+            self.increment_function_temporal_variable_counter(result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1256,7 +1366,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_temporal_counter(result_type)
+            self.increment_function_temporal_variable_counter(result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1282,7 +1392,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_temporal_counter(result_type)
+            self.increment_function_temporal_variable_counter(result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1308,7 +1418,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_temporal_counter(result_type)
+            self.increment_function_temporal_variable_counter(result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1375,7 +1485,7 @@ class ParserCodeGenerator(object):
         constant_type = Type.INT
 
         constant_storage_variable = self.create_constant_variable(constant_type)
-        self.increment_constant_counter(constant_type)
+        self.increment_function_constant_variable_counter(constant_type)
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_storage_variable)
         self.insert_quadruple(quadruple)
@@ -1389,7 +1499,7 @@ class ParserCodeGenerator(object):
         constant_type = Type.REAL
 
         constant_storage_variable = self.create_constant_variable(constant_type)
-        self.increment_constant_counter(constant_type)
+        self.increment_function_constant_variable_counter(constant_type)
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_storage_variable)
         self.insert_quadruple(quadruple)
@@ -1403,7 +1513,7 @@ class ParserCodeGenerator(object):
         constant_type = Type.CHAR
 
         constant_storage_variable = self.create_constant_variable(constant_type)
-        self.increment_constant_counter(constant_type)
+        self.increment_function_constant_variable_counter(constant_type)
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_storage_variable)
         self.insert_quadruple(quadruple)
@@ -1417,7 +1527,7 @@ class ParserCodeGenerator(object):
         constant_type = Type.STRING
 
         constant_storage_variable = self.create_constant_variable(constant_type)
-        self.increment_constant_counter(constant_type)
+        self.increment_function_constant_variable_counter(constant_type)
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_storage_variable)
         self.insert_quadruple(quadruple)
@@ -1431,7 +1541,7 @@ class ParserCodeGenerator(object):
         constant_type = Type.BOOL
 
         constant_storage_variable = self.create_constant_variable(constant_type)
-        self.increment_constant_counter(constant_type)
+        self.increment_function_constant_variable_counter(constant_type)
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_storage_variable)
         self.insert_quadruple(quadruple)

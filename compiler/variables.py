@@ -2,13 +2,15 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 
+
 class Type(Enum):
     ERROR = -1
-    INT = 0
-    REAL = 1
-    CHAR = 2
-    BOOL = 3
-    STRING = 4
+    VOID = 0
+    INT = 1
+    REAL = 2
+    CHAR = 3
+    BOOL = 4
+    STRING = 5
 
 
 class Operator(Enum):
@@ -34,21 +36,36 @@ class Operator(Enum):
     OR = 15
     NOT = 16
 
-    STORE_CONSTANT = 17
+    READ = 17
+    PRINT = 18
 
-    GOTO = 18
-    GOTOF = 19
-    GOTOT = 20
+    STORE_CONSTANT = 19
 
-    READ = 21
-    PRINT = 22
+    GOTO = 20
+    GOTOF = 21
+    GOTOT = 22
+    GOSUB = 23
 
-    END = 23
+    ERA = 24
+    PARAM = 25
+    ENDFUNC = 26
+
+    END = 27
+
+    @classmethod
+    def assignment_operator(cls):
+        return cls.ASGMT
 
 
     @classmethod
     def arithmetic_operators(cls):
         return cls.PLUS, cls.MINUS, cls.TIMES, cls.DIVIDE, cls.MODULO
+
+
+    @classmethod
+    def unary_arithmetic_operators(cls):
+        return cls.UNARY_PLUS, cls.UNARY_MINUS
+
 
     @classmethod
     def relational_operators(cls):

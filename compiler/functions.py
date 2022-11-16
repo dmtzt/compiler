@@ -1,42 +1,192 @@
 from abc import ABC, abstractmethod
+from collections import defaultdict
+from dataclasses import dataclass, field
 
 from .variables import Variable
 from .variables import VariableTable
-from .command import Command
-
-class Function():
-    def __init__(self):
-        self.__id = None
-        self.__return_type = None
-        self._variable_table = VariableTable()
+from .variables import Type
 
 
-    def set_id(self, id):
-        self.__id = id
+class VirtualMemoryAddress():
+    _global = dict()
+    _local = dict()
+    _constant = dict()
+    _temporal = dict()
+    _pointer = dict()
 
+    _global[Type.INT] = 0
+    _global[Type.REAL] = 1000
+    _global[Type.CHAR] = 2000
+    _global[Type.BOOL] = 3000
+    _global[Type.STRING] = 4000
 
-    def set_return_type(self, return_type):
-        self.__return_type = return_type
+    _local[Type.INT] = 5000
+    _local[Type.REAL] = 6000
+    _local[Type.CHAR] = 7000
+    _local[Type.BOOL] = 8000
+    _local[Type.STRING] = 9000
+
+    _constant[Type.INT] = 10000
+    _constant[Type.REAL] = 11000
+    _constant[Type.CHAR] = 12000
+    _constant[Type.BOOL] = 13000
+    _constant[Type.STRING] = 14000
+
+    _temporal[Type.INT] = 15000
+    _temporal[Type.REAL] = 16000
+    _temporal[Type.CHAR] = 17000
+    _temporal[Type.BOOL] = 18000
+    _temporal[Type.STRING] = 19000
+
+    _pointer[Type.INT] = 20000
+    _pointer[Type.REAL] = 21000
+    _pointer[Type.CHAR] = 22000
+    _pointer[Type.BOOL] = 23000
+    _pointer[Type.STRING] = 24000
+    
+    @classmethod
+    def get_global_base_virtual_memory_address(cls, type: Type) -> int:
+        if type not in cls._global:
+            raise UndefinedTypeBaseVirtualAddress()
+
+        return cls._global[type]
 
     
-    def get_id(self) -> str:
-        return self.__id
+    @classmethod
+    def get_local_base_virtual_memory_address(cls, type: Type) -> int:
+        if type not in cls._local:
+            raise UndefinedTypeBaseVirtualAddress()
 
-
-    def get_return_type(self) -> str:
-        return self.__return_type
+        return cls._local[type]
 
     
+    @classmethod
+    def get_constant_base_virtual_memory_address(cls, type: Type) -> int:
+        if type not in cls._constant:
+            raise UndefinedTypeBaseVirtualAddress()
+
+        return cls._constant[type]
+
+    
+    @classmethod
+    def get_temporal_base_virtual_memory_address(cls, type: Type) -> int:
+        if type not in cls._temporal:
+            raise UndefinedTypeBaseVirtualAddress()
+
+        return cls._temporal[type]
+
+    
+    @classmethod
+    def get_pointer_base_virtual_memory_address(cls, type: Type) -> int:
+        if type not in cls._pointer:
+            raise UndefinedTypeBaseVirtualAddress()
+
+        return cls._pointer[type]
+
+
+class Memory:
+    def __init__(self) -> None:
+        self._local = defaultdict(int)
+        self._constant = defaultdict(int)
+        self._temporal = defaultdict(int)
+        self._pointer = defaultdict(int)
+
+    def increment_local_counter(self, type: Type) -> None:
+        self._local[type] += 1
+
+    
+    def increment_constant_counter(self, type: Type) -> None:
+        self._constant[type] += 1
+
+    
+    def increment_temporal_counter(self, type: Type) -> None:
+        self._temporal[type] += 1
+
+    
+    def increment_pointer_counter(self, type: Type) -> None:
+        self._pointer[type] += 1
+
+    
+    def get_local_counter(self, type: Type) -> int:
+        return self._local[type]
+
+
+    def get_constant_counter(self, type: Type) -> int:
+        return self._constant[type]
+
+    
+    def get_temporal_counter(self, type: Type) -> int:
+        return self._temporal[type]
+
+    
+    def get_pointer_counter(self, type: Type) -> int:
+        return self._pointer[type]
+
+
+class Function:
+    def __init__(self) -> None:
+        self._memory: Memory = Memory()
+        self._variable_table: VariableTable = VariableTable()
+
+
+    def set_id(self, id) -> None:
+        self._id = id
+
+    
+    def set_return_type(self, return_type) -> None:
+        self._return_type = return_type
+
+
+    def set_start_quadruple_number(self, start_quadruple_number) -> None:
+        self._start_quadruple_number = start_quadruple_number
+
+    
+    def set_n_params(self, n_params) -> None:
+        self._n_params = n_params
+
+
     def insert_variable(self, id: str, variable: Variable) -> None:
         self._variable_table.insert_variable(id, variable)
 
-    
+
     def get_variable(self, variable_id):
         return self._variable_table.get_variable(variable_id)
 
+    
+    def increment_local_counter(self, type: Type) -> None:
+        self._memory.increment_local_counter(type)
+
+    
+    def increment_constant_counter(self, type: Type) -> None:
+        self._memory.increment_constant_counter(type)
+
+    
+    def increment_temporal_counter(self, type: Type) -> None:
+        self._memory.increment_temporal_counter(type)
+
+    
+    def increment_pointer_counter(self, type: Type) -> None:
+        self._memory.increment_pointer_counter(type)
+
+    
+    def get_local_counter(self, type: Type) -> int:
+        return self._memory.get_local_counter(type)
+
+
+    def get_constant_counter(self, type: Type) -> int:
+        return self._memory.get_constant_counter(type)
+
+    
+    def get_temporal_counter(self, type: Type) -> int:
+        return self._memory.get_temporal_counter(type)
+
+    
+    def get_pointer_counter(self, type: Type) -> int:
+        return self._memory.get_pointer_counter(type)
+
 
     def __str__(self) -> str:
-        return f'Function(id={self.__id}, return_type={self.__return_type}, variables={self._variable_table.__str__()})'
+        return f'Function(id={self._id} type={self._return_type} start={self._start_quadruple_number} vars={self._variable_table.__str__()})'
 
 
 class FunctionDirectory():
@@ -66,6 +216,38 @@ class FunctionDirectory():
         return self._directory[function_id].get_variable(variable_id)
 
     
+    def increment_function_local_variable_counter(self, function_id: str, type: Type) -> None:
+        self._directory[function_id].increment_local_counter(type)
+
+    
+    def increment_function_constant_variable_counter(self, function_id: str, type: Type) -> None:
+        self._directory[function_id].increment_constant_counter(type)
+
+    
+    def increment_function_temporal_variable_counter(self, function_id: str, type: Type) -> None:
+        self._directory[function_id].increment_temporal_counter(type)
+
+    
+    def increment_function_pointer_variable_counter(self, function_id: str, type: Type) -> None:
+        self._directory[function_id].increment_pointer_counter(type)
+
+    
+    def get_function_local_variable_counter(self, function_id: str, type: Type) -> int:
+        return self._directory[function_id].get_local_counter(type)
+
+
+    def get_function_constant_variable_counter(self, function_id: str, type: Type) -> int:
+        return self._directory[function_id].get_constant_counter(type)
+
+    
+    def get_function_temporal_variable_counter(self, function_id: str, type: Type) -> int:
+        return self._directory[function_id].get_temporal_counter(type)
+
+    
+    def get_function_pointer_variable_counter(self, function_id: str, type: Type) -> int:
+        return self._directory[function_id].get_pointer_counter(type)
+
+    
     def __str__(self) -> str:
         s = "FunctionDirectory[\n"
 
@@ -93,6 +275,11 @@ class Builder(ABC):
     def set_return_type(self, return_type: str) -> None:
         pass
 
+
+    @abstractmethod
+    def set_start_quadruple_number(self, start_quadruple_number: int) -> None:
+        pass
+
     
 class FunctionBuilder(Builder):
     def __init__(self) -> None:
@@ -115,6 +302,10 @@ class FunctionBuilder(Builder):
 
     def set_return_type(self, return_type: str) -> None:
         self.__function.set_return_type(return_type)
+
+
+    def set_start_quadruple_number(self, start_quadruple_number: int) -> None:
+        self.__function.set_start_quadruple_number(start_quadruple_number)
 
 
 class FunctionDirector:
@@ -142,29 +333,6 @@ class FunctionDirector:
         self._builder.set_return_type(None)
 
 
-class InsertFunctionToDirectoryCommand(Command):
-    def __init__(self, directory: FunctionDirectory, function_id: str, function: Function) -> None:
-        self._directory = directory
-        self._function_id = function_id
-        self._function = function
-
-    
-    def execute(self) -> None:
-        self._directory.insert_function(self._function_id, self._function)
-
-
-class InsertVariableToFunctionCommand(Command):
-    def __init__(self, directory: FunctionDirectory, function_id: str, variable_id: str, variable: Variable) -> None:
-        self._directory = directory
-        self._function_id = function_id
-        self._variable_id = variable_id
-        self._variable = variable
-
-    
-    def execute(self) -> None:
-        self._directory.insert_function_variable(self._function_id, self._variable_id, self._variable)
-
-
 class FunctionAlreadyDefinedException(RuntimeError):
     pass
 
@@ -174,4 +342,8 @@ class FunctionUndefinedException(RuntimeError):
 
 
 class VariableUndefinedException(RuntimeError):
+    pass
+
+
+class UndefinedTypeBaseVirtualAddress(RuntimeError):
     pass

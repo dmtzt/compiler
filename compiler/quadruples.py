@@ -95,6 +95,14 @@ class PrintQuadruple(Quadruple):
 
 
 @dataclass
+class EndFunctionQuadruple(Quadruple):
+    operator: Operator = Operator.ENDFUNC
+
+    def __str__(self) -> str:
+        return f'{self.operator.name}'
+
+
+@dataclass
 class EndProgramQuadruple(Quadruple):
     operator: Operator
 

@@ -1,6 +1,6 @@
 ## Sintaxis
 
-**esperanto** \[**-n** | **--names**\] \[**-o** _outfile_\] _infile_
+**python** **esperanto** \[**-n** | **--names**\] \[**-o** _outfile_\] _infile_
 
 ## Opciones
 

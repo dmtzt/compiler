@@ -193,8 +193,8 @@ class ParserCodeGenerator(object):
         self.function_directory.insert_function(function_id, function)
 
     
-    def remove_function_variable(self, function_id: str, variable_id: str) -> None:
-        pass
+    def get_function_variable(self, function_id: str, variable_id: str) -> Variable:
+        return self.function_directory.get_function_variable(function_id, variable_id)
 
     
     def fill_control_transfer_quadruple(self, quadruple_number: int, program_count: int) -> None:
@@ -266,7 +266,7 @@ class ParserCodeGenerator(object):
         self.program_counter += 1
 
     
-    def increment_avail_counter(self, type: Type) -> None:
+    def increment_temporal_counter(self, type: Type) -> None:
         self.avail_counter[type] += 1
 
     
@@ -287,18 +287,6 @@ class ParserCodeGenerator(object):
             operator
         )
 
-    
-    def for_index_init(self, variable_id: str, variable_type: Type) -> None:
-        self.variable_builder.set_id(variable_id)
-        self.variable_builder.set_type(variable_type)
-        
-        index_variable = self.variable_builder.build()
-        value_variable = self.pop_operand_stack()
-
-        quadruple = self.generate_assignment_quadruple(value_variable, index_variable)
-        self.insert_quadruple(quadruple)
-        self.increment_program_counter()
-    
 
     def get_program_counter(self) -> int:
         return self.program_counter
@@ -741,24 +729,45 @@ class ParserCodeGenerator(object):
 
     
     def p_for_1(self, p):
-        '''for : FROM LPAREN for_init COLON for_increment COLON for_end_value_step RPAREN instruction_block'''
+        '''for : FROM LPAREN for_index COLON for_limit COLON for_step RPAREN instruction_block'''
+        step_variable = self.pop_operand_stack()
+        index_variable = self.pop_operand_stack()
+        result_type = Type.INT
+        operator = Operator.PLUS
+
+        updated_index_variable = self.create_temporal_variable(result_type)
+        self.increment_temporal_counter(result_type)
+
+        addition_quadruple = self.generate_arithmetic_quadruple(operator, index_variable, step_variable, updated_index_variable)
+        self.insert_quadruple(addition_quadruple)
+        self.increment_program_counter()
+
+        assignment_quadruple = self.generate_assignment_quadruple(updated_index_variable, index_variable)
+        self.insert_quadruple(assignment_quadruple)
+        self.increment_program_counter()
+
+        fill_quadruple_number = self.pop_jump_stack()
+        unconditional_transfer_quadruple_number = self.pop_jump_stack()
+
+        quadruple = self.generate_filled_unconditional_control_transfer_quadruple(unconditional_transfer_quadruple_number)
+        self.insert_quadruple(quadruple)
+        self.increment_program_counter()
+
+        program_counter = self.get_program_counter()
+        self.fill_control_transfer_quadruple(fill_quadruple_number, program_counter)
 
     
     def p_for_2(self, p):
-        '''for : FROM LPAREN for_init COLON for_end_value_no_step RPAREN instruction_block'''
-        increment_variable = self.pop_operand_stack()
+        '''for : FROM LPAREN for_index COLON for_limit for_no_step RPAREN instruction_block'''
+        step_variable = self.pop_operand_stack()
         index_variable = self.pop_operand_stack()
+        result_type = Type.INT
         operator = Operator.PLUS
 
-        result_type = self.get_operation_result_type(index_variable, increment_variable, operator)
-
-        if result_type == Type.ERROR:
-            raise TypeMismatchError()
-
         updated_index_variable = self.create_temporal_variable(result_type)
-        self.increment_avail_counter(result_type)
+        self.increment_temporal_counter(result_type)
 
-        addition_quadruple = self.generate_arithmetic_quadruple(operator, index_variable, increment_variable, updated_index_variable)
+        addition_quadruple = self.generate_arithmetic_quadruple(operator, index_variable, step_variable, updated_index_variable)
         self.insert_quadruple(addition_quadruple)
         self.increment_program_counter()
 
@@ -777,8 +786,12 @@ class ParserCodeGenerator(object):
         self.fill_control_transfer_quadruple(fill_quadruple_number, program_counter)
         
 
-    def p_for_init_index(self, p):
-        '''for_init : ID ASGMT CONST_INT'''
+    def p_for_index_1(self, p):
+        '''for_index : ID ASGMT CONST_INT'''
+        index_variable_id = p[1]
+        function_scope = self.get_function_scope()
+        index_variable = self.get_function_variable(function_scope, index_variable_id)
+
         initial_value = p[3]
         initial_value_type = Type.INT
         initial_value_variable = self.create_constant_variable(initial_value_type)
@@ -788,14 +801,7 @@ class ParserCodeGenerator(object):
         self.insert_quadruple(initial_value_storage_quadruple)
         self.increment_program_counter()
 
-        index_variable_id = p[1]
-        index_variable_type = Type.INT
-        function_id = self.get_function_scope()
         operator = Operator.ASGMT
-
-        index_variable = self.create_named_variable(index_variable_id, index_variable_type)
-        self.insert_function_variable(function_id, index_variable_id, index_variable)
-
         result_type = self.get_operation_result_type(index_variable, initial_value_variable, operator)
 
         if result_type == Type.ERROR:
@@ -808,37 +814,99 @@ class ParserCodeGenerator(object):
         self.push_operand_stack(index_variable)
 
     
-    def p_for_end_value_no_step(self, p):
-        '''for_end_value_no_step : CONST_INT'''
-        increment_variable_value = '1'
-        increment_variable_type = Type.INT
-        increment_variable = self.create_constant_variable(increment_variable_type)
-        self.increment_constant_counter(increment_variable_type)
-        increment_storage_quadruple = self.generate_constant_storage_quadruple(increment_variable_value, increment_variable)
-        self.insert_quadruple(increment_storage_quadruple)
+    def p_for_index_2(self, p):
+        '''for_index : ID ASGMT MINUS CONST_INT'''
+        index_variable_id = p[1]
+        function_scope = self.get_function_scope()
+        index_variable = self.get_function_variable(function_scope, index_variable_id)
+
+        absolute_initial_value = p[4]
+        initial_value_type = Type.INT
+        absolute_initial_value_variable = self.create_temporal_variable(initial_value_type)
+        self.increment_temporal_counter(initial_value_type)
+
+        absolute_initial_value_storage_quadruple = self.generate_constant_storage_quadruple(absolute_initial_value, absolute_initial_value_variable)
+        self.insert_quadruple(absolute_initial_value_storage_quadruple)
         self.increment_program_counter()
 
-        end_value = p[1]
-        end_value_type = Type.INT
-        end_value_variable = self.create_constant_variable(end_value_type)
-        self.increment_constant_counter(end_value_type)
-        end_storage_quadruple = self.generate_constant_storage_quadruple(end_value, end_value_variable)
-        self.insert_quadruple(end_storage_quadruple)
+        initial_value_variable = self.create_constant_variable(initial_value_type)
+        self.increment_constant_counter(initial_value_type)
+
+        unary_minus_operator = Operator.UNARY_MINUS
+        unary_minus_quadruple = self.generate_unary_arithmetic_quadruple(unary_minus_operator, absolute_initial_value_variable, initial_value_variable)
+        self.insert_quadruple(unary_minus_quadruple)
         self.increment_program_counter()
 
-        index_variable = self.pop_operand_stack()
-        relational_operator = Operator.LTHAN
+        operator = Operator.ASGMT
+        result_type = self.get_operation_result_type(index_variable, initial_value_variable, operator)
 
-        result_type = self.get_operation_result_type(index_variable, end_value_variable, relational_operator)
-        if (result_type == Type.ERROR):
+        if result_type == Type.ERROR:
             raise TypeMismatchError()
 
+        assignment_quadruple = self.generate_assignment_quadruple(initial_value_variable, index_variable)
+        self.insert_quadruple(assignment_quadruple)
+        self.increment_program_counter()
+
+        self.push_operand_stack(index_variable)
+
+    
+    def p_for_limit_1(self, p):
+        '''for_limit : CONST_INT'''
+        limit_type = Type.INT
+        limit_value = p[1]
+        limit_variable = self.create_constant_variable(limit_type)
+        self.increment_constant_counter(limit_type)
+
+        limit_storage_quadruple = self.generate_constant_storage_quadruple(limit_value, limit_variable)
+        self.insert_quadruple(limit_storage_quadruple)
+        self.increment_program_counter()
+
+        self.push_operand_stack(limit_variable)
+
+    
+    def p_for_limit_2(self, p):
+        '''for_limit : MINUS CONST_INT'''
+        limit_type = Type.INT
+        absolute_limit_value = p[2]
+        absolute_limit_variable = self.create_temporal_variable(limit_type)
+        self.increment_temporal_counter(limit_type)
+
+        absolute_limit_storage_quadruple = self.generate_constant_storage_quadruple(absolute_limit_value, absolute_limit_variable)
+        self.insert_quadruple(absolute_limit_storage_quadruple)
+        self.increment_program_counter()
+
+        limit_variable = self.create_constant_variable(limit_type)
+        self.increment_constant_counter(limit_type)
+
+        unary_minus_operator = Operator.UNARY_MINUS
+        quadruple = self.generate_unary_arithmetic_quadruple(unary_minus_operator, absolute_limit_variable, limit_variable)
+        self.insert_quadruple(quadruple)
+        self.increment_program_counter()
+
+        self.push_operand_stack(limit_variable)
+
+
+    def p_for_no_step(self, p):
+        '''for_no_step :'''
+        step_type = Type.INT
+        step_value = '1'
+        step_variable = self.create_constant_variable(step_type)
+        self.increment_constant_counter(step_type)
+
+        step_storage_quadruple = self.generate_constant_storage_quadruple(step_value, step_variable)
+        self.insert_quadruple(step_storage_quadruple)
+        self.increment_program_counter()
+
+        limit_variable = self.pop_operand_stack()
+        index_variable = self.pop_operand_stack()
+        
+        boolean_type = Type.BOOL
+        boolean_variable = self.create_temporal_variable(boolean_type)
+        self.increment_temporal_counter(boolean_type)
+
         self.push_current_count_jump_stack()
-
-        boolean_variable = self.create_temporal_variable(result_type)
-        self.increment_avail_counter(result_type)
-
-        relational_quadruple = self.generate_relational_quadruple(relational_operator, index_variable, end_value_variable, boolean_variable)
+        relational_operator = Operator.LTHAN_EQUAL
+        relational_quadruple = self.generate_relational_quadruple(relational_operator, index_variable, limit_variable, boolean_variable)
         self.insert_quadruple(relational_quadruple)
         self.increment_program_counter()
 
@@ -848,28 +916,87 @@ class ParserCodeGenerator(object):
         self.increment_program_counter()
 
         self.push_previous_count_jump_stack()
+
         self.push_operand_stack(index_variable)
-        self.push_operand_stack(increment_variable)
+        self.push_operand_stack(step_variable)
 
     
-    def p_for_increment_1(self, p):
-        '''for_increment : CONST_INT'''
-        # CONST_INT, -CONST_INT !!!!!
-        increment_variable_type = Type.INT
-        increment_variable_value = p[1]
+    def p_for_step_1(self, p):
+        '''for_step : CONST_INT'''
+        step_type = Type.INT
+        step_value = p[1]
+        step_variable = self.create_constant_variable(step_type)
+        self.increment_constant_counter(step_type)
 
-        increment_variable = self.create_constant_variable(increment_variable_type)
-        constant_storage_quadruple = self.generate_constant_storage_quadruple(increment_variable_value, increment_variable)
-        self.insert_quadruple(constant_storage_quadruple)
+        step_storage_quadruple = self.generate_constant_storage_quadruple(step_value, step_variable)
+        self.insert_quadruple(step_storage_quadruple)
         self.increment_program_counter()
 
-    
-    def p_for_end_value_step(self, p):
-        '''for_end_value_step : expr'''
+        limit_variable = self.pop_operand_stack()
+        index_variable = self.pop_operand_stack()
+        
+        boolean_type = Type.BOOL
+        boolean_variable = self.create_temporal_variable(boolean_type)
+        self.increment_temporal_counter(boolean_type)
+
+        self.push_current_count_jump_stack()
+        relational_operator = Operator.LTHAN_EQUAL
+        relational_quadruple = self.generate_relational_quadruple(relational_operator, index_variable, limit_variable, boolean_variable)
+        self.insert_quadruple(relational_quadruple)
+        self.increment_program_counter()
+
+        control_transfer_operator = Operator.GOTOF
+        control_transfer_quadruple = self.generate_empty_conditional_control_transfer_quadruple(control_transfer_operator, boolean_variable)
+        self.insert_quadruple(control_transfer_quadruple)
+        self.increment_program_counter()
+
+        self.push_previous_count_jump_stack()
+
+        self.push_operand_stack(index_variable)
+        self.push_operand_stack(step_variable)
 
     
-    def p_for_increment_2(self, p):
-        '''for_increment : MINUS CONST_INT'''
+    def p_for_step_2(self, p):
+        '''for_step : MINUS CONST_INT'''
+        step_type = Type.INT
+        absolute_step_value = p[2]
+        absolute_step_variable = self.create_temporal_variable(step_type)
+        self.increment_temporal_counter(step_type)
+        
+        absolute_step_storage_quadruple = self.generate_constant_storage_quadruple(absolute_step_value, absolute_step_variable)
+        self.insert_quadruple(absolute_step_storage_quadruple)
+        self.increment_program_counter()
+
+        step_variable = self.create_constant_variable(step_type)
+        self.increment_constant_counter(step_type)
+
+        unary_minus_operator = Operator.UNARY_MINUS
+        unary_minus_quadruple = self.generate_unary_arithmetic_quadruple(unary_minus_operator, absolute_step_variable, step_variable)
+        self.insert_quadruple(unary_minus_quadruple)
+        self.increment_program_counter()
+
+        limit_variable = self.pop_operand_stack()
+        index_variable = self.pop_operand_stack()
+        
+        boolean_type = Type.BOOL
+        boolean_variable = self.create_temporal_variable(boolean_type)
+        self.increment_temporal_counter(boolean_type)
+
+        self.push_current_count_jump_stack()
+        relational_operator = Operator.GTHAN_EQUAL
+        relational_quadruple = self.generate_relational_quadruple(relational_operator, index_variable, limit_variable, boolean_variable)
+        self.insert_quadruple(relational_quadruple)
+        self.increment_program_counter()
+
+        control_transfer_operator = Operator.GOTOF
+        control_transfer_quadruple = self.generate_empty_conditional_control_transfer_quadruple(control_transfer_operator, boolean_variable)
+        self.insert_quadruple(control_transfer_quadruple)
+        self.increment_program_counter()
+
+        self.push_previous_count_jump_stack()
+
+        self.push_operand_stack(index_variable)
+        self.push_operand_stack(step_variable)
 
     
     def p_return_1(self, p):
@@ -909,7 +1036,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_avail_counter(result_type)
+            self.increment_temporal_counter(result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -935,7 +1062,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_avail_counter(result_type)
+            self.increment_temporal_counter(result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -965,7 +1092,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_avail_counter(result_type)
+            self.increment_temporal_counter(result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -991,7 +1118,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_avail_counter(result_type)
+            self.increment_temporal_counter(result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1017,7 +1144,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_avail_counter(result_type)
+            self.increment_temporal_counter(result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1043,7 +1170,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_avail_counter(result_type)
+            self.increment_temporal_counter(result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1073,7 +1200,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_avail_counter(result_type)
+            self.increment_temporal_counter(result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1099,7 +1226,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_avail_counter(result_type)
+            self.increment_temporal_counter(result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1129,7 +1256,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_avail_counter(result_type)
+            self.increment_temporal_counter(result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1155,7 +1282,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_avail_counter(result_type)
+            self.increment_temporal_counter(result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1181,7 +1308,7 @@ class ParserCodeGenerator(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_temporal_variable(result_type)
-            self.increment_avail_counter(result_type)
+            self.increment_temporal_counter(result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)

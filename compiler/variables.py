@@ -77,11 +77,37 @@ class Boolean(Enum):
     TRUE = 1
 
 
-@dataclass
 class Variable:
-    id: str
-    type: Type
-    virtual_memory_address: int
+    def __init__(self) -> None:
+        pass
+
+
+    def set_id(self, id: str) -> None:
+        self._id = id
+
+    
+    def set_type(self, type: Type) -> None:
+        self._type = type
+
+    
+    def set_virtual_memory_address(self, virtual_memory_address: int) -> None:
+        self._virtual_memory_address = virtual_memory_address
+
+    
+    def get_id(self) -> str:
+        return self._id
+
+    
+    def get_type(self) -> Type:
+        return self._type
+
+    
+    def get_virtual_memory_address(self) -> int:
+        return self._virtual_memory_address
+
+    
+    def __str__(self) -> str:
+        return f'{self._id} {self._type.name} {self._virtual_memory_address}'
 
 
 class Builder(ABC):
@@ -112,7 +138,7 @@ class VariableBuilder(Builder):
 
     
     def reset(self) -> None:
-        self.__variable = Variable(None, None, None)
+        self.__variable = Variable()
 
 
     def build(self) -> Variable:
@@ -122,15 +148,15 @@ class VariableBuilder(Builder):
 
 
     def set_id(self, id: str) -> None:
-        self.__variable.id = id
+        self.__variable.set_id(id)
 
 
     def set_type(self, type: Type) -> None:
-        self.__variable.type = type
+        self.__variable.set_type(type)
 
     
     def set_virtual_memory_address(self, virtual_memory_address: int) -> None:
-        self.__variable.virtual_memory_address = virtual_memory_address
+        self.__variable.set_virtual_memory_address(virtual_memory_address)
 
 
 class VariableTable():

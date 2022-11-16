@@ -3,6 +3,7 @@ from collections import defaultdict
 from ply import yacc
 
 from .lexer import Lexer
+from .files import QuadrupleListPrinter
 from .functions import Function
 from .functions import FunctionBuilder
 from .functions import FunctionDirector
@@ -43,6 +44,7 @@ class ParserCodeGenerator(object):
         self.function_director = FunctionDirector()
         self.variable_builder = VariableBuilder()
         self.semantic_table = SemanticTable()
+        self.quadruple_list_printer = QuadrupleListPrinter()
 
         self.program_counter = None
         self.function_directory = None
@@ -73,9 +75,14 @@ class ParserCodeGenerator(object):
         self.shared_variable_declaration_type = None
 
 
-    def parse(self, file_data: str):
+    def parse(self, file_data: str) -> None:
         self.reset()
-        return self.parser.parse(file_data)
+        self.parser.parse(file_data)
+
+        print(self.quadruple_list.__str__())
+
+        self.quadruple_list_printer.generate_named_representation_file(self.quadruple_list, 'res.txt')
+        self.quadruple_list_printer.generate_intermediate_code_representation_file(self.quadruple_list, 'res.obj')
 
 
     def create_global_scope(self):
@@ -527,16 +534,17 @@ class ParserCodeGenerator(object):
 
     def p_single_function_definition_param(self, p):
         '''single_function_definition_param : type ID'''
-        variable_type = p[1]
         variable_id = p[2]
+        variable_type = p[1]
 
-        self.variable_builder.set_type(variable_type)
-        self.variable_builder.set_id(variable_id)
+        function_id = self.get_function_scope()
+        function_local_variable_counter = self.get_function_local_variable_counter(function_id, variable_type)
 
-        variable = self.variable_builder.build()
-        variable_declaration_scope = self.get_function_scope()
+        variable_virtual_memory_address = function_local_variable_counter + VirtualMemoryAddress.get_local_base_virtual_memory_address(variable_type)
+        self.increment_function_local_variable_counter(function_id, variable_type)
 
-        self.function_directory.insert_function_variable(variable_declaration_scope, variable_id, variable)
+        variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
+        self.function_directory.insert_function_variable(function_id, variable_id, variable)
 
     
     def p_entry_point_definition_1(self, p):
@@ -601,10 +609,10 @@ class ParserCodeGenerator(object):
         variable_type = self.get_shared_variable_type()
 
         function_id = self.get_function_scope()
-        print(function_id, variable_type)
         function_local_variable_counter = self.get_function_local_variable_counter(function_id, variable_type)
 
         variable_virtual_memory_address = function_local_variable_counter + VirtualMemoryAddress.get_local_base_virtual_memory_address(variable_type)
+        self.increment_function_local_variable_counter(function_id, variable_type)
 
         variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
         self.function_directory.insert_function_variable(function_id, variable_id, variable)

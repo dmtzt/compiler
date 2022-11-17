@@ -7,7 +7,7 @@ class FileReader:
 
 
     def generate_file_path(self, fname: str) -> str:
-        return Path().absolute() / fname
+        return Path(fname)
 
 
     def get_file_stem(self, fpath: Path) -> str:

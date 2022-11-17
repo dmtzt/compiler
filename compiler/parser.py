@@ -77,10 +77,7 @@ class Parser(object):
         self.reset()
         self.parser.parse(file_data)
 
-        print(self.quadruple_list.__str__())
-
-        self.quadruple_list_printer.generate_named_representation_file(self.quadruple_list, 'res.txt')
-        self.quadruple_list_printer.generate_intermediate_code_representation_file(self.quadruple_list, 'res.obj')
+        return self.quadruple_list
 
 
     def create_global_scope(self):

@@ -3,7 +3,6 @@ from collections import defaultdict
 from ply import yacc
 
 from .lexer import Lexer
-from .files import QuadrupleListPrinter
 from .functions import Function
 from .functions import FunctionBuilder
 from .functions import FunctionDirector
@@ -33,7 +32,7 @@ from .variables import VariableBuilder
 from .variables import Operator
 
 
-class ParserCodeGenerator(object):
+class Parser(object):
     tokens = Lexer.tokens
 
     def __init__(self) -> None:
@@ -44,7 +43,6 @@ class ParserCodeGenerator(object):
         self.function_director = FunctionDirector()
         self.variable_builder = VariableBuilder()
         self.semantic_table = SemanticTable()
-        self.quadruple_list_printer = QuadrupleListPrinter()
 
         self.program_counter = None
         self.function_directory = None
@@ -395,6 +393,10 @@ class ParserCodeGenerator(object):
         return self.function_directory.get_function_pointer_variable_counter(function_id, type)
 
     
+    def increment_function_number_parameters(self, function_id: str) -> None:
+        self.function_directory.increment_function_number_parameters(function_id)
+
+    
     def p_program(self, p):
         '''program : init start'''
         end_program_quadruple = self.generate_end_program_quadruple()
@@ -545,6 +547,8 @@ class ParserCodeGenerator(object):
 
         variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
         self.function_directory.insert_function_variable(function_id, variable_id, variable)
+
+        self.increment_function_number_parameters(function_id)
 
     
     def p_entry_point_definition_1(self, p):

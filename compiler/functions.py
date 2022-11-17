@@ -127,6 +127,7 @@ class Function:
     def __init__(self) -> None:
         self._memory: Memory = Memory()
         self._variable_table: VariableTable = VariableTable()
+        self._number_parameters = 0
 
 
     def set_id(self, id) -> None:
@@ -139,10 +140,6 @@ class Function:
 
     def set_start_quadruple_number(self, start_quadruple_number) -> None:
         self._start_quadruple_number = start_quadruple_number
-
-    
-    def set_n_params(self, n_params) -> None:
-        self._n_params = n_params
 
 
     def insert_variable(self, id: str, variable: Variable) -> None:
@@ -184,9 +181,13 @@ class Function:
     def get_pointer_counter(self, type: Type) -> int:
         return self._memory.get_pointer_counter(type)
 
+    
+    def increment_number_parameters(self) -> None:
+        self._number_parameters += 1
+
 
     def __str__(self) -> str:
-        return f'Function(id={self._id} type={self._return_type} start={self._start_quadruple_number} vars={self._variable_table.__str__()})'
+        return f'Function(id={self._id} type={self._return_type} start={self._start_quadruple_number} n_params={self._number_parameters} vars={self._variable_table.__str__()})'
 
 
 class FunctionDirectory():
@@ -246,6 +247,10 @@ class FunctionDirectory():
     
     def get_function_pointer_variable_counter(self, function_id: str, type: Type) -> int:
         return self._directory[function_id].get_pointer_counter(type)
+
+    
+    def increment_function_number_parameters(self, function_id: str) -> None:
+        self._directory[function_id].increment_number_parameters()
 
     
     def __str__(self) -> str:

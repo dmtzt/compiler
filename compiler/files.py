@@ -1,7 +1,7 @@
 from pathlib import Path
 from .quadruples import QuadrupleList
 
-class FileReader():
+class FileReader:
     def __init__(self) -> None:
         pass
 
@@ -10,7 +10,7 @@ class FileReader():
             return '\n'.join(line.rstrip() for line in f)
 
 
-class QuadrupleListPrinter():
+class FilePrinter:
     def __init__(self) -> None:
         pass
 

@@ -1,0 +1,7 @@
+komenco()
+lokaj variabloj:
+    ent a;
+{
+    a = -1;
+    a = +1;
+}

@@ -1,0 +1,11 @@
+funkcio ent fun()
+{
+
+}
+
+komenco()
+lokaj variabloj:
+  ent a;
+{
+   fun();
+}

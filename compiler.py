@@ -5,6 +5,10 @@ from compiler.files import FileReader
 from compiler.files import FilePrinter
 from compiler.parser import Parser
 
+class InvalidFileExtensionError(RuntimeError):
+    pass
+
+
 def main():
     FILE_EXTENSION = '.epo'
 
@@ -18,13 +22,18 @@ def main():
                             '--names',
                             action='store_true',
                             help='Generate additional named representation file')
+    arg_parser.add_argument('-o',
+                            metavar='outfile',
+                            action='store',
+                            help='Output file name')
 
     args = arg_parser.parse_args()
 
     fname = args.infile
+
     fpath = file_reader.generate_file_path(fname)
-    fstem = file_reader.get_file_stem(fpath)
     fsuffix = file_reader.get_file_suffix(fpath)
+    fstem = file_reader.get_file_stem(fpath) if not args.o else args.o
 
     if fsuffix != FILE_EXTENSION:
         raise InvalidFileExtensionError()
@@ -38,10 +47,6 @@ def main():
 
     code_repr_fpath = file_printer.generate_intermediate_code_representation_file_path(fstem)
     file_printer.generate_intermediate_code_representation_file(code_repr_fpath, quadruple_list)
-
-
-class InvalidFileExtensionError(RuntimeError):
-    pass
 
 
 if __name__ == '__main__':

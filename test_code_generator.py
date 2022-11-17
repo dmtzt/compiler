@@ -1,13 +1,13 @@
 import unittest
 from pathlib import Path
 
-from compiler.parser import ParserCodeGenerator
+from compiler.parser import Parser
 from compiler.parser import TypeMismatchError
 
 class TestCodeGenerator(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.parser = ParserCodeGenerator()
+        cls.parser = Parser()
         cls.dir_files = Path('./test_files/code_generator')
 
 
@@ -214,10 +214,126 @@ class TestCodeGenerator(unittest.TestCase):
 
         self.assertEqual(result, None)
 
-    
+    @unittest.skip
     def test_code_generator_21(self):
         """Generates quadruples for an assignment of an addition of one integer and one real constant"""
         test_name = 'test_code_generator_21'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+
+        self.assertEqual(result, None)
+
+    @unittest.skip
+    def test_code_generator_22(self):
+        """Prints an integer constant"""
+        test_name = 'test_code_generator_22'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+
+        self.assertEqual(result, None)
+
+    @unittest.skip
+    def test_code_generator_23(self):
+        """Prints one constant of each type: integer, real, boolean, char, string"""
+        test_name = 'test_code_generator_23'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+
+        self.assertEqual(result, None)
+
+    
+    @unittest.skip
+    def test_code_generator_24(self):
+        """While with simple assignment inside and after"""
+        test_name = 'test_code_generator_24'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+
+        self.assertEqual(result, None)
+
+    
+    @unittest.skip
+    def test_code_generator_25(self):
+        """For loop with positive limit and no step"""
+        test_name = 'test_code_generator_25'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+
+        self.assertEqual(result, None)
+
+    @unittest.skip
+    def test_code_generator_26(self):
+        """Unary minus and plus"""
+        test_name = 'test_code_generator_26'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+
+        self.assertEqual(result, None)
+
+    # @unittest.skip
+    def test_code_generator_27(self):
+        """For loop with postive limit and positive step"""
+        test_name = 'test_code_generator_27'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+
+        self.assertEqual(result, None)
+
+    @unittest.skip
+    def test_code_generator_28(self):
+        """For loop with positive limit and negative step"""
+        test_name = 'test_code_generator_28'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+
+        self.assertEqual(result, None)
+
+
+    @unittest.skip
+    def test_code_generator_29(self):
+        """For loop with negative limit and negative step"""
+        test_name = 'test_code_generator_29'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+
+        self.assertEqual(result, None)
+
+
+    @unittest.skip
+    def test_code_generator_30(self):
+        """For loop with negative index, positive limit and positive step"""
+        test_name = 'test_code_generator_30'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+
+        self.assertEqual(result, None)
+
+
+    @unittest.skip
+    def test_code_generator_31(self):
+        """Main function and empty function for each data type"""
+        test_name = 'test_code_generator_31'
+        text = self.read_test_file(test_name)
+
+        result = self.parser.parse(text)
+
+        self.assertEqual(result, None)
+
+    
+    @unittest.skip
+    def test_code_generator_32(self):
+        """Global scope, function, and main entry point with variables each"""
+        test_name = 'test_code_generator_32'
         text = self.read_test_file(test_name)
 
         result = self.parser.parse(text)

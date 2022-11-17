@@ -47,7 +47,7 @@ class VirtualMemoryAddress():
     @classmethod
     def get_global_base_virtual_memory_address(cls, type: Type) -> int:
         if type not in cls._global:
-            raise UndefinedTypeBaseVirtualAddress()
+            raise UndefinedTypeBaseVirtualAddressError()
 
         return cls._global[type]
 
@@ -55,7 +55,7 @@ class VirtualMemoryAddress():
     @classmethod
     def get_local_base_virtual_memory_address(cls, type: Type) -> int:
         if type not in cls._local:
-            raise UndefinedTypeBaseVirtualAddress()
+            raise UndefinedTypeBaseVirtualAddressError()
 
         return cls._local[type]
 
@@ -63,7 +63,7 @@ class VirtualMemoryAddress():
     @classmethod
     def get_constant_base_virtual_memory_address(cls, type: Type) -> int:
         if type not in cls._constant:
-            raise UndefinedTypeBaseVirtualAddress()
+            raise UndefinedTypeBaseVirtualAddressError()
 
         return cls._constant[type]
 
@@ -71,7 +71,7 @@ class VirtualMemoryAddress():
     @classmethod
     def get_temporal_base_virtual_memory_address(cls, type: Type) -> int:
         if type not in cls._temporal:
-            raise UndefinedTypeBaseVirtualAddress()
+            raise UndefinedTypeBaseVirtualAddressError()
 
         return cls._temporal[type]
 
@@ -79,7 +79,7 @@ class VirtualMemoryAddress():
     @classmethod
     def get_pointer_base_virtual_memory_address(cls, type: Type) -> int:
         if type not in cls._pointer:
-            raise UndefinedTypeBaseVirtualAddress()
+            raise UndefinedTypeBaseVirtualAddressError()
 
         return cls._pointer[type]
 
@@ -125,7 +125,11 @@ class Memory:
 
 class Function:
     def __init__(self) -> None:
+        self._id = None
+        self._return_type = None
+        self._start_quadruple_number = None
         self._memory: Memory = Memory()
+        self._parameter_table = None
         self._variable_table: VariableTable = VariableTable()
         self._number_parameters = 0
 
@@ -215,6 +219,10 @@ class FunctionDirectory():
             raise FunctionUndefinedException(function_id)
 
         return self._directory[function_id].get_variable(variable_id)
+
+    
+    def function_exists(self, function_id: str) -> bool:
+        return True if function_id in self._directory else False
 
     
     def increment_function_local_variable_counter(self, function_id: str, type: Type) -> None:
@@ -350,5 +358,5 @@ class VariableUndefinedException(RuntimeError):
     pass
 
 
-class UndefinedTypeBaseVirtualAddress(RuntimeError):
+class UndefinedTypeBaseVirtualAddressError(RuntimeError):
     pass

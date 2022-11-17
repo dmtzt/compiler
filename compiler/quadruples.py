@@ -23,6 +23,13 @@ class Quadruple(ABC):
     def get_intermediate_code_representation(self) -> str:
         pass
 
+
+class ControlTransferQuadruple(Quadruple):
+    @abstractmethod
+    def fill_program_count(self, program_count: int) -> None:
+        pass
+
+
 @dataclass
 class ArithmeticQuadruple(Quadruple):
     operator: Operator
@@ -98,13 +105,17 @@ class AssignmentQuadruple(Quadruple):
 
 
 @dataclass
-class ConditionalControlTransferQuadruple(Quadruple):
+class ConditionalControlTransferQuadruple(ControlTransferQuadruple):
     operator: Operator
     boolean_variable: Variable
     program_count: int
 
     def __str__(self) -> str:
         return f'{self.operator.name} {self.boolean_variable} {self.program_count}'
+
+    
+    def fill_program_count(self, program_count: int) -> None:
+        self.program_count = program_count
 
     
     def get_named_representation(self) -> str:
@@ -116,12 +127,16 @@ class ConditionalControlTransferQuadruple(Quadruple):
 
 
 @dataclass
-class UnconditionalControlTransferQuadruple(Quadruple):
+class UnconditionalControlTransferQuadruple(ControlTransferQuadruple):
     operator: Operator
     program_count: int
 
     def __str__(self) -> str:
         return f'{self.operator.name} {self.program_count}'
+
+    
+    def fill_program_count(self, program_count: int) -> None:
+        self.program_count = program_count
 
     
     def get_named_representation(self) -> str:
@@ -228,7 +243,10 @@ class QuadrupleList():
 
     
     def fill_control_transfer_quadruple(self, quadruple_number: int, program_count: int) -> None:
-        self._list[quadruple_number].program_count = program_count
+        if not isinstance(self._list[quadruple_number], ControlTransferQuadruple):
+            raise InvalidQuadrupleOperationError()
+
+        self._list[quadruple_number].fill_program_count(program_count)
 
     
     def get_quadruples(self) -> deque[Quadruple]:
@@ -244,3 +262,7 @@ class QuadrupleList():
         s += ')'
 
         return s
+
+
+class InvalidQuadrupleOperationError(RuntimeError):
+    pass

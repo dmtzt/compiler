@@ -1,0 +1,4 @@
+komenco()
+{
+    skribi(1, 2.3, vera, 'a', "hola");   
+}

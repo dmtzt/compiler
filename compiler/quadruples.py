@@ -10,11 +10,6 @@ class Quadruple(ABC):
     UNUSED_STATEMENT = '-'
 
     @abstractmethod
-    def __str__(self) -> str:
-        pass
-
-
-    @abstractmethod
     def get_named_representation(self) -> str:
         pass
 
@@ -36,10 +31,6 @@ class ArithmeticQuadruple(Quadruple):
     left_operand: Variable
     right_operand: Variable
     temporal_storage_variable: Variable
-
-    def __str__(self) -> str:
-        return f'{self.operator.name} {self.left_operand} {self.right_operand} {self.temporal_storage_variable}'
-
     
     def get_named_representation(self) -> str:
         return f'{self.operator.name : <16}{self.left_operand.get_id() : <10}{self.right_operand.get_id() : <10}{self.temporal_storage_variable.get_id()}'
@@ -54,10 +45,6 @@ class UnaryArithmeticQuadruple(Quadruple):
     operator: Operator
     value_variable: Variable
     temporal_storage_variable: Variable
-
-    def __str__(self) -> str:
-        return f'{self.operator.name} {self.value_variable} {self.temporal_storage_variable}'
-
     
     def get_named_representation(self) -> str:
         return f'{self.operator.name : <16}{self.value_variable.get_id() : <10}{" " : <10}{self.temporal_storage_variable.get_id()}'
@@ -73,10 +60,6 @@ class RelationalQuadruple(Quadruple):
     left_operand: Variable
     right_operand: Variable
     temporal_storage_variable: Variable
-
-    def __str__(self) -> str:
-        return f'{self.operator.name} {self.left_operand} {self.right_operand} {self.temporal_storage_variable}'
-
     
     def get_named_representation(self) -> str:
         return f'{self.operator.name : <16}{self.left_operand.get_id() : <10}{self.right_operand.get_id() : <10}{self.temporal_storage_variable.get_id()}'
@@ -91,10 +74,6 @@ class AssignmentQuadruple(Quadruple):
     operator: Operator
     value_variable: Variable
     storage_variable: Variable
-
-    def __str__(self) -> str:
-        return f'{self.operator.name} {self.value_variable} {self.storage_variable}'
-
     
     def get_named_representation(self) -> str:
         return f'{self.operator.name : <16}{self.value_variable.get_id() : <10}{" " : <10}{self.storage_variable.get_id()}'
@@ -109,10 +88,6 @@ class ConditionalControlTransferQuadruple(ControlTransferQuadruple):
     operator: Operator
     boolean_variable: Variable
     program_count: int
-
-    def __str__(self) -> str:
-        return f'{self.operator.name} {self.boolean_variable} {self.program_count}'
-
     
     def fill_program_count(self, program_count: int) -> None:
         self.program_count = program_count
@@ -130,10 +105,6 @@ class ConditionalControlTransferQuadruple(ControlTransferQuadruple):
 class UnconditionalControlTransferQuadruple(ControlTransferQuadruple):
     operator: Operator
     program_count: int
-
-    def __str__(self) -> str:
-        return f'{self.operator.name} {self.program_count}'
-
     
     def fill_program_count(self, program_count: int) -> None:
         self.program_count = program_count
@@ -152,10 +123,6 @@ class ConstantStorageQuadruple(Quadruple):
     operator: Operator
     constant_value: str
     storage_variable: Variable
-
-    def __str__(self) -> str:
-        return f'{self.operator.name} {self.constant_value} {self.storage_variable}'
-
     
     def get_named_representation(self) -> str:
         return f'{self.operator.name : <16}{self.constant_value : <10}{" " : <10}{self.storage_variable.get_id()}'
@@ -169,11 +136,6 @@ class ConstantStorageQuadruple(Quadruple):
 class ReadQuadruple(Quadruple):
     operator: Operator
     storage_variable: Variable
-
-
-    def __str__(self) -> str:
-        return f'{self.operator.name} {self.storage_variable}'
-
     
     def get_named_representation(self) -> str:
         return f'{self.operator.name : <16}{" " : <10}{" " : <10}{self.storage_variable.get_id()}'
@@ -188,16 +150,25 @@ class PrintQuadruple(Quadruple):
     operator: Operator
     printed_variable: Variable
 
-    def __str__(self) -> str:
-        return f'{self.operator.name} {self.printed_variable}'
-
-    
     def get_named_representation(self) -> str:
         return f'{self.operator.name : <16}{" " : <10}{" " : <10}{self.printed_variable.get_id()}'
 
     
     def get_intermediate_code_representation(self) -> str:
         return f'{self.operator.value : <3}{self.UNUSED_STATEMENT : <6}{self.UNUSED_STATEMENT : <6}{self.printed_variable.get_virtual_memory_address()}'
+
+
+@dataclass
+class ActivationRecordExpansionQuadruple(Quadruple):
+    function_id: str
+    operator: Operator = Operator.ERA
+
+    def get_named_representation(self) -> str:
+        return f'{self.operator.name : <16}{" " : <10}{" " : <10}{self.function_id}'
+
+    
+    def get_intermediate_code_representation(self) -> str:
+        return f'{self.operator.value : <3}{self.UNUSED_STATEMENT : <6}{self.UNUSED_STATEMENT : <6}{self.function_id}'
 
 
 @dataclass

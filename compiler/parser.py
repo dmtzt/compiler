@@ -8,6 +8,8 @@ from .functions import FunctionBuilder
 from .functions import FunctionDirector
 from .functions import FunctionDirectory
 from .functions import VirtualMemoryAddress
+from .functions import FunctionUndefinedException
+from .quadruples import ActivationRecordExpansionQuadruple
 from .quadruples import ArithmeticQuadruple
 from .quadruples import AssignmentQuadruple
 from .quadruples import ConstantStorageQuadruple
@@ -181,6 +183,13 @@ class Parser(object):
     def generate_print_quadruple(self, print_param: Variable) -> PrintQuadruple:
         operator = Operator.PRINT
         return PrintQuadruple(operator, print_param)
+
+    
+    def generate_activation_record_expansion_quadruple(self, function_id: str):
+        if not self.function_directory.function_exists(function_id):
+            raise FunctionUndefinedException()
+
+        return ActivationRecordExpansionQuadruple(function_id)
 
     
     def generate_end_function_quadruple(self) -> EndFunctionQuadruple:
@@ -401,7 +410,7 @@ class Parser(object):
         self.increment_program_counter()
 
         print(self.function_directory.__str__())
-        print(self.quadruple_list.__str__())
+        # print(self.quadruple_list.__str__())
 
 
     def p_init(self, p):
@@ -446,62 +455,41 @@ class Parser(object):
 
     def p_functions_definition_2(self, p):
         '''functions_definition : single_function_definition'''
+        end_function_quadruple = self.generate_end_function_quadruple()
+        self.insert_quadruple(end_function_quadruple)
+        self.increment_program_counter()
 
     
     def p_single_function_definition_primitive_type_1(self, p):
         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
-        end_function_quadruple = self.generate_end_function_quadruple()
-        self.insert_quadruple(end_function_quadruple)
-        self.increment_program_counter()
 
 
     def p_single_function_definition_primitive_type_2(self, p):
         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN function_definition_params RPAREN instruction_block'''
-        end_function_quadruple = self.generate_end_function_quadruple()
-        self.insert_quadruple(end_function_quadruple)
-        self.increment_program_counter()
 
     
     def p_single_function_definition_primitive_type_3(self, p):
         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN RPAREN local_variables_declaration instruction_block'''
-        end_function_quadruple = self.generate_end_function_quadruple()
-        self.insert_quadruple(end_function_quadruple)
-        self.increment_program_counter()
 
     
     def p_single_function_definition_primitive_type_4(self, p):
         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN RPAREN instruction_block'''
-        end_function_quadruple = self.generate_end_function_quadruple()
-        self.insert_quadruple(end_function_quadruple)
-        self.increment_program_counter()
 
 
     def p_single_function_definition_void_type_1(self, p):
         '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
-        end_function_quadruple = self.generate_end_function_quadruple()
-        self.insert_quadruple(end_function_quadruple)
-        self.increment_program_counter()
 
 
     def p_single_function_definition_void_type_2(self, p):
         '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN function_definition_params RPAREN instruction_block'''
-        end_function_quadruple = self.generate_end_function_quadruple()
-        self.insert_quadruple(end_function_quadruple)
-        self.increment_program_counter()
 
 
     def p_single_function_definition_void_type_3(self, p):
         '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN RPAREN local_variables_declaration instruction_block'''
-        end_function_quadruple = self.generate_end_function_quadruple()
-        self.insert_quadruple(end_function_quadruple)
-        self.increment_program_counter()
 
     
     def p_single_function_definition_void_type_4(self, p):
         '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN RPAREN instruction_block'''
-        end_function_quadruple = self.generate_end_function_quadruple()
-        self.insert_quadruple(end_function_quadruple)
-        self.increment_program_counter()
 
 
     def p_parsed_function_id(self, p):
@@ -729,11 +717,20 @@ class Parser(object):
 
     
     def p_function_call_1(self, p):
-        '''function_call : ID LPAREN function_call_params RPAREN SEMI'''
+        '''function_call : ID parsed_function_call_id LPAREN function_call_params RPAREN SEMI'''
 
     
     def p_function_call_2(self, p):
-        '''function_call : ID LPAREN RPAREN SEMI'''
+        '''function_call : ID parsed_function_call_id LPAREN RPAREN SEMI'''
+
+    
+    def p_parsed_function_call_id(self, p):
+        '''parsed_function_call_id :'''
+        function_id = p[-1]
+
+        activation_record_expansion_quadruple = self.generate_activation_record_expansion_quadruple(function_id)
+        self.insert_quadruple(activation_record_expansion_quadruple)
+        self.increment_program_counter()
 
     
     def p_function_call_params_1(self, p):
@@ -775,7 +772,6 @@ class Parser(object):
     
     def p_conditional_1(self, p):
         '''conditional : IF LPAREN expr RPAREN parsed_if_expr instruction_block ELSE parsed_else instruction_block'''
-        print('Here 2')
         quadruple_number = self.pop_jump_stack()
         program_count = self.program_counter
 
@@ -784,7 +780,6 @@ class Parser(object):
     
     def p_conditional_2(self, p):
         '''conditional : IF LPAREN expr RPAREN parsed_if_expr instruction_block'''
-        print('Here 1')
         quadruple_number = self.pop_jump_stack()
         program_count = self.program_counter
 

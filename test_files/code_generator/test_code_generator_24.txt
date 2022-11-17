@@ -1,0 +1,11 @@
+komenco()
+lokaj variabloj:
+    ent a, b;
+{
+    dum (a > b)
+    {
+        a = 1;
+    }
+
+    b = 2;
+}

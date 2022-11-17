@@ -149,7 +149,7 @@ class Parser(object):
     def generate_empty_unconditional_control_transfer_quadruple(
         self
     ) -> UnconditionalControlTransferQuadruple:
-        operator: Operator.GOTO
+        operator = Operator.GOTO
         program_count = None
 
         return UnconditionalControlTransferQuadruple(operator, program_count)
@@ -408,6 +408,12 @@ class Parser(object):
         '''init :'''
         self.create_global_scope()
 
+        self.push_current_count_jump_stack()
+
+        main_control_transfer_quadruple = self.generate_empty_unconditional_control_transfer_quadruple()
+        self.insert_quadruple(main_control_transfer_quadruple)
+        self.increment_program_counter()
+
 
     def p_start_1(self, p):
         '''start : global_variables_declaration functions_definition entry_point_definition'''
@@ -560,6 +566,10 @@ class Parser(object):
         '''parsed_main_id :'''
         self.create_main_function()
         self.set_function_scope('main')
+
+        program_counter = self.get_program_counter()
+        quadruple_number = self.pop_jump_stack()
+        self.fill_control_transfer_quadruple(quadruple_number, program_counter)
 
 
     def p_local_variables_declaration(self, p):

@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from dataclasses import dataclass, field
 
 from .variables import Variable
 from .variables import VariableTable
+from .variables import ParameterTable
 from .variables import Type
 
 
-class VirtualMemoryAddress():
+class VirtualMemoryAddress:
     _global = dict()
     _local = dict()
     _constant = dict()
@@ -84,7 +84,7 @@ class VirtualMemoryAddress():
         return cls._pointer[type]
 
 
-class Memory:
+class ActivationRecord:
     def __init__(self) -> None:
         self._local = defaultdict(int)
         self._constant = defaultdict(int)
@@ -123,15 +123,18 @@ class Memory:
         return self._pointer[type]
 
 
+class Memory:
+    pass
+
+
 class Function:
     def __init__(self) -> None:
         self._id = None
         self._return_type = None
         self._start_quadruple_number = None
-        self._memory: Memory = Memory()
-        self._parameter_table = None
-        self._variable_table: VariableTable = VariableTable()
-        self._number_parameters = 0
+        self._activation_record = ActivationRecord()
+        self._parameter_table = ParameterTable()
+        self._variable_table = VariableTable()
 
 
     def set_id(self, id) -> None:
@@ -149,49 +152,57 @@ class Function:
     def insert_variable(self, id: str, variable: Variable) -> None:
         self._variable_table.insert_variable(id, variable)
 
-
+    
     def get_variable(self, variable_id):
         return self._variable_table.get_variable(variable_id)
 
     
+    def insert_parameter(self, parameter: Variable) -> None:
+        self._parameter_table.insert_parameter(parameter)
+
+
+    def get_parameter(self, number: int) -> Variable:
+        return self._parameter_table.get_parameter(number)
+
+    
+    def get_number_params(self) -> int:
+        return self._parameter_table.get_number_parameters()
+
+    
     def increment_local_counter(self, type: Type) -> None:
-        self._memory.increment_local_counter(type)
+        self._activation_record.increment_local_counter(type)
 
     
     def increment_constant_counter(self, type: Type) -> None:
-        self._memory.increment_constant_counter(type)
+        self._activation_record.increment_constant_counter(type)
 
     
     def increment_temporal_counter(self, type: Type) -> None:
-        self._memory.increment_temporal_counter(type)
+        self._activation_record.increment_temporal_counter(type)
 
     
     def increment_pointer_counter(self, type: Type) -> None:
-        self._memory.increment_pointer_counter(type)
+        self._activation_record.increment_pointer_counter(type)
 
     
     def get_local_counter(self, type: Type) -> int:
-        return self._memory.get_local_counter(type)
+        return self._activation_record.get_local_counter(type)
 
 
     def get_constant_counter(self, type: Type) -> int:
-        return self._memory.get_constant_counter(type)
+        return self._activation_record.get_constant_counter(type)
 
     
     def get_temporal_counter(self, type: Type) -> int:
-        return self._memory.get_temporal_counter(type)
+        return self._activation_record.get_temporal_counter(type)
 
     
     def get_pointer_counter(self, type: Type) -> int:
-        return self._memory.get_pointer_counter(type)
-
-    
-    def increment_number_parameters(self) -> None:
-        self._number_parameters += 1
+        return self._activation_record.get_pointer_counter(type)
 
 
     def __str__(self) -> str:
-        return f'Function(id={self._id} type={self._return_type} start={self._start_quadruple_number} n_params={self._number_parameters} vars={self._variable_table.__str__()})'
+        return f'Function(id={self._id} type={self._return_type} start={self._start_quadruple_number} vars=\n\t{self._variable_table.__str__()} params=\n\t{self._parameter_table.__str__()})'
 
 
 class FunctionDirectory():
@@ -214,11 +225,32 @@ class FunctionDirectory():
         self._directory[function_id].insert_variable(variable_id, variable)
 
     
+    def insert_function_parameter(self, function_id: str, parameter: Variable) -> None:
+        if function_id not in self._directory:
+            raise FunctionUndefinedException(function_id)
+
+        self._directory[function_id].insert_parameter(parameter)
+
+    
     def get_function_variable(self, function_id: str, variable_id: str) -> Variable:
         if function_id not in self._directory:
             raise FunctionUndefinedException(function_id)
 
         return self._directory[function_id].get_variable(variable_id)
+
+    
+    def get_function_number_parameters(self, function_id: str) -> int:
+        if function_id not in self._directory:
+            raise FunctionUndefinedException(function_id)
+
+        return self._directory[function_id].get_number_params()
+
+    
+    def get_function_parameter(self, function_id: str, number: int) -> Variable:
+        if function_id not in self._directory:
+            raise FunctionUndefinedException(function_id)
+
+        return self._directory[function_id].get_parameter(number)
 
     
     def function_exists(self, function_id: str) -> bool:
@@ -255,10 +287,6 @@ class FunctionDirectory():
     
     def get_function_pointer_variable_counter(self, function_id: str, type: Type) -> int:
         return self._directory[function_id].get_pointer_counter(type)
-
-    
-    def increment_function_number_parameters(self, function_id: str) -> None:
-        self._directory[function_id].increment_number_parameters()
 
     
     def __str__(self) -> str:
@@ -351,6 +379,14 @@ class FunctionAlreadyDefinedException(RuntimeError):
 
 
 class FunctionUndefinedException(RuntimeError):
+    pass
+
+
+class IncorrectFunctionParameterAmountException(RuntimeError):
+    pass
+
+
+class IncorrectFunctionParameterTypeException(RuntimeError):
     pass
 
 

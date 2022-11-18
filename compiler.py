@@ -1,8 +1,8 @@
 import argparse
 from pathlib import Path
 
-from compiler.files import FileReader
-from compiler.files import FilePrinter
+from compiler.files import SourceCodeFileReader
+from compiler.files import IntermediateCodeFilePrinter
 from compiler.parser import Parser
 
 class InvalidFileExtensionError(RuntimeError):
@@ -13,8 +13,8 @@ def main():
     FILE_EXTENSION = '.epo'
 
     parser = Parser()
-    file_reader = FileReader()
-    file_printer = FilePrinter()
+    file_reader = SourceCodeFileReader()
+    file_printer = IntermediateCodeFilePrinter()
     arg_parser = argparse.ArgumentParser(description='Esperanto compiler')
 
     arg_parser.add_argument('infile', type=str, help='Input file name')

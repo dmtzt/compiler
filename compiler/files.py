@@ -1,11 +1,8 @@
+from csv import reader
 from pathlib import Path
 from .quadruples import QuadrupleList
 
-class FileReader:
-    def __init__(self) -> None:
-        pass
-
-
+class SourceCodeFileReader:
     def generate_file_path(self, fname: str) -> str:
         return Path(fname)
 
@@ -26,11 +23,7 @@ class FileReader:
             return '\n'.join(line.rstrip() for line in f)
 
 
-class FilePrinter:
-    def __init__(self) -> None:
-        pass
-
-
+class IntermediateCodeFilePrinter:
     def generate_named_representation_file(self, fpath: Path, quadruple_list: QuadrupleList) -> None:
         quadruples = quadruple_list.get_quadruples()
 
@@ -56,6 +49,20 @@ class FilePrinter:
     def generate_intermediate_code_representation_file_path(self, fstem: str) -> Path:
         fname = f'{fstem}.obj'
         return Path().absolute() / fname
+
+
+class IntermediateCodeFileReader:
+    def read_quadruples_list(self, fpath: Path) -> str:
+        if not fpath.is_file():
+            raise FileNotFoundError()
+
+        with open(fpath) as f:
+            return [line.rstrip() for line in f]
+
+
+    def parse_quadruple(quadruple: str) -> tuple[str, str, str, str]:
+        toks = quadruple.split()
+        return toks[0], toks[1], toks[2], toks[3]
 
 
 class FileNotFoundError(RuntimeError):

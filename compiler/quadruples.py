@@ -293,10 +293,13 @@ class EndFunctionQuadruple(Quadruple):
     def get_named_representation(self) -> str:
         return f'{self.operator.name}'
 
-    
-    def get_intermediate_code_representation(self) -> str:
-        return f'{self.operator.value : <3}{self.UNUSED_STATEMENT : <6}{self.UNUSED_STATEMENT : <6}{self.UNUSED_STATEMENT}'
 
+    def get_intermediate_code_representation(self) -> str:
+        q1 = str(self.operator.value)
+        q2 = str(self.UNUSED_STATEMENT)
+        q3 = str(self.UNUSED_STATEMENT)
+        q4 = str(self.UNUSED_STATEMENT)
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 @dataclass
@@ -306,13 +309,17 @@ class EndProgramQuadruple(Quadruple):
     def __str__(self) -> str:
         return f'{self.operator.name}'
 
-    
+
     def get_named_representation(self) -> str:
         return f'{self.operator.name}'
 
     
     def get_intermediate_code_representation(self) -> str:
-        return f'{self.operator.value : <3}{self.UNUSED_STATEMENT : <6}{self.UNUSED_STATEMENT : <6}{self.UNUSED_STATEMENT}'
+        q1 = str(self.operator.value)
+        q2 = str(self.UNUSED_STATEMENT)
+        q3 = str(self.UNUSED_STATEMENT)
+        q4 = str(self.UNUSED_STATEMENT)
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 class QuadrupleList():

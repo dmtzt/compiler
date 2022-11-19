@@ -157,8 +157,12 @@ class Function:
         self._variable_table.insert_variable(id, variable)
 
     
-    def get_variable(self, variable_id):
+    def get_variable(self, variable_id) -> Variable:
         return self._variable_table.get_variable(variable_id)
+
+    
+    def variable_exists(self, variable_id: str) -> bool:
+        return self._variable_table.variable_exists(variable_id)
 
     
     def insert_parameter(self, parameter: Variable) -> None:
@@ -210,9 +214,31 @@ class Function:
 
 
 class FunctionDirectory():
+    GLOBAL_SCOPE_ID = 'global'
+    MAIN_SCOPE_ID = 'main'
+
     # FIX: operations that involve global variables
     def __init__(self) -> None:
         self._directory : dict[str, Function] = {}
+        
+        self.create_global_scope()
+        self.create_main_scope()
+
+    
+    def create_global_scope(self) -> None:
+        global_scope_id = self.GLOBAL_SCOPE_ID
+
+        global_scope = Function()
+        global_scope.set_id(global_scope_id)
+        self.insert_function(global_scope_id, global_scope)
+
+    
+    def create_main_scope(self) -> None:
+        main_id = self.MAIN_SCOPE_ID
+
+        main_scope = Function()
+        main_scope.set_id(main_id)
+        self.insert_function(main_id, main_scope)
 
     
     def insert_function(self, id: str, function: Function) -> None:
@@ -220,6 +246,10 @@ class FunctionDirectory():
             raise FunctionAlreadyDefinedException()
 
         self._directory[id] = function
+
+
+    def get_global_variable(self, variable_id: str) -> Variable:
+        return self._directory[self.GLOBAL_SCOPE_ID].get_variable(variable_id)
 
 
     def insert_function_variable(self, function_id: str, variable_id: str, variable: Variable) -> None:
@@ -265,7 +295,11 @@ class FunctionDirectory():
 
     
     def function_exists(self, function_id: str) -> bool:
-        return True if function_id in self._directory else False
+        return function_id in self._directory
+
+    
+    def variable_exists(self, function_id: str, variable_id: str) -> bool:
+        return self._directory[function_id].variable_exists(variable_id)
 
     
     def increment_function_local_variable_counter(self, function_id: str, type: Type) -> None:

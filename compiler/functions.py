@@ -144,6 +144,10 @@ class Function:
     def set_return_type(self, return_type) -> None:
         self._return_type = return_type
 
+    
+    def get_return_type(self) -> Type:
+        return self._return_type
+
 
     def set_start_quadruple_number(self, start_quadruple_number) -> None:
         self._start_quadruple_number = start_quadruple_number
@@ -251,6 +255,13 @@ class FunctionDirectory():
             raise FunctionUndefinedException(function_id)
 
         return self._directory[function_id].get_parameter(number)
+
+    
+    def get_function_return_type(self, function_id: str) -> Type:
+        if function_id not in self._directory:
+            raise FunctionUndefinedException(function_id)
+
+        return self._directory[function_id].get_return_type()
 
     
     def function_exists(self, function_id: str) -> bool:
@@ -387,6 +398,10 @@ class IncorrectFunctionParameterAmountException(RuntimeError):
 
 
 class IncorrectFunctionParameterTypeException(RuntimeError):
+    pass
+
+
+class IncorrectFunctionReturnTypeException(RuntimeError):
     pass
 
 

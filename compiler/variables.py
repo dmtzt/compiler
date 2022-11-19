@@ -49,9 +49,10 @@ class Operator(Enum):
 
     ERA = 24
     PARAM = 25
-    ENDFUNC = 26
+    RETURN = 26
+    ENDFUNC = 27
 
-    END = 27
+    END = 28
 
     @classmethod
     def assignment_operator(cls):

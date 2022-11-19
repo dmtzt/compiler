@@ -9,6 +9,7 @@ from .functions import FunctionDirector
 from .functions import FunctionDirectory
 from .functions import IncorrectFunctionParameterAmountException
 from .functions import IncorrectFunctionParameterTypeException
+from .functions import IncorrectFunctionReturnTypeException
 from .functions import VirtualMemoryAddress
 from .functions import FunctionUndefinedException
 from .quadruples import ActivationRecordExpansionQuadruple
@@ -22,6 +23,8 @@ from .quadruples import ParameterPassingQuadruple
 from .quadruples import PrintQuadruple
 from .quadruples import ReadQuadruple
 from .quadruples import RelationalQuadruple
+from .quadruples import ReturnValueQuadruple
+from .quadruples import ReturnVoidQuadruple
 from .quadruples import StartSubroutineQuadruple
 from .quadruples import Quadruple
 from .quadruples import QuadrupleList
@@ -198,6 +201,14 @@ class Parser(object):
         return PrintQuadruple(operator, print_param)
 
     
+    def generate_return_value_quadruple(self, return_variable: Variable) -> ReturnValueQuadruple:
+        return ReturnValueQuadruple(return_variable)
+
+    
+    def generate_return_void_quadruple(self) -> ReturnVoidQuadruple:
+        return ReturnVoidQuadruple()
+
+    
     def generate_start_subroutine_quadruple(self, function_id: str) -> StartSubroutineQuadruple:
         return StartSubroutineQuadruple(function_id)
 
@@ -236,6 +247,10 @@ class Parser(object):
     
     def get_function_variable(self, function_id: str, variable_id: str) -> Variable:
         return self.function_directory.get_function_variable(function_id, variable_id)
+
+    
+    def get_function_return_type(self, function_id: str) -> Type:
+        return self.function_directory.get_function_return_type(function_id)
 
     
     def fill_control_transfer_quadruple(self, quadruple_number: int, program_count: int) -> None:
@@ -1227,12 +1242,36 @@ class Parser(object):
     
     def p_return_1(self, p):
         '''return : RETURN expr SEMI'''
+        function_id = self.get_function_scope()
+        function_return_type = self.get_function_return_type(function_id)
+
+        return_variable = self.pop_operand_stack()
+        return_variable_type = return_variable.get_type()
+
+        if return_variable_type != function_return_type:
+            raise IncorrectFunctionReturnTypeException()
+
+        return_value_quadruple = self.generate_return_value_quadruple(return_variable)
+        self.insert_quadruple(return_value_quadruple)
+        self.increment_program_counter()
 
 
+    # DEFINE return sin variable?
     def p_return_2(self, p):
         '''return : RETURN SEMI'''
+        function_id = self.get_function_scope()
+        function_return_type = self.get_function_return_type(function_id)
 
-    
+        return_variable_type = Type.VOID
+
+        if return_variable_type != function_return_type:
+            raise IncorrectFunctionReturnTypeException()
+
+        return_void_quadruple = self.generate_return_void_quadruple()
+        self.insert_quadruple(return_void_quadruple)
+        self.increment_program_counter()
+
+
     def p_expr_1(self, p):
         '''expr : expr OR and_expr'''
 

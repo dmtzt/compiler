@@ -95,7 +95,7 @@ class Parser(object):
 
 
     def create_global_scope(self):
-        function_id = self.get_global_scope_name()
+        function_id = self.get_global_scope_id()
         function_return_type = Type.VOID
         function_start_quadruple_number = 0
 
@@ -104,7 +104,7 @@ class Parser(object):
 
 
     def create_main_function(self):
-        function_id = self.get_main_function_name()
+        function_id = self.get_main_function_id()
         function_return_type = Type.VOID
         function_start_quadruple_number = self.get_program_counter()
 
@@ -249,8 +249,16 @@ class Parser(object):
         return self.function_directory.get_function_variable(function_id, variable_id)
 
     
+    def function_variable_exists(self, function_id: str, variable_id: str) -> bool:
+        return self.function_directory.variable_exists(function_id, variable_id)
+
+    
     def get_function_return_type(self, function_id: str) -> Type:
         return self.function_directory.get_function_return_type(function_id)
+
+    
+    def get_global_variable(self, variable_id: str) -> Variable:
+        return self.function_directory.get_global_variable(variable_id)
 
     
     def fill_control_transfer_quadruple(self, quadruple_number: int, program_count: int) -> None:
@@ -313,12 +321,12 @@ class Parser(object):
         return variable
 
     
-    def get_global_scope_name(self) -> str:
-        return 'global'
+    def get_global_scope_id(self) -> str:
+        return self.function_directory.GLOBAL_SCOPE_ID
 
     
-    def get_main_function_name(self) -> str:
-        return 'main'
+    def get_main_function_id(self) -> str:
+        return self.function_directory.MAIN_SCOPE_ID
 
     
     def get_temporal_variable_name(self, type: Type, count: int) -> str:
@@ -333,6 +341,26 @@ class Parser(object):
         return f'p_{type.name}_{count}'
 
     
+    def get_global_base_virtual_memory_address(self, variable_type: Type) -> int:
+        return VirtualMemoryAddress.get_global_base_virtual_memory_address(variable_type)
+    
+
+    def get_local_base_virtual_memory_address(self, variable_type: Type) -> int:
+        return VirtualMemoryAddress.get_local_base_virtual_memory_address(variable_type)
+
+    
+    def get_constant_base_virtual_memory_address(self, variable_type: Type) -> int:
+        return VirtualMemoryAddress.get_constant_base_virtual_memory_address(variable_type)
+
+    
+    def get_temporal_base_virtual_memory_address(self, variable_type: Type) -> int:
+        return VirtualMemoryAddress.get_temporal_base_virtual_memory_address(variable_type)
+
+    
+    def get_pointer_base_virtual_memory_address(self, variable_type: Type) -> int:
+        return VirtualMemoryAddress.get_pointer_base_virtual_memory_address(variable_type)
+
+
     def push_operand_stack(self, operand: Variable) -> None:
         self.operand_stack.push(operand)
 
@@ -478,13 +506,10 @@ class Parser(object):
         self.increment_program_counter()
 
         print(self.function_directory.__str__())
-        # print(self.quadruple_list.__str__())
 
 
     def p_init(self, p):
         '''init :'''
-        self.create_global_scope()
-
         self.push_current_count_jump_stack()
 
         main_control_transfer_quadruple = self.generate_empty_unconditional_control_transfer_quadruple()
@@ -514,7 +539,8 @@ class Parser(object):
     
     def p_parsed_global_scope(self, p):
         '''parsed_global_scope :'''
-        self.set_function_scope('global')
+        global_scope_id = self.get_global_scope_id()
+        self.set_function_scope(global_scope_id)
 
     
     def p_functions_definition_1(self, p):
@@ -619,8 +645,8 @@ class Parser(object):
  
     def p_parsed_main_id(self, p):
         '''parsed_main_id :'''
-        self.create_main_function()
-        self.set_function_scope('main')
+        main_scope_id = self.get_main_function_id()
+        self.set_function_scope(main_scope_id)
 
         program_counter = self.get_program_counter()
         quadruple_number = self.pop_jump_stack()
@@ -675,9 +701,15 @@ class Parser(object):
         variable_type = self.get_shared_variable_type()
 
         function_id = self.get_function_scope()
+        global_scope_id = self.get_global_scope_id()
         function_local_variable_counter = self.get_function_local_variable_counter(function_id, variable_type)
+        
+        if function_id == global_scope_id:
+            base_virtual_memory_address = self.get_global_base_virtual_memory_address(variable_type)
+        else:
+            base_virtual_memory_address = self.get_local_base_virtual_memory_address(variable_type)
 
-        variable_virtual_memory_address = function_local_variable_counter + VirtualMemoryAddress.get_local_base_virtual_memory_address(variable_type)
+        variable_virtual_memory_address = function_local_variable_counter + base_virtual_memory_address
         self.increment_function_local_variable_counter(function_id, variable_type)
 
         variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
@@ -760,9 +792,12 @@ class Parser(object):
     def p_parsed_id_variable_access(self, p):
         '''parsed_id_variable_access :'''
         variable_id = p[-1]
-        function_id = self.function_scope
+        function_id = self.get_function_scope()
 
-        variable = self.function_directory.get_function_variable(function_id, variable_id)
+        if self.function_variable_exists(function_id, variable_id):
+            variable = self.get_function_variable(function_id, variable_id)
+        else:
+            variable = self.get_global_variable(variable_id)
 
         self.operand_stack.push(variable)
 

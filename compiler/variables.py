@@ -178,6 +178,10 @@ class VariableTable():
             raise VariableUndefinedException()
 
         return self._table[variable_id]
+
+    
+    def variable_exists(self, variable_id: str) -> bool:
+        return variable_id in self._table
     
 
     def __str__(self) -> str:

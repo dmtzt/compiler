@@ -215,6 +215,41 @@ class ActivationRecordExpansionQuadruple(Quadruple):
 
 
 @dataclass
+class ParameterPassingQuadruple(Quadruple):
+    variable : Variable
+    parameter_number : int
+    operator : Operator = Operator.PARAM
+
+    def get_named_representation(self) -> str:
+        return f'{self.operator.name : <16}{self.variable.get_id() : <10}{" " : <10}{self.parameter_number}'
+
+    
+    def get_intermediate_code_representation(self) -> str:
+        q1 = str(self.operator.value)
+        q2 = str(self.variable.get_virtual_memory_address())
+        q3 = str(self.UNUSED_STATEMENT)
+        q4 = str(self.parameter_number)
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
+
+
+@dataclass
+class StartSubroutineQuadruple(Quadruple):
+    function_id : str
+    operator : Operator = Operator.GOSUB
+
+    def get_named_representation(self) -> str:
+        return f'{self.operator.name : <16}{" " : <10}{" " : <10}{self.function_id}'
+
+    
+    def get_intermediate_code_representation(self) -> str:
+        q1 = str(self.operator.value)
+        q2 = str(self.UNUSED_STATEMENT)
+        q3 = str(self.UNUSED_STATEMENT)
+        q4 = str(self.function_id)
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
+
+
+@dataclass
 class EndFunctionQuadruple(Quadruple):
     operator: Operator = Operator.ENDFUNC
 

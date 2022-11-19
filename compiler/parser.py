@@ -18,9 +18,11 @@ from .quadruples import ConstantStorageQuadruple
 from .quadruples import ConditionalControlTransferQuadruple
 from .quadruples import EndFunctionQuadruple
 from .quadruples import EndProgramQuadruple
+from .quadruples import ParameterPassingQuadruple
 from .quadruples import PrintQuadruple
 from .quadruples import ReadQuadruple
 from .quadruples import RelationalQuadruple
+from .quadruples import StartSubroutineQuadruple
 from .quadruples import Quadruple
 from .quadruples import QuadrupleList
 from .quadruples import UnaryArithmeticQuadruple
@@ -187,9 +189,17 @@ class Parser(object):
         return ReadQuadruple(operator, storage_variable)
 
     
+    def generate_parameter_passing_quadruple(self, variable: Variable, parameter_number: int) -> ParameterPassingQuadruple:
+        return ParameterPassingQuadruple(variable, parameter_number)
+
+    
     def generate_print_quadruple(self, print_param: Variable) -> PrintQuadruple:
         operator = Operator.PRINT
         return PrintQuadruple(operator, print_param)
+
+    
+    def generate_start_subroutine_quadruple(self, function_id: str) -> StartSubroutineQuadruple:
+        return StartSubroutineQuadruple(function_id)
 
     
     def generate_activation_record_expansion_quadruple(self, function_id: str):
@@ -770,6 +780,10 @@ class Parser(object):
         if function_parameter_count != function_number_params:
             raise IncorrectFunctionParameterAmountException()
 
+        start_subroutine_quadruple = self.generate_start_subroutine_quadruple(function_id)
+        self.insert_quadruple(start_subroutine_quadruple)
+        self.increment_program_counter()
+
     
     def p_function_call_2(self, p):
         '''function_call : ID parsed_function_call_id LPAREN RPAREN'''
@@ -816,6 +830,11 @@ class Parser(object):
 
         if signature_function_parameter_type != function_call_parameter_type:
             raise IncorrectFunctionParameterTypeException()
+
+        parameter_passing_quadruple = self.generate_parameter_passing_quadruple(function_call_parameter, function_parameter_count)
+        self.insert_quadruple(parameter_passing_quadruple)
+        self.increment_program_counter()
+
 
     
     def p_print_1(self, p):

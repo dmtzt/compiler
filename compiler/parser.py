@@ -904,20 +904,19 @@ class Parser(object):
         
         self.push_previous_count_jump_stack()
 
-    
+
     def p_parsed_else(self, p):
         '''parsed_else :'''
         quadruple = self.generate_empty_unconditional_control_transfer_quadruple()
         self.insert_quadruple(quadruple)
         self.increment_program_counter()
 
-        #
         quadruple_number = self.pop_jump_stack()
         program_count = self.program_counter
         self.push_previous_count_jump_stack()
         self.fill_control_transfer_quadruple(quadruple_number, program_count)
 
-    
+
     def p_loop_1(self, p):
         '''loop : while'''
 
@@ -925,7 +924,7 @@ class Parser(object):
     def p_loop_2(self, p):
         '''loop : for'''
 
-    
+
     def p_while(self, p):
         '''while : WHILE parsed_while LPAREN expr parsed_while_expr RPAREN instruction_block'''
         fill_quadruple_number = self.pop_jump_stack()
@@ -1256,7 +1255,6 @@ class Parser(object):
         self.increment_program_counter()
 
 
-    # DEFINE return sin variable?
     def p_return_2(self, p):
         '''return : RETURN SEMI'''
         function_id = self.get_function_scope()
@@ -1350,7 +1348,7 @@ class Parser(object):
         '''relational_expr : additive_expr LTHAN_EQUAL parsed_lthan_equal additive_expr'''
         function_id = self.get_function_scope()
         operator = self.operator_stack.top()
-        if operator == Operator.NEQUAL:
+        if operator == Operator.LTHAN_EQUAL:
             right_operand = self.pop_operand_stack()
             left_operand = self.pop_operand_stack()
             self.pop_operator_stack()
@@ -1377,7 +1375,7 @@ class Parser(object):
         '''relational_expr : additive_expr LTHAN parsed_lthan additive_expr'''
         function_id = self.get_function_scope()
         operator = self.operator_stack.top()
-        if operator == Operator.LTHAN_EQUAL:
+        if operator == Operator.LTHAN:
             right_operand = self.pop_operand_stack()
             left_operand = self.pop_operand_stack()
             self.pop_operator_stack()

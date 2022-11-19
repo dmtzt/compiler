@@ -7,6 +7,8 @@ from .functions import Function
 from .functions import FunctionBuilder
 from .functions import FunctionDirector
 from .functions import FunctionDirectory
+from .functions import IncorrectFunctionParameterAmountException
+from .functions import IncorrectFunctionParameterTypeException
 from .functions import VirtualMemoryAddress
 from .functions import FunctionUndefinedException
 from .quadruples import ActivationRecordExpansionQuadruple
@@ -26,6 +28,7 @@ from .quadruples import UnconditionalControlTransferQuadruple
 from .stacks import JumpStack
 from .stacks import OperandStack
 from .stacks import OperatorStack
+from .stacks import FunctionParameterCountStack
 from .variables import Boolean
 from .variables import SemanticTable
 from .variables import Type
@@ -47,10 +50,12 @@ class Parser(object):
         self.semantic_table = SemanticTable()
 
         self.program_counter = None
+        self.function_parameter_counter = None
         self.function_directory = None
         self.jump_stack = None
         self.operator_stack = None
         self.operand_stack = None
+        self.function_parameter_count_stack = None
         self.avail_counter = None
         self.constant_counter = None
         self.quadruple_list = None
@@ -60,10 +65,12 @@ class Parser(object):
     
     def reset(self):
         self.program_counter = 0
+        self.function_parameter_counter = 0
         self.function_directory = FunctionDirectory()
         self.jump_stack = JumpStack()
         self.operator_stack = OperatorStack()
         self.operand_stack = OperandStack()
+        self.function_parameter_count_stack = FunctionParameterCountStack()
         self.avail_counter = defaultdict(int)
         self.constant_counter = defaultdict(int)
         self.quadruple_list = QuadrupleList()
@@ -205,12 +212,16 @@ class Parser(object):
         self.quadruple_list.insert_quadruple(quadruple)
 
     
-    def insert_function_variable(self, function_id: str, variable_id: str, variable: Variable) -> None:
-        self.function_directory.insert_function_variable(function_id, variable_id, variable)
-    
-
     def insert_function_to_directory(self, function_id: str, function: Function) -> None:
         self.function_directory.insert_function(function_id, function)
+
+    
+    def insert_function_variable(self, function_id: str, variable_id: str, variable: Variable) -> None:
+        self.function_directory.insert_function_variable(function_id, variable_id, variable)
+
+    
+    def insert_function_parameter(self, function_id: str, parameter: Variable) -> None:
+        self.function_directory.insert_function_parameter(function_id, parameter)
 
     
     def get_function_variable(self, function_id: str, variable_id: str) -> Variable:
@@ -324,7 +335,7 @@ class Parser(object):
     def increment_program_counter(self) -> None:
         self.program_counter += 1
 
-    
+
     def increment_function_temporal_variable_counter(self, type: Type) -> None:
         self.avail_counter[type] += 1
 
@@ -346,9 +357,29 @@ class Parser(object):
             operator
         )
 
+    
+    def increment_function_parameter_counter(self) -> None:
+        self.function_parameter_counter += 1
+
+    
+    def reset_function_parameter_counter(self) -> None:
+        self.function_parameter_counter = 0
+
 
     def get_program_counter(self) -> int:
         return self.program_counter
+
+    
+    def get_function_parameter_counter(self) -> int:
+        return self.function_parameter_counter
+
+    
+    def get_function_number_parameters(self, function_id: str) -> int:
+        return self.function_directory.get_function_number_parameters(function_id)
+
+    
+    def get_function_parameter(self, function_id: str, number: int) -> Variable:
+        return self.function_directory.get_function_parameter(function_id, number)
 
 
     def set_function_scope(self, function_id: str) -> None:
@@ -399,8 +430,20 @@ class Parser(object):
         return self.function_directory.get_function_pointer_variable_counter(function_id, type)
 
     
-    def increment_function_number_parameters(self, function_id: str) -> None:
-        self.function_directory.increment_function_number_parameters(function_id)
+    def push_count_function_parameter_count_stack(self, function_id: str) -> None:
+        return self.function_parameter_count_stack.push_count(function_id)
+
+
+    def pop_count_function_parameter_count_stack(self) -> tuple[str, int]:
+        return self.function_parameter_count_stack.pop_count()
+
+
+    def get_top_count_function_parameter_count_stack(self) -> tuple[str, int]:
+        return self.function_parameter_count_stack.get_top_count()
+
+    
+    def increment_top_count_function_parameter_count_stack(self) -> None:
+        self.function_parameter_count_stack.increment_top_count()
 
     
     def p_program(self, p):
@@ -538,8 +581,7 @@ class Parser(object):
 
         variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
         self.function_directory.insert_function_variable(function_id, variable_id, variable)
-
-        self.increment_function_number_parameters(function_id)
+        self.function_directory.insert_function_parameter(function_id, variable)
 
     
     def p_entry_point_definition_1(self, p):
@@ -642,7 +684,7 @@ class Parser(object):
 
 
     def p_single_statement_2(self, p):
-        '''single_statement : function_call'''
+        '''single_statement : function_call_stmt'''
 
 
     def p_single_statement_3(self, p):
@@ -716,12 +758,26 @@ class Parser(object):
         '''single_dim_access : LBRACKET expr RBRACKET'''
 
     
+    def p_function_call_stmt(self, p):
+        '''function_call_stmt : function_call SEMI'''
+
+    
     def p_function_call_1(self, p):
-        '''function_call : ID parsed_function_call_id LPAREN function_call_params RPAREN SEMI'''
+        '''function_call : ID parsed_function_call_id LPAREN function_call_params RPAREN'''
+        function_id, function_parameter_count = self.pop_count_function_parameter_count_stack()
+        function_number_params = self.get_function_number_parameters(function_id)
+
+        if function_parameter_count != function_number_params:
+            raise IncorrectFunctionParameterAmountException()
 
     
     def p_function_call_2(self, p):
-        '''function_call : ID parsed_function_call_id LPAREN RPAREN SEMI'''
+        '''function_call : ID parsed_function_call_id LPAREN RPAREN'''
+        function_id, function_parameter_count = self.pop_count_function_parameter_count_stack()
+        function_number_params = self.get_function_number_parameters(function_id)
+
+        if function_parameter_count != function_number_params:
+            raise IncorrectFunctionParameterAmountException()
 
     
     def p_parsed_function_call_id(self, p):
@@ -731,6 +787,8 @@ class Parser(object):
         activation_record_expansion_quadruple = self.generate_activation_record_expansion_quadruple(function_id)
         self.insert_quadruple(activation_record_expansion_quadruple)
         self.increment_program_counter()
+
+        self.push_count_function_parameter_count_stack(function_id)
 
     
     def p_function_call_params_1(self, p):
@@ -743,6 +801,21 @@ class Parser(object):
 
     def p_single_function_call_param(self, p):
         '''single_function_call_param : expr'''
+        self.increment_top_count_function_parameter_count_stack()
+
+        function_id, function_parameter_count = self.get_top_count_function_parameter_count_stack()
+        function_number_params = self.get_function_number_parameters(function_id)
+
+        if function_parameter_count > function_number_params:
+            raise IncorrectFunctionParameterAmountException()
+
+        signature_function_parameter = self.get_function_parameter(function_id, function_parameter_count)
+        signature_function_parameter_type = signature_function_parameter.get_type()
+        function_call_parameter = self.pop_operand_stack()
+        function_call_parameter_type = function_call_parameter.get_type()
+
+        if signature_function_parameter_type != function_call_parameter_type:
+            raise IncorrectFunctionParameterTypeException()
 
     
     def p_print_1(self, p):

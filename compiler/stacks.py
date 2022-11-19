@@ -35,7 +35,6 @@ class OperatorStack():
 
     
     def push(self, operator: Operator) -> None:
-        print(self.__str__())
         self._stack.append(operator)
 
     
@@ -70,6 +69,41 @@ class JumpStack():
     
     def __str__(self) -> str:
         s = 'JumpStack(stack='
+
+        for item in self._stack:
+            s += f'{item}'
+
+        s += ')'
+
+        return s
+
+
+class FunctionParameterCountStack():
+    def __init__(self) -> None:
+        self._stack : list[tuple[str, int]] = list()
+
+    
+    def push_count(self, function_id: str) -> None:
+        self._stack.append((function_id, 0))
+
+    
+    def pop_count(self) -> tuple[str, int]:
+        return self._stack.pop()
+
+    
+    def get_top_count(self) -> tuple[str, int]:
+        return self._stack[-1]
+
+    
+    def increment_top_count(self) -> None:
+        function_id, count = self._stack[-1]
+        count +=1
+
+        self._stack[-1] = (function_id, count)
+
+    
+    def __str__(self) -> str:
+        s = 'FunctionParameterStack(stack='
 
         for item in self._stack:
             s += f'{item}'

@@ -22,7 +22,7 @@ class Lexer(object):
         "ne": "NOT",
         "reel": "REAL",
         "redonu": "RETURN",
-        "skribi": "PRINT",
+        "presi": "PRINT",
         "se": "IF",
         "tutmondaj": "GLOBAL",
         "variabloj": "VARIABLES", 

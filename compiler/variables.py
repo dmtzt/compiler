@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import deque
 from dataclasses import dataclass
 from enum import Enum
 
@@ -161,7 +162,7 @@ class VariableBuilder(Builder):
 
 class VariableTable():
     def __init__(self) -> None:
-        self._table: dict[str, Variable] = {}
+        self._table: dict[str, Variable] = dict()
 
     
     def insert_variable(self, variable_id: str, variable: Variable) -> None:
@@ -183,6 +184,34 @@ class VariableTable():
 
         for id in self._table:
             s += f'\t\t{id}: {self._table[id].__str__()},\n'
+
+        s += ']'
+
+        return s
+
+
+class ParameterTable:
+    def __init__(self) -> None:
+        self._table: deque[Variable] = deque()
+
+
+    def get_number_parameters(self) -> int:
+        return len(self._table)
+
+    
+    def insert_parameter(self, parameter: Variable) -> None:
+        self._table.append(parameter)
+
+    
+    def get_parameter(self, number: int) -> Variable:
+        return self._table[number - 1]
+
+    
+    def __str__(self) -> str:
+        s = "ParameterTable[\n"
+
+        for param in self._table:
+            s += f'\t\t{param.__str__()},\n'
 
         s += ']'
 

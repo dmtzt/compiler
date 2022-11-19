@@ -18,6 +18,10 @@ class Quadruple(ABC):
     def get_intermediate_code_representation(self) -> str:
         pass
 
+    
+    def _generate_intermediate_code_representation(self, q1: str, q2: str, q3: str, q4: str) -> str:
+        return f'{q1}{" "}{q2}{" "}{q3}{" "}{q4}'
+
 
 class ControlTransferQuadruple(Quadruple):
     @abstractmethod
@@ -33,11 +37,15 @@ class ArithmeticQuadruple(Quadruple):
     temporal_storage_variable: Variable
     
     def get_named_representation(self) -> str:
-        return f'{self.operator.name : <16}{self.left_operand.get_id() : <10}{self.right_operand.get_id() : <10}{self.temporal_storage_variable.get_id()}'
+        return f'{self.operator.name : <16} {self.left_operand.get_id() : <10} {self.right_operand.get_id() : <10} {self.temporal_storage_variable.get_id()}'
 
     
     def get_intermediate_code_representation(self) -> str:
-        return f'{self.operator.value : <3}{self.left_operand.get_virtual_memory_address() : <6}{self.right_operand.get_virtual_memory_address() : <6}{self.temporal_storage_variable.get_virtual_memory_address()}'
+        q1 = str(self.operator.value)
+        q2 = str(self.left_operand.get_virtual_memory_address())
+        q3 = str(self.right_operand.get_virtual_memory_address())
+        q4 = str(self.temporal_storage_variable.get_virtual_memory_address())
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 @dataclass
@@ -47,11 +55,15 @@ class UnaryArithmeticQuadruple(Quadruple):
     temporal_storage_variable: Variable
     
     def get_named_representation(self) -> str:
-        return f'{self.operator.name : <16}{self.value_variable.get_id() : <10}{" " : <10}{self.temporal_storage_variable.get_id()}'
+        return f'{self.operator.name : <16} {self.value_variable.get_id() : <10} {" " : <10} {self.temporal_storage_variable.get_id()}'
 
     
     def get_intermediate_code_representation(self) -> str:
-        return f'{self.operator.value : <3}{self.value_variable.get_virtual_memory_address() : <6}{self.UNUSED_STATEMENT : <6}{self.temporal_storage_variable.get_virtual_memory_address()}'
+        q1 = str(self.operator.value)
+        q2 = str(self.value_variable.get_virtual_memory_address())
+        q3 = str(self.UNUSED_STATEMENT)
+        q4 = str(self.temporal_storage_variable.get_virtual_memory_address())
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 @dataclass
@@ -62,11 +74,15 @@ class RelationalQuadruple(Quadruple):
     temporal_storage_variable: Variable
     
     def get_named_representation(self) -> str:
-        return f'{self.operator.name : <16}{self.left_operand.get_id() : <10}{self.right_operand.get_id() : <10}{self.temporal_storage_variable.get_id()}'
+        return f'{self.operator.name : <16} {self.left_operand.get_id() : <10} {self.right_operand.get_id() : <10} {self.temporal_storage_variable.get_id()}'
 
     
     def get_intermediate_code_representation(self) -> str:
-        return f'{self.operator.value : <3}{self.left_operand.get_virtual_memory_address() : <6}{self.right_operand.get_virtual_memory_address() : <6}{self.temporal_storage_variable.get_virtual_memory_address()}'
+        q1 = str(self.operator.value)
+        q2 = str(self.left_operand.get_virtual_memory_address())
+        q3 = str(self.right_operand.get_virtual_memory_address())
+        q4 = str(self.temporal_storage_variable.get_virtual_memory_address())
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 @dataclass
@@ -76,11 +92,14 @@ class AssignmentQuadruple(Quadruple):
     storage_variable: Variable
     
     def get_named_representation(self) -> str:
-        return f'{self.operator.name : <16}{self.value_variable.get_id() : <10}{" " : <10}{self.storage_variable.get_id()}'
+        return f'{self.operator.name : <16} {self.value_variable.get_id() : <10} {" " : <10} {self.storage_variable.get_id()}'
 
-    
     def get_intermediate_code_representation(self) -> str:
-        return f'{self.operator.value : <3}{self.value_variable.get_virtual_memory_address() : <6}{self.UNUSED_STATEMENT : <6}{self.storage_variable.get_virtual_memory_address()}'
+        q1 = str(self.operator.value)
+        q2 = str(self.value_variable.get_virtual_memory_address())
+        q3 = str(self.UNUSED_STATEMENT)
+        q4 = str(self.storage_variable.get_virtual_memory_address())
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 @dataclass
@@ -98,7 +117,11 @@ class ConditionalControlTransferQuadruple(ControlTransferQuadruple):
 
     
     def get_intermediate_code_representation(self) -> str:
-        return f'{self.operator.value : <3}{self.boolean_variable.get_virtual_memory_address() : <6}{self.UNUSED_STATEMENT : <6}{self.program_count}'
+        q1 = str(self.operator.value)
+        q2 = str(self.boolean_variable.get_virtual_memory_address())
+        q3 = str(self.UNUSED_STATEMENT)
+        q4 = str(self.program_count)
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 @dataclass
@@ -115,7 +138,11 @@ class UnconditionalControlTransferQuadruple(ControlTransferQuadruple):
 
     
     def get_intermediate_code_representation(self) -> str:
-        return f'{self.operator.value : <3}{self.UNUSED_STATEMENT : <6}{self.UNUSED_STATEMENT : <6}{self.program_count}'
+        q1 = str(self.operator.value)
+        q2 = str(self.UNUSED_STATEMENT)
+        q3 = str(self.UNUSED_STATEMENT)
+        q4 = str(self.program_count)
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 @dataclass
@@ -129,7 +156,11 @@ class ConstantStorageQuadruple(Quadruple):
 
     
     def get_intermediate_code_representation(self) -> str:
-        return f'{self.operator.value : <3}{self.constant_value : <6}{self.UNUSED_STATEMENT : <6}{self.storage_variable.get_virtual_memory_address()}'
+        q1 = str(self.operator.value)
+        q2 = str(self.constant_value)
+        q3 = str(self.UNUSED_STATEMENT)
+        q4 = str(self.storage_variable.get_virtual_memory_address())
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 @dataclass
@@ -140,9 +171,13 @@ class ReadQuadruple(Quadruple):
     def get_named_representation(self) -> str:
         return f'{self.operator.name : <16}{" " : <10}{" " : <10}{self.storage_variable.get_id()}'
 
-    
+
     def get_intermediate_code_representation(self) -> str:
-        return f'{self.operator.value : <3}{self.UNUSED_STATEMENT : <6}{self.UNUSED_STATEMENT : <6}{self.storage_variable.get_virtual_memory_address()}'
+        q1 = str(self.operator.value)
+        q2 = str(self.UNUSED_STATEMENT)
+        q3 = str(self.UNUSED_STATEMENT)
+        q4 = str(self.storage_variable.get_virtual_memory_address())
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 @dataclass
@@ -155,7 +190,11 @@ class PrintQuadruple(Quadruple):
 
     
     def get_intermediate_code_representation(self) -> str:
-        return f'{self.operator.value : <3}{self.UNUSED_STATEMENT : <6}{self.UNUSED_STATEMENT : <6}{self.printed_variable.get_virtual_memory_address()}'
+        q1 = str(self.operator.value)
+        q2 = str(self.UNUSED_STATEMENT)
+        q3 = str(self.UNUSED_STATEMENT)
+        q4 = str(self.printed_variable.get_virtual_memory_address())
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 @dataclass
@@ -168,7 +207,11 @@ class ActivationRecordExpansionQuadruple(Quadruple):
 
     
     def get_intermediate_code_representation(self) -> str:
-        return f'{self.operator.value : <3}{self.UNUSED_STATEMENT : <6}{self.UNUSED_STATEMENT : <6}{self.function_id}'
+        q1 = str(self.operator.value)
+        q2 = str(self.UNUSED_STATEMENT)
+        q3 = str(self.UNUSED_STATEMENT)
+        q4 = str(self.function_id)
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 @dataclass

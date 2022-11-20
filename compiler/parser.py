@@ -883,6 +883,10 @@ class Parser(object):
         if function_parameter_count != function_number_params:
             raise IncorrectFunctionParameterAmountException()
 
+        start_subroutine_quadruple = self.generate_start_subroutine_quadruple(function_id)
+        self.insert_quadruple(start_subroutine_quadruple)
+        self.increment_program_counter()
+
     
     def p_parsed_function_call_id(self, p):
         '''parsed_function_call_id :'''

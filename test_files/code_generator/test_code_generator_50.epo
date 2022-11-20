@@ -1,0 +1,15 @@
+funkcio malplena a()
+{
+    redonu;
+}
+
+funkcio ent b()
+{
+    redonu 1;
+}
+
+komenco()
+{
+    a();
+    b();
+}

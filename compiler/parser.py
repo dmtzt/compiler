@@ -261,6 +261,29 @@ class Parser(object):
         return self.function_directory.get_global_variable(variable_id)
 
     
+    def create_global_function_return_variable(self, function_id: str, variable_type: int, call_number: int) -> Variable:
+        pass
+        # variable_id = p[1]
+        # variable_type = self.get_shared_variable_type()
+
+        # function_id = self.get_function_scope()
+        # global_scope_id = self.get_global_scope_id()
+        # function_local_variable_counter = self.get_function_local_variable_counter(function_id, variable_type)
+        
+        # if function_id == global_scope_id:
+        #     base_virtual_memory_address = self.get_global_base_virtual_memory_address(variable_type)
+        # else:
+        #     base_virtual_memory_address = self.get_local_base_virtual_memory_address(variable_type)
+
+        # variable_virtual_memory_address = function_local_variable_counter + base_virtual_memory_address
+        # self.increment_function_local_variable_counter(function_id, variable_type)
+
+        # variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
+        # self.function_directory.insert_function_variable(function_id, variable_id, variable)
+
+
+        # variable_id = self.get_global_function_return_variable_name(function_id, call_number)
+        # global_variable_counter = self.get_global_variable_counter(variable_type)
 
     
     def get_global_function_return_variable_name(self, function_id: str, call_number: int) -> str:

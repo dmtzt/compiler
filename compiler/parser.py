@@ -563,7 +563,7 @@ class Parser(object):
         self.insert_quadruple(end_program_quadruple)
         self.increment_program_counter()
 
-        print(self.function_directory.__str__())
+        # print(self.function_directory.__str__())
 
 
     def p_init(self, p):
@@ -578,14 +578,14 @@ class Parser(object):
     def p_start_1(self, p):
         '''start : global_variables_declaration functions_definition entry_point_definition'''
 
-    
+
     def p_start_2(self, p):
         '''start : global_variables_declaration entry_point_definition'''
 
-    
+
     def p_start_3(self, p):
         '''start : functions_definition entry_point_definition'''
-        
+
 
     def p_start_4(self, p):
         '''start : entry_point_definition'''
@@ -594,16 +594,19 @@ class Parser(object):
     def p_global_variables_declaration(self, p):
         '''global_variables_declaration : GLOBAL parsed_global_scope variables_declaration'''
 
-    
+
     def p_parsed_global_scope(self, p):
         '''parsed_global_scope :'''
         global_scope_id = self.get_global_scope_id()
         self.set_function_scope(global_scope_id)
 
-    
+
     def p_functions_definition_1(self, p):
         '''functions_definition : functions_definition single_function_definition'''
-    
+        end_function_quadruple = self.generate_end_function_quadruple()
+        self.insert_quadruple(end_function_quadruple)
+        self.increment_program_counter()
+
 
     def p_functions_definition_2(self, p):
         '''functions_definition : single_function_definition'''
@@ -611,7 +614,7 @@ class Parser(object):
         self.insert_quadruple(end_function_quadruple)
         self.increment_program_counter()
 
-    
+
     def p_single_function_definition_primitive_type_1(self, p):
         '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
 

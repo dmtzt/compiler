@@ -197,8 +197,8 @@ class Parser(object):
         return PrintQuadruple(operator, print_param)
 
     
-    def generate_return_value_quadruple(self, return_variable: Variable) -> ReturnValueQuadruple:
-        return ReturnValueQuadruple(return_variable)
+    def generate_return_value_quadruple(self, return_variable: Variable, function_global_variable: Variable) -> ReturnValueQuadruple:
+        return ReturnValueQuadruple(return_variable, function_global_variable)
 
     
     def generate_return_void_quadruple(self) -> ReturnVoidQuadruple:
@@ -261,7 +261,7 @@ class Parser(object):
         return self.function_directory.get_global_variable(variable_id)
 
     
-    def create_global_function_return_variable(self, function_id: str, function_return_type: Type) -> Variable:
+    def create_global_function_variable(self, function_id: str, function_return_type: Type) -> Variable:
         variable_virtual_memory_address = self.get_global_base_virtual_memory_address(function_return_type)
         variable = self.build_variable(function_id, function_return_type, variable_virtual_memory_address)
         
@@ -637,8 +637,8 @@ class Parser(object):
         self.set_function_scope(function_id)
 
         function_return_type = function.get_return_type()
-        global_function_return_variable = self.create_global_function_return_variable(function_id, function_return_type)
-        self.insert_global_variable(function_id, global_function_return_variable)
+        global_function_variable = self.create_global_function_variable(function_id, function_return_type)
+        self.insert_global_variable(function_id, global_function_variable)
 
 
     def p_parsed_void_function_id(self, p):
@@ -1349,7 +1349,9 @@ class Parser(object):
         if return_variable_type != function_return_type:
             raise IncorrectFunctionReturnTypeException()
 
-        return_value_quadruple = self.generate_return_value_quadruple(return_variable)
+        function_global_variable = self.get_global_variable(function_id)
+
+        return_value_quadruple = self.generate_return_value_quadruple(return_variable, function_global_variable)
         self.insert_quadruple(return_value_quadruple)
         self.increment_program_counter()
 

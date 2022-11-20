@@ -235,17 +235,18 @@ class ParameterPassingQuadruple(Quadruple):
 @dataclass
 class ReturnValueQuadruple(Quadruple):
     return_variable : Variable
+    function_global_variable : Variable
     operator : Operator = Operator.RETURN_VALUE
 
     def get_named_representation(self) -> str:
-        return f'{self.operator.name : <16}{" " : <10}{" " : <10}{self.return_variable.get_id()}'
+        return f'{self.operator.name : <16}{self.return_variable.get_id() : <10}{" " : <10}{self.function_global_variable.get_id()}'
 
     
     def get_intermediate_code_representation(self) -> str:
         q1 = str(self.operator.value)
-        q2 = str(self.UNUSED_STATEMENT)
+        q2 = str(self.return_variable.get_id())
         q3 = str(self.UNUSED_STATEMENT)
-        q4 = str(self.return_variable.get_id())
+        q4 = str(self.function_global_variable.get_id())
         return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 

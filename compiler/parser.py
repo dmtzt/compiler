@@ -261,34 +261,11 @@ class Parser(object):
         return self.function_directory.get_global_variable(variable_id)
 
     
-    def create_global_function_return_variable(self, function_id: str, variable_type: int, call_number: int) -> Variable:
-        pass
-        # variable_id = p[1]
-        # variable_type = self.get_shared_variable_type()
-
-        # function_id = self.get_function_scope()
-        # global_scope_id = self.get_global_scope_id()
-        # function_local_variable_counter = self.get_function_local_variable_counter(function_id, variable_type)
+    def create_global_function_return_variable(self, function_id: str, function_return_type: Type) -> Variable:
+        variable_virtual_memory_address = self.get_global_base_virtual_memory_address(function_return_type)
+        variable = self.build_variable(function_id, function_return_type, variable_virtual_memory_address)
         
-        # if function_id == global_scope_id:
-        #     base_virtual_memory_address = self.get_global_base_virtual_memory_address(variable_type)
-        # else:
-        #     base_virtual_memory_address = self.get_local_base_virtual_memory_address(variable_type)
-
-        # variable_virtual_memory_address = function_local_variable_counter + base_virtual_memory_address
-        # self.increment_function_local_variable_counter(function_id, variable_type)
-
-        # variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
-        # self.function_directory.insert_function_variable(function_id, variable_id, variable)
-
-
-        # variable_id = self.get_global_function_return_variable_name(function_id, call_number)
-        # global_variable_counter = self.get_global_variable_counter(variable_type)
-
-    
-    def get_global_function_return_variable_name(self, function_id: str, call_number: int) -> str:
-        return f'{function_id} {call_number}'
-
+        return variable
     
         
     def increment_global_local_variable_counter(self, type: Type) -> None:
@@ -563,7 +540,7 @@ class Parser(object):
         self.insert_quadruple(end_program_quadruple)
         self.increment_program_counter()
 
-        # print(self.function_directory.__str__())
+        print(self.function_directory.__str__())
 
 
     def p_init(self, p):
@@ -616,39 +593,39 @@ class Parser(object):
 
 
     def p_single_function_definition_primitive_type_1(self, p):
-        '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
+        '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_type_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
 
 
     def p_single_function_definition_primitive_type_2(self, p):
-        '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN function_definition_params RPAREN instruction_block'''
+        '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_type_function_id LPAREN function_definition_params RPAREN instruction_block'''
 
     
     def p_single_function_definition_primitive_type_3(self, p):
-        '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN RPAREN local_variables_declaration instruction_block'''
+        '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_type_function_id LPAREN RPAREN local_variables_declaration instruction_block'''
 
     
     def p_single_function_definition_primitive_type_4(self, p):
-        '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_function_id LPAREN RPAREN instruction_block'''
+        '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_type_function_id LPAREN RPAREN instruction_block'''
 
 
     def p_single_function_definition_void_type_1(self, p):
-        '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
+        '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_void_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
 
 
     def p_single_function_definition_void_type_2(self, p):
-        '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN function_definition_params RPAREN instruction_block'''
+        '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_void_function_id LPAREN function_definition_params RPAREN instruction_block'''
 
 
     def p_single_function_definition_void_type_3(self, p):
-        '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN RPAREN local_variables_declaration instruction_block'''
+        '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_void_function_id LPAREN RPAREN local_variables_declaration instruction_block'''
 
     
     def p_single_function_definition_void_type_4(self, p):
-        '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_function_id LPAREN RPAREN instruction_block'''
+        '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_void_function_id LPAREN RPAREN instruction_block'''
 
 
-    def p_parsed_function_id(self, p):
-        '''parsed_function_id :'''
+    def p_parsed_type_function_id(self, p):
+        '''parsed_type_function_id :'''
         function_id = p[-1]
         function_start_quadruple_number = self.get_program_counter()
         
@@ -656,7 +633,24 @@ class Parser(object):
         self.function_builder.set_start_quadruple_number(function_start_quadruple_number)
         function = self.function_builder.build()
 
-        self.function_directory.insert_function(function_id, function)
+        self.insert_function_to_directory(function_id, function)
+        self.set_function_scope(function_id)
+
+        function_return_type = function.get_return_type()
+        global_function_return_variable = self.create_global_function_return_variable(function_id, function_return_type)
+        self.insert_global_variable(function_id, global_function_return_variable)
+
+
+    def p_parsed_void_function_id(self, p):
+        '''parsed_void_function_id :'''
+        function_id = p[-1]
+        function_start_quadruple_number = self.get_program_counter()
+        
+        self.function_builder.set_id(function_id)
+        self.function_builder.set_start_quadruple_number(function_start_quadruple_number)
+        function = self.function_builder.build()
+
+        self.insert_function_to_directory(function_id, function)
         self.set_function_scope(function_id)
 
 

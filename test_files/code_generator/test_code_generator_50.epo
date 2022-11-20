@@ -8,6 +8,11 @@ funkcio ent b()
     redonu 1;
 }
 
+funkcio reel c()
+{
+    redonu 1.2;
+}
+
 komenco()
 {
     a();

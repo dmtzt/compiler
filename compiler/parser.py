@@ -541,6 +541,7 @@ class Parser(object):
         self.increment_program_counter()
 
         print(self.function_directory.__str__())
+        print(self.operand_stack.__str__())
 
 
     def p_init(self, p):
@@ -884,28 +885,56 @@ class Parser(object):
     
     def p_function_call_1(self, p):
         '''function_call : ID parsed_function_call_id LPAREN function_call_params RPAREN'''
-        function_id, function_parameter_count = self.pop_count_function_parameter_count_stack()
-        function_number_params = self.get_function_number_parameters(function_id)
+        function_call_id, function_call_parameter_count = self.pop_count_function_parameter_count_stack()
+        function_call_number_params = self.get_function_number_parameters(function_call_id)
+        function_call_return_type = self.get_function_return_type(function_call_id)
 
-        if function_parameter_count != function_number_params:
+        if function_call_parameter_count != function_call_number_params:
             raise IncorrectFunctionParameterAmountException()
 
-        start_subroutine_quadruple = self.generate_start_subroutine_quadruple(function_id)
+        start_subroutine_quadruple = self.generate_start_subroutine_quadruple(function_call_id)
         self.insert_quadruple(start_subroutine_quadruple)
         self.increment_program_counter()
+
+        if function_call_return_type != Type.VOID:
+            function_scope = self.get_function_scope()
+
+            global_function_variable = self.get_global_variable(function_call_id)
+            temporal_function_return_variable = self.create_function_temporal_variable(function_scope, function_call_return_type)
+            self.increment_function_temporal_variable_counter(function_scope, function_call_return_type)
+            
+            assignment_quadruple = self.generate_assignment_quadruple(global_function_variable, temporal_function_return_variable)
+            self.insert_quadruple(assignment_quadruple)
+            self.increment_program_counter()
+
+            self.push_operand_stack(temporal_function_return_variable)
 
     
     def p_function_call_2(self, p):
         '''function_call : ID parsed_function_call_id LPAREN RPAREN'''
-        function_id, function_parameter_count = self.pop_count_function_parameter_count_stack()
-        function_number_params = self.get_function_number_parameters(function_id)
+        function_call_id, function_call_parameter_count = self.pop_count_function_parameter_count_stack()
+        function_call_number_params = self.get_function_number_parameters(function_call_id)
+        function_call_return_type = self.get_function_return_type(function_call_id)
 
-        if function_parameter_count != function_number_params:
+        if function_call_parameter_count != function_call_number_params:
             raise IncorrectFunctionParameterAmountException()
 
-        start_subroutine_quadruple = self.generate_start_subroutine_quadruple(function_id)
+        start_subroutine_quadruple = self.generate_start_subroutine_quadruple(function_call_id)
         self.insert_quadruple(start_subroutine_quadruple)
         self.increment_program_counter()
+
+        if function_call_return_type != Type.VOID:
+            function_scope = self.get_function_scope()
+
+            global_function_variable = self.get_global_variable(function_call_id)
+            temporal_function_return_variable = self.create_function_temporal_variable(function_scope, function_call_return_type)
+            self.increment_function_temporal_variable_counter(function_scope, function_call_return_type)
+            
+            assignment_quadruple = self.generate_assignment_quadruple(global_function_variable, temporal_function_return_variable)
+            self.insert_quadruple(assignment_quadruple)
+            self.increment_program_counter()
+
+            self.push_operand_stack(temporal_function_return_variable)
 
     
     def p_parsed_function_call_id(self, p):

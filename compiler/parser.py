@@ -61,8 +61,6 @@ class Parser(object):
         self.operator_stack = None
         self.operand_stack = None
         self.function_parameter_count_stack = None
-        self.avail_counter = None
-        self.constant_counter = None
         self.quadruple_list = None
 
         self.function_director.builder = self.function_builder
@@ -76,8 +74,6 @@ class Parser(object):
         self.operator_stack = OperatorStack()
         self.operand_stack = OperandStack()
         self.function_parameter_count_stack = FunctionParameterCountStack()
-        self.avail_counter = defaultdict(int)
-        self.constant_counter = defaultdict(int)
         self.quadruple_list = QuadrupleList()
 
         self.function_builder.reset()
@@ -388,14 +384,6 @@ class Parser(object):
     def increment_program_counter(self) -> None:
         self.program_counter += 1
 
-
-    def increment_function_temporal_variable_counter(self, type: Type) -> None:
-        self.avail_counter[type] += 1
-
-    
-    def increment_function_constant_variable_counter(self, type: Type) -> None:
-        self.constant_counter[type] += 1
-
     
     def get_operation_result_type(
         self,
@@ -481,6 +469,10 @@ class Parser(object):
     
     def get_function_pointer_variable_counter(self, function_id: str, type: Type) -> int:
         return self.function_directory.get_function_pointer_variable_counter(function_id, type)
+
+    
+    def get_global_variable_counter(variable_type: Type) -> int:
+        pass
 
     
     def push_count_function_parameter_count_stack(self, function_id: str) -> None:

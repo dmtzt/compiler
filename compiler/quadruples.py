@@ -235,7 +235,7 @@ class ParameterPassingQuadruple(Quadruple):
 @dataclass
 class ReturnValueQuadruple(Quadruple):
     return_variable : Variable
-    operator : Operator = Operator.RETURN
+    operator : Operator = Operator.RETURN_VALUE
 
     def get_named_representation(self) -> str:
         return f'{self.operator.name : <16}{" " : <10}{" " : <10}{self.return_variable.get_id()}'
@@ -251,10 +251,10 @@ class ReturnValueQuadruple(Quadruple):
 
 @dataclass
 class ReturnVoidQuadruple(Quadruple):
-    operator : Operator = Operator.RETURN
+    operator : Operator = Operator.RETURN_VOID
 
     def get_named_representation(self) -> str:
-        return f'{self.operator.name : <16}'
+        return f'{self.operator.name}'
 
     
     def get_intermediate_code_representation(self) -> str:

@@ -49,10 +49,11 @@ class Operator(Enum):
 
     ERA = 24
     PARAM = 25
-    RETURN = 26
-    ENDFUNC = 27
+    RETURN_VALUE = 26
+    RETURN_VOID = 27
+    ENDFUNC = 28
 
-    END = 28
+    END = 29
 
     @classmethod
     def assignment_operator(cls):
@@ -161,7 +162,7 @@ class VariableBuilder(Builder):
         self.__variable.set_virtual_memory_address(virtual_memory_address)
 
 
-class VariableTable():
+class VariableTable:
     def __init__(self) -> None:
         self._table: dict[str, Variable] = dict()
 

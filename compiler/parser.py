@@ -253,8 +253,51 @@ class Parser(object):
         return self.function_directory.get_function_return_type(function_id)
 
     
+    def insert_global_variable(self, variable_id: str, variable: Variable) -> None:
+        self.function_directory.insert_global_variable(variable_id, variable)
+
+    
     def get_global_variable(self, variable_id: str) -> Variable:
         return self.function_directory.get_global_variable(variable_id)
+
+    
+
+    
+    def get_global_function_return_variable_name(self, function_id: str, call_number: int) -> str:
+        return f'{function_id} {call_number}'
+
+    
+        
+    def increment_global_local_variable_counter(self, type: Type) -> None:
+        self.function_directory.increment_global_local_variable_counter(type)
+
+    
+    def increment_global_constant_variable_counter(self, type: Type) -> None:
+        self.function_directory.increment_global_constant_variable_counter(type)
+
+    
+    def increment_global_temporal_variable_counter(self, type: Type) -> None:
+        self.function_directory.increment_global_temporal_variable_counter(type)
+
+    
+    def increment_global_pointer_variable_counter(self, type: Type) -> None:
+        self.function_directory.increment_global_pointer_variable_counter(type)
+
+    
+    def get_global_local_variable_counter(self, type: Type) -> int:
+        return self.function_directory.get_global_local_variable_counter(type)
+
+
+    def get_global_constant_variable_counter(self, type: Type) -> int:
+        return self.function_directory.get_global_constant_variable_counter(type)
+
+    
+    def get_global_temporal_variable_counter(self, type: Type) -> int:
+        return self.function_directory.get_global_temporal_variable_counter(type)
+
+    
+    def get_global_pointer_variable_counter(self, type: Type) -> int:
+        return self.function_directory.get_global_pointer_variable_counter(type)
 
     
     def fill_control_transfer_quadruple(self, quadruple_number: int, program_count: int) -> None:
@@ -694,18 +737,23 @@ class Parser(object):
 
         function_id = self.get_function_scope()
         global_scope_id = self.get_global_scope_id()
-        function_local_variable_counter = self.get_function_local_variable_counter(function_id, variable_type)
-        
-        if function_id == global_scope_id:
+
+        if function_id == global_scope_id:    
             base_virtual_memory_address = self.get_global_base_virtual_memory_address(variable_type)
+            local_variable_counter = self.get_global_local_variable_counter(variable_type)
+            variable_virtual_memory_address = base_virtual_memory_address + local_variable_counter
+
+            variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
+            self.insert_global_variable(variable_id, variable)
+            self.increment_global_local_variable_counter(variable_type)
         else:
             base_virtual_memory_address = self.get_local_base_virtual_memory_address(variable_type)
+            local_variable_counter = self.get_function_local_variable_counter(function_id, variable_type)
+            variable_virtual_memory_address = base_virtual_memory_address + local_variable_counter
 
-        variable_virtual_memory_address = function_local_variable_counter + base_virtual_memory_address
-        self.increment_function_local_variable_counter(function_id, variable_type)
-
-        variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
-        self.function_directory.insert_function_variable(function_id, variable_id, variable)
+            variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
+            self.insert_function_variable(function_id, variable_id, variable)
+            self.increment_function_local_variable_counter(function_id, variable_type)
 
 
     def p_dim_definition(self, p):

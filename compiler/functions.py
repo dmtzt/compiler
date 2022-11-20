@@ -248,6 +248,10 @@ class FunctionDirectory():
         self._directory[id] = function
 
 
+    def insert_global_variable(self, variable_id: str, variable: Variable) -> None:
+        self._directory[self.GLOBAL_SCOPE_ID].insert_variable(variable_id, variable)
+
+
     def get_global_variable(self, variable_id: str) -> Variable:
         return self._directory[self.GLOBAL_SCOPE_ID].get_variable(variable_id)
 
@@ -300,6 +304,54 @@ class FunctionDirectory():
     
     def variable_exists(self, function_id: str, variable_id: str) -> bool:
         return self._directory[function_id].variable_exists(variable_id)
+
+    
+    def increment_global_local_variable_counter(self, type: Type) -> None:
+        self._directory[self.GLOBAL_SCOPE_ID].increment_local_counter(type)
+
+
+    def increment_global_constant_variable_counter(self, type: Type) -> None:
+        self._directory[self.GLOBAL_SCOPE_ID].increment_constant_counter(type)
+
+
+    def increment_global_temporal_variable_counter(self, type: Type) -> None:
+        self._directory[self.GLOBAL_SCOPE_ID].increment_temporal_counter(type)
+
+    
+    def increment_global_pointer_variable_counter(self, type: Type) -> None:
+        self._directory[self.GLOBAL_SCOPE_ID].increment_pointer_counter(type)
+
+
+    def get_global_local_variable_counter(self, type: Type) -> int:
+        return self._directory[self.GLOBAL_SCOPE_ID].get_local_counter(type)
+
+
+    def get_global_constant_variable_counter(self, type: Type) -> int:
+        return self._directory[self.GLOBAL_SCOPE_ID].get_constant_counter(type)
+
+    
+    def get_global_temporal_variable_counter(self, type: Type) -> int:
+        return self._directory[self.GLOBAL_SCOPE_ID].get_temporal_counter(type)
+
+    
+    def get_global_pointer_variable_counter(self, type: Type) -> int:
+        return self._directory[self.GLOBAL_SCOPE_ID].get_pointer_counter(type)
+
+
+    def get_function_local_variable_counter(self, function_id: str, type: Type) -> int:
+        return self._directory[function_id].get_local_counter(type)
+
+
+    def get_function_constant_variable_counter(self, function_id: str, type: Type) -> int:
+        return self._directory[function_id].get_constant_counter(type)
+
+    
+    def get_function_temporal_variable_counter(self, function_id: str, type: Type) -> int:
+        return self._directory[function_id].get_temporal_counter(type)
+
+    
+    def get_function_pointer_variable_counter(self, function_id: str, type: Type) -> int:
+        return self._directory[function_id].get_pointer_counter(type)
 
     
     def increment_function_local_variable_counter(self, function_id: str, type: Type) -> None:

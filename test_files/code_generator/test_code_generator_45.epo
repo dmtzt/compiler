@@ -1,0 +1,9 @@
+funkcio malplena foo()
+{
+    redonu;
+}
+
+komenco()
+{
+    foo();
+}

@@ -1,0 +1,9 @@
+funkcio ent baz(ent a, reel b, kar c, bul d)
+{
+
+}
+
+komenco()
+{
+    baz(1, 2.2, 'a', vera);
+}

@@ -1,0 +1,14 @@
+funkcio ent a()
+{
+    redonu 1;
+}
+
+komenco()
+lokaj variabloj:
+    ent i, j, k;
+{
+    a();
+    i = j + k;
+    a();
+    i = a();
+}

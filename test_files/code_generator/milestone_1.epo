@@ -1,0 +1,15 @@
+funkcio ent suma(ent a, ent b)
+{
+    redonu a + b;
+}
+
+komenco()
+lokaj variabloj:
+    ent i, j;
+{
+    i = 1 + 2;
+    dum (i < j)
+    {
+        suma(i, j);
+    }
+}

@@ -1,0 +1,19 @@
+funkcio malplena foo(ent i, ent j)
+{
+
+}
+
+funkcio ent bar()
+{
+
+}
+
+funkcio ent baz()
+{
+
+}
+
+komenco()
+{
+    foo(bar(i ,j), baz(x))
+}

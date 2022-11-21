@@ -1,0 +1,11 @@
+funkcio ent a()
+{
+    redonu 1;
+}
+
+komenco()
+lokaj variabloj:
+    ent i;
+{
+    i = a();
+}

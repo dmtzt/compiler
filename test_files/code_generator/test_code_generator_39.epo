@@ -1,0 +1,19 @@
+funkcio ent foo()
+{
+
+}
+
+funkcio ent bar()
+{
+
+}
+
+funkcio ent baz(ent a)
+{
+
+}
+
+komenco()
+{
+    baz(foo(), bar());
+}

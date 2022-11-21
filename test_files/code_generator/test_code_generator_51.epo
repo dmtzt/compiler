@@ -1,0 +1,17 @@
+funkcio malplena a()
+{
+    redonu;
+}
+
+funkcio ent b()
+{
+    redonu 1;
+}
+
+komenco()
+lokaj variabloj:
+    ent i;
+{
+    b();
+    b();
+}

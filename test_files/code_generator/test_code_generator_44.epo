@@ -1,0 +1,9 @@
+funkcio ent baz()
+{
+    redonu 'a';
+}
+
+komenco()
+{
+    baz();
+}

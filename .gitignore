@@ -1,3 +1,8 @@
 __pycache__
 ply
 compiler/ply
+compiler/intermediate_code_generation.py
+compiler/dump.py
+dump.txt
+test.names
+test.obj

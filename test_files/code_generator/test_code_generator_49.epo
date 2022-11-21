@@ -1,0 +1,14 @@
+tutmondaj variabloj:
+    ent i;
+
+funkcio malplena fun()
+{
+    presi(i);
+}
+
+komenco()
+lokaj variabloj:
+    ent i;
+{
+    presi(i);
+}

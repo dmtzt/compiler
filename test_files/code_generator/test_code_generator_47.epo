@@ -1,0 +1,9 @@
+tutmondaj variabloj:
+    ent i;
+
+komenco()
+lokaj variabloj:
+    ent i;
+{
+    presi(i);
+}

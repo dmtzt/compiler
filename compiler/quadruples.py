@@ -165,8 +165,8 @@ class ConstantStorageQuadruple(Quadruple):
 
 @dataclass
 class ReadQuadruple(Quadruple):
-    operator: Operator
     storage_variable: Variable
+    operator: Operator = Operator.READ
     
     def get_named_representation(self) -> str:
         return f'{self.operator.name : <16}{" " : <10}{" " : <10}{self.storage_variable.get_id()}'
@@ -182,8 +182,8 @@ class ReadQuadruple(Quadruple):
 
 @dataclass
 class PrintQuadruple(Quadruple):
-    operator: Operator
     printed_variable: Variable
+    operator: Operator = Operator.PRINT
 
     def get_named_representation(self) -> str:
         return f'{self.operator.name : <16}{" " : <10}{" " : <10}{self.printed_variable.get_id()}'
@@ -305,7 +305,7 @@ class EndFunctionQuadruple(Quadruple):
 
 @dataclass
 class EndProgramQuadruple(Quadruple):
-    operator: Operator
+    operator: Operator = Operator.END
 
     def __str__(self) -> str:
         return f'{self.operator.name}'

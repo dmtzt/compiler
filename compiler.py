@@ -4,6 +4,7 @@ from pathlib import Path
 from compiler.files import SourceCodeFileReader
 from compiler.files import IntermediateCodeFilePrinter
 from compiler.parser import Parser
+from compiler.intermediate_code import IntermediateCodeContainer
 
 class InvalidFileExtensionError(RuntimeError):
     pass
@@ -39,7 +40,7 @@ def main():
         raise InvalidFileExtensionError()
 
     fdata = file_reader.read_file(fpath)
-    quadruple_list = parser.parse(fdata)
+    intermediate_code_container = parser.parse(fdata)
 
     if args.names:
         named_repr_fpath = file_printer.generate_named_representation_file_path(fstem)

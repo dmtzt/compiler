@@ -1,17 +1,16 @@
-from collections import defaultdict
-
 from ply import yacc
 
 from .lexer import Lexer
 from .functions import Function
 from .functions import FunctionBuilder
-from .functions import FunctionDirector
 from .functions import FunctionDirectory
 from .functions import IncorrectFunctionParameterAmountException
 from .functions import IncorrectFunctionParameterTypeException
 from .functions import IncorrectFunctionReturnTypeException
-from .functions import VirtualMemoryAddress
 from .functions import FunctionUndefinedException
+from .functions import Names
+from .intermediate_code import IntermediateCodeContainer
+from .memory import VirtualMemoryAddress
 from .quadruples import ActivationRecordExpansionQuadruple
 from .quadruples import ArithmeticQuadruple
 from .quadruples import AssignmentQuadruple
@@ -35,6 +34,7 @@ from .stacks import OperandStack
 from .stacks import OperatorStack
 from .stacks import FunctionParameterCountStack
 from .variables import Boolean
+from .variables import DimensionNode
 from .variables import SemanticTable
 from .variables import Type
 from .variables import Variable
@@ -50,12 +50,11 @@ class Parser(object):
         self.parser = yacc.yacc(module=self)
 
         self.function_builder = FunctionBuilder()
-        self.function_director = FunctionDirector()
         self.variable_builder = VariableBuilder()
         self.semantic_table = SemanticTable()
 
         self.program_counter = None
-        self.function_parameter_counter = None
+        self.array_size = None
         self.function_directory = None
         self.jump_stack = None
         self.operator_stack = None
@@ -63,12 +62,10 @@ class Parser(object):
         self.function_parameter_count_stack = None
         self.quadruple_list = None
 
-        self.function_director.builder = self.function_builder
-
     
     def reset(self):
         self.program_counter = 0
-        self.function_parameter_counter = 0
+        self.array_size = 1
         self.function_directory = FunctionDirectory()
         self.jump_stack = JumpStack()
         self.operator_stack = OperatorStack()
@@ -83,20 +80,20 @@ class Parser(object):
         self.shared_variable_declaration_type = None
 
 
-    def parse(self, file_data: str) -> None:
+    def parse(self, file_data: str) -> IntermediateCodeContainer:
         self.reset()
         self.parser.parse(file_data)
 
-        return self.quadruple_list
+        intermediate_code = self.generate_intermediate_code_container(self.function_directory, self.quadruple_list)
+        return intermediate_code
 
-
-    def create_global_scope(self):
-        function_id = self.get_global_scope_id()
-        function_return_type = Type.VOID
-        function_start_quadruple_number = 0
-
-        function = self.build_function(function_id, function_return_type, function_start_quadruple_number)
-        self.insert_function_to_directory(function_id, function)
+    
+    def generate_intermediate_code_container(
+        self,
+        function_directory: FunctionDirectory,
+        quadruple_list: QuadrupleList
+    ) -> IntermediateCodeContainer:
+        return IntermediateCodeContainer(function_directory, quadruple_list)
 
 
     def create_main_function(self):
@@ -184,8 +181,7 @@ class Parser(object):
 
     
     def generate_read_quadruple(self, storage_variable: Variable) -> ReadQuadruple:
-        operator = Operator.READ
-        return ReadQuadruple(operator, storage_variable)
+        return ReadQuadruple(storage_variable)
 
     
     def generate_parameter_passing_quadruple(self, variable: Variable, parameter_number: int) -> ParameterPassingQuadruple:
@@ -193,8 +189,7 @@ class Parser(object):
 
     
     def generate_print_quadruple(self, print_param: Variable) -> PrintQuadruple:
-        operator = Operator.PRINT
-        return PrintQuadruple(operator, print_param)
+        return PrintQuadruple(print_param)
 
     
     def generate_return_value_quadruple(self, return_variable: Variable, function_global_variable: Variable) -> ReturnValueQuadruple:
@@ -221,8 +216,11 @@ class Parser(object):
 
     
     def generate_end_program_quadruple(self) -> EndProgramQuadruple:
-        operator = Operator.END
-        return EndProgramQuadruple(operator)
+        return EndProgramQuadruple()
+
+
+    def generate_dimension_node(self, upper_bound: int, m: int) -> DimensionNode:
+        return DimensionNode(upper_bound, m)
 
     
     def insert_quadruple(self, quadruple: Quadruple) -> None:
@@ -233,75 +231,54 @@ class Parser(object):
         self.function_directory.insert_function(function_id, function)
 
     
-    def insert_function_variable(self, function_id: str, variable_id: str, variable: Variable) -> None:
-        self.function_directory.insert_function_variable(function_id, variable_id, variable)
+    def get_global_variable(self, variable_id: str) -> Variable:
+        return self.function_directory.get_global_variable(variable_id)
 
-    
-    def insert_function_parameter(self, function_id: str, parameter: Variable) -> None:
-        self.function_directory.insert_function_parameter(function_id, parameter)
+
+    def insert_global_variable(self, variable_id: str, variable: Variable) -> None:
+        self.function_directory.insert_global_variable(variable_id, variable)
 
     
     def get_function_variable(self, function_id: str, variable_id: str) -> Variable:
-        return self.function_directory.get_function_variable(function_id, variable_id)
+        return self.function_directory.get_function_local_variable(function_id, variable_id)
+
+
+    def insert_function_variable(self, function_id: str, variable_id: str, variable: Variable) -> None:
+        self.function_directory.insert_function_local_variable(function_id, variable_id, variable)
 
     
     def function_variable_exists(self, function_id: str, variable_id: str) -> bool:
         return self.function_directory.variable_exists(function_id, variable_id)
 
     
+    def insert_function_parameter(self, function_id: str, parameter: Variable) -> None:
+        self.function_directory.insert_function_parameter(function_id, parameter)
+
+    
     def get_function_return_type(self, function_id: str) -> Type:
         return self.function_directory.get_function_return_type(function_id)
 
     
-    def insert_global_variable(self, variable_id: str, variable: Variable) -> None:
-        self.function_directory.insert_global_variable(variable_id, variable)
+    def create_global_function_return_variable(self, function_id: str, function_return_type: Type) -> Variable:
+        base_virtual_memory_address = self.get_global_base_virtual_memory_address(function_return_type)
+        local_variable_counter = self.get_global_variable_counter(function_return_type)
 
-    
-    def get_global_variable(self, variable_id: str) -> Variable:
-        return self.function_directory.get_global_variable(variable_id)
-
-    
-    def create_global_function_variable(self, function_id: str, function_return_type: Type) -> Variable:
-        variable_virtual_memory_address = self.get_global_base_virtual_memory_address(function_return_type)
+        variable_virtual_memory_address = base_virtual_memory_address + local_variable_counter
         variable = self.build_variable(function_id, function_return_type, variable_virtual_memory_address)
         
         return variable
     
-        
-    def increment_global_local_variable_counter(self, type: Type) -> None:
-        self.function_directory.increment_global_local_variable_counter(type)
+
+    def get_global_variable_counter(self, variable_type: Type) -> int:
+        return self.function_directory.get_global_variable_counter(variable_type)    
+    
+
+    def increment_global_variable_counter(self, variable_type: Type) -> None:
+        self.function_directory.increment_global_variable_counter(variable_type)
 
     
-    def increment_global_constant_variable_counter(self, type: Type) -> None:
-        self.function_directory.increment_global_constant_variable_counter(type)
-
-    
-    def increment_global_temporal_variable_counter(self, type: Type) -> None:
-        self.function_directory.increment_global_temporal_variable_counter(type)
-
-    
-    def increment_global_pointer_variable_counter(self, type: Type) -> None:
-        self.function_directory.increment_global_pointer_variable_counter(type)
-
-    
-    def get_global_local_variable_counter(self, type: Type) -> int:
-        return self.function_directory.get_global_local_variable_counter(type)
-
-
-    def get_global_constant_variable_counter(self, type: Type) -> int:
-        return self.function_directory.get_global_constant_variable_counter(type)
-
-    
-    def get_global_temporal_variable_counter(self, type: Type) -> int:
-        return self.function_directory.get_global_temporal_variable_counter(type)
-
-    
-    def get_global_pointer_variable_counter(self, type: Type) -> int:
-        return self.function_directory.get_global_pointer_variable_counter(type)
-
-    
-    def fill_control_transfer_quadruple(self, quadruple_number: int, program_count: int) -> None:
-        self.quadruple_list.fill_control_transfer_quadruple(quadruple_number, program_count)
+    def increment_global_variable_counter_array(self, variable_type: Type, array_size: int) -> None:
+        self.function_directory.increment_global_variable_counter_array(variable_type, array_size)
 
     
     def push_current_count_jump_stack(self) -> None:
@@ -312,36 +289,43 @@ class Parser(object):
         self.jump_stack.push(self.program_counter - 1)
 
 
+    def fill_control_transfer_quadruple(self, quadruple_number: int, program_count: int) -> None:
+        self.quadruple_list.fill_control_transfer_quadruple(quadruple_number, program_count)
+
+
     def create_function_temporal_variable(self, function_id: str, variable_type: Type) -> Variable:
-        count = self.get_function_temporal_variable_counter(function_id, variable_type)
+        temporal_counter = self.get_function_temporal_counter(function_id, variable_type)
+        base_virtual_address = self.get_temporal_base_virtual_memory_address(variable_type)
         
-        variable_id = self.get_temporal_variable_name(variable_type, count)
-        variable_virtual_memory_address = count + VirtualMemoryAddress.get_temporal_base_virtual_memory_address(variable_type)
+        variable_id = self.get_temporal_variable_name(variable_type, temporal_counter)
+        variable_virtual_memory_address = base_virtual_address + temporal_counter
         variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
 
         return variable
 
     
     def create_function_constant_variable(self, function_id: str, variable_type: Type) -> Variable:
-        count = self.get_function_constant_variable_counter(function_id, variable_type)
+        constant_counter = self.get_function_constant_counter(function_id, variable_type)
+        base_virtual_address = self.get_constant_base_virtual_memory_address(variable_type)
 
-        variable_id = self.get_constant_variable_name(variable_type, count)
-        variable_virtual_memory_address = count + VirtualMemoryAddress.get_constant_base_virtual_memory_address(variable_type)
+        variable_id = self.get_constant_variable_name(variable_type, constant_counter)
+        variable_virtual_memory_address = base_virtual_address + constant_counter
         variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
 
         return variable
 
     
     def create_function_pointer_variable(self, function_id: str, variable_type: Type) -> Variable:
-        count = self.get_function_pointer_variable_counter(function_id, variable_type)
+        pointer_counter = self.get_function_pointer_counter(function_id, variable_type)
+        base_virtual_address = self.get_pointer_base_virtual_memory_address(variable_type)
 
-        variable_id = self.get_pointer_variable_name(variable_type, count)
-        variable_virtual_memory_address = count + VirtualMemoryAddress.get_pointer_base_virtual_memory_address(variable_type)
+        variable_id = self.get_pointer_variable_name(variable_type, pointer_counter)
+        variable_virtual_memory_address = base_virtual_address + pointer_counter
         variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
 
         return variable
 
-    
+
     def build_function(self, function_id: str, function_return_type, function_start_quadruple_number: int) -> Function:
         self.function_builder.set_id(function_id)
         self.function_builder.set_return_type(function_return_type)
@@ -360,24 +344,24 @@ class Parser(object):
         return variable
 
     
-    def get_global_scope_id(self) -> str:
-        return self.function_directory.GLOBAL_SCOPE_ID
+    def get_global_module_id(self) -> str:
+        return Names.GLOBAL.value
 
     
     def get_main_function_id(self) -> str:
-        return self.function_directory.MAIN_SCOPE_ID
+        return Names.MAIN.value
 
     
-    def get_temporal_variable_name(self, type: Type, count: int) -> str:
-        return f't_{type.name}_{count}'
+    def get_temporal_variable_name(self, variable_type: Type, count: int) -> str:
+        return f't_{variable_type.name}_{count}'
 
     
-    def get_constant_variable_name(self, type: Type, count: int) -> str:
-        return f'c_{type.name}_{count}'
+    def get_constant_variable_name(self, variable_type: Type, count: int) -> str:
+        return f'c_{variable_type.name}_{count}'
 
     
-    def get_pointer_variable_name(self, type: Type, count: int) -> str:
-        return f'p_{type.name}_{count}'
+    def get_pointer_variable_name(self, variable_type: Type, count: int) -> str:
+        return f'p_{variable_type.name}_{count}'
 
     
     def get_global_base_virtual_memory_address(self, variable_type: Type) -> int:
@@ -424,10 +408,6 @@ class Parser(object):
         return self.jump_stack.pop()
 
 
-    def increment_program_counter(self) -> None:
-        self.program_counter += 1
-
-    
     def get_operation_result_type(
         self,
         left_operand: Variable,
@@ -441,21 +421,13 @@ class Parser(object):
             operator
         )
 
-    
-    def increment_function_parameter_counter(self) -> None:
-        self.function_parameter_counter += 1
-
-    
-    def reset_function_parameter_counter(self) -> None:
-        self.function_parameter_counter = 0
-
 
     def get_program_counter(self) -> int:
         return self.program_counter
 
-    
-    def get_function_parameter_counter(self) -> int:
-        return self.function_parameter_counter
+
+    def increment_program_counter(self) -> None:
+        self.program_counter += 1
 
     
     def get_function_number_parameters(self, function_id: str) -> int:
@@ -474,50 +446,54 @@ class Parser(object):
         return self.function_scope
 
     
-    def set_shared_variable_type(self, type: Type) -> None:
-        self.shared_variable_declaration_type = type
+    def set_shared_variable_type(self, variable_type: Type) -> None:
+        self.shared_variable_declaration_type = variable_type
 
     
     def get_shared_variable_type(self) -> Type:
         return self.shared_variable_declaration_type
 
-    
-    def increment_function_local_variable_counter(self, function_id: str, type: Type) -> None:
-        self.function_directory.increment_function_local_variable_counter(function_id, type)
+
+    def get_global_variable_counter(self, variable_type: Type) -> int:
+        return self.function_directory.get_global_variable_counter(variable_type)
+
+
+    def get_function_variable_counter(self, function_id: str, variable_type: Type) -> int:
+        return self.function_directory.get_function_variable_counter(function_id, variable_type)
+
+
+    def increment_function_variable_counter(self, function_id: str, variable_type: Type) -> None:
+        self.function_directory.increment_function_variable_counter(function_id, variable_type)
 
     
-    def increment_function_constant_variable_counter(self, function_id: str, type: Type) -> None:
-        self.function_directory.increment_function_constant_variable_counter(function_id, type)
+    def increment_function_variable_counter_array(self, function_id: str, variable_type: Type, array_size: int) -> None:
+        self.function_directory.increment_function_variable_counter_array(function_id, variable_type, array_size)
+
+
+    def get_function_constant_counter(self, function_id: str, variable_type: Type) -> int:
+        return self.function_directory.get_function_constant_counter(function_id, variable_type)
+
+
+    def increment_function_constant_counter(self, function_id: str, variable_type: Type) -> None:
+        self.function_directory.increment_function_constant_counter(function_id, variable_type)
+
+
+    def get_function_temporal_counter(self, function_id: str, variable_type: Type) -> int:
+        return self.function_directory.get_function_temporal_counter(function_id, variable_type)
 
     
-    def increment_function_temporal_variable_counter(self, function_id: str, type: Type) -> None:
-        self.function_directory.increment_function_temporal_variable_counter(function_id, type)
+    def increment_function_temporal_counter(self, function_id: str, variable_type: Type) -> None:
+        self.function_directory.increment_function_temporal_counter(function_id, variable_type)
 
     
-    def increment_function_pointer_variable_counter(self, function_id: str, type: Type) -> None:
-        self.function_directory.increment_function_pointer_variable_counter(function_id, type)
+    def get_function_pointer_counter(self, function_id: str, variable_type: Type) -> int:
+        return self.function_directory.get_function_pointer_counter(function_id, variable_type)
 
     
-    def get_function_local_variable_counter(self, function_id: str, type: Type) -> int:
-        return self.function_directory.get_function_local_variable_counter(function_id, type)
+    def increment_function_pointer_counter(self, function_id: str, variable_type: Type) -> None:
+        self.function_directory.increment_function_pointer_counter(function_id, variable_type)
 
 
-    def get_function_constant_variable_counter(self, function_id: str, type: Type) -> int:
-        return self.function_directory.get_function_constant_variable_counter(function_id, type)
-
-    
-    def get_function_temporal_variable_counter(self, function_id: str, type: Type) -> int:
-        return self.function_directory.get_function_temporal_variable_counter(function_id, type)
-
-    
-    def get_function_pointer_variable_counter(self, function_id: str, type: Type) -> int:
-        return self.function_directory.get_function_pointer_variable_counter(function_id, type)
-
-    
-    def get_global_variable_counter(variable_type: Type) -> int:
-        pass
-
-    
     def push_count_function_parameter_count_stack(self, function_id: str) -> None:
         return self.function_parameter_count_stack.push_count(function_id)
 
@@ -533,6 +509,22 @@ class Parser(object):
     def increment_top_count_function_parameter_count_stack(self) -> None:
         self.function_parameter_count_stack.increment_top_count()
 
+
+    def create_dimension_node(self, dimension_size: int) -> DimensionNode:
+        return DimensionNode(dimension_size)
+
+
+    def get_array_size(self) -> int:
+        return self.array_size
+
+
+    def set_array_size(self, array_size: int) -> None:
+        self.array_size = array_size
+
+
+    def reset_array_size(self) -> None:
+        self.array_size = 1
+
     
     def p_program(self, p):
         '''program : init start'''
@@ -541,7 +533,7 @@ class Parser(object):
         self.increment_program_counter()
 
         print(self.function_directory.__str__())
-        print(self.operand_stack.__str__())
+        # print(self.operand_stack.__str__())
 
 
     def p_init(self, p):
@@ -575,7 +567,7 @@ class Parser(object):
 
     def p_parsed_global_scope(self, p):
         '''parsed_global_scope :'''
-        global_scope_id = self.get_global_scope_id()
+        global_scope_id = self.get_global_module_id()
         self.set_function_scope(global_scope_id)
 
 
@@ -638,9 +630,9 @@ class Parser(object):
         self.set_function_scope(function_id)
 
         function_return_type = function.get_return_type()
-        global_function_variable = self.create_global_function_variable(function_id, function_return_type)
+        global_function_variable = self.create_global_function_return_variable(function_id, function_return_type)
         self.insert_global_variable(function_id, global_function_variable)
-        self.increment_global_local_variable_counter(function_return_type)
+        self.increment_global_variable_counter(function_return_type)
 
 
     def p_parsed_void_function_id(self, p):
@@ -682,13 +674,14 @@ class Parser(object):
         variable_type = p[1]
 
         function_id = self.get_function_scope()
-        function_local_variable_counter = self.get_function_local_variable_counter(function_id, variable_type)
+        local_variable_counter = self.get_function_variable_counter(function_id, variable_type)
+        local_base_virtual_memory_address = self.get_local_base_virtual_memory_address(variable_type)
 
-        variable_virtual_memory_address = function_local_variable_counter + VirtualMemoryAddress.get_local_base_virtual_memory_address(variable_type)
-        self.increment_function_local_variable_counter(function_id, variable_type)
+        variable_virtual_memory_address = local_base_virtual_memory_address + local_variable_counter
+        self.increment_function_variable_counter(function_id, variable_type)
 
         variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
-        self.function_directory.insert_function_variable(function_id, variable_id, variable)
+        self.function_directory.insert_function_local_variable(function_id, variable_id, variable)
         self.function_directory.insert_function_parameter(function_id, variable)
 
     
@@ -745,43 +738,115 @@ class Parser(object):
 
 
     def p_single_variable_declaration_1(self, p):
-        '''single_variable_declaration : ID dim_definition dim_definition'''
+        '''single_variable_declaration : variable_id_declaration variable_dim_definition variable_dim_definition'''
+        number_dimensions = self.variable_builder.get_number_dimensions()
+        array_size = self.get_array_size()
 
-    
+        for dimension in range(number_dimensions):
+            r = self.get_array_size()
+
+            dimension_size = self.variable_builder.get_dimension_size(dimension)
+            m = int(r / dimension_size)
+
+            self.variable_builder.set_dimension_node_m(dimension, m)
+            self.set_array_size(m)
+
+        variable = self.variable_builder.build()
+        variable_id = variable.get_id()
+        variable_type = variable.get_type()
+
+        function_id = self.get_function_scope()
+        global_scope_id = self.get_global_module_id()
+
+        if function_id == global_scope_id:
+            self.insert_global_variable(variable_id, variable)
+            self.increment_global_variable_counter_array(variable_type, array_size)
+        else:
+            self.insert_function_variable(function_id, variable_id, variable)
+            self.increment_function_variable_counter_array(function_id, variable_type, array_size)
+
+
     def p_single_variable_declaration_2(self, p):
-        '''single_variable_declaration : ID dim_definition'''
+        '''single_variable_declaration : variable_id_declaration variable_dim_definition'''
+        array_size = self.get_array_size()
+        
+        dimension = 0
+        dimension_size = self.variable_builder.get_dimension_size(dimension)
+
+        r = self.get_array_size()
+        m = int(r / dimension_size)
+
+        self.variable_builder.set_dimension_node_m(dimension, m)
+        self.set_array_size(m)
+
+        variable = self.variable_builder.build()
+        variable_id = variable.get_id()
+        variable_type = variable.get_type()
+
+        function_id = self.get_function_scope()
+        global_scope_id = self.get_global_module_id()
+
+
+        if function_id == global_scope_id:
+            self.insert_global_variable(variable_id, variable)
+            self.increment_global_variable_counter_array(variable_type, array_size)
+        else:
+            self.insert_function_variable(function_id, variable_id, variable)
+            self.increment_function_variable_counter_array(function_id, variable_type, array_size)
+
+        self.reset_array_size()
 
     
     def p_single_variable_declaration_3(self, p):
-        '''single_variable_declaration : ID'''
+        '''single_variable_declaration : variable_id_declaration'''
+        function_id = self.get_function_scope()
+        global_scope_id = self.get_global_module_id()
+
+        variable = self.variable_builder.build()
+        variable_id = variable.get_id()
+        variable_type = variable.get_type()
+
+        if function_id == global_scope_id:
+            self.insert_global_variable(variable_id, variable)
+            self.increment_global_variable_counter(variable_type)
+        else:
+            self.insert_function_variable(function_id, variable_id, variable)
+            self.increment_function_variable_counter(function_id, variable_type)
+
+
+    def p_variable_id_declaration(self, p):
+        '''variable_id_declaration : ID'''
         variable_id = p[1]
         variable_type = self.get_shared_variable_type()
 
         function_id = self.get_function_scope()
-        global_scope_id = self.get_global_scope_id()
+        global_scope_id = self.get_global_module_id()
 
         if function_id == global_scope_id:    
             base_virtual_memory_address = self.get_global_base_virtual_memory_address(variable_type)
-            local_variable_counter = self.get_global_local_variable_counter(variable_type)
-            variable_virtual_memory_address = base_virtual_memory_address + local_variable_counter
-
-            variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
-            self.insert_global_variable(variable_id, variable)
-            self.increment_global_local_variable_counter(variable_type)
+            variable_counter = self.get_global_variable_counter(variable_type)
         else:
             base_virtual_memory_address = self.get_local_base_virtual_memory_address(variable_type)
-            local_variable_counter = self.get_function_local_variable_counter(function_id, variable_type)
-            variable_virtual_memory_address = base_virtual_memory_address + local_variable_counter
+            variable_counter = self.get_function_variable_counter(function_id, variable_type)
+        
+        variable_virtual_memory_address = base_virtual_memory_address + variable_counter
 
-            variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
-            self.insert_function_variable(function_id, variable_id, variable)
-            self.increment_function_local_variable_counter(function_id, variable_type)
+        self.variable_builder.set_id(variable_id)
+        self.variable_builder.set_type(variable_type)
+        self.variable_builder.set_virtual_memory_address(variable_virtual_memory_address)
 
 
-    def p_dim_definition(self, p):
-        '''dim_definition : LBRACKET CONST_INT RBRACKET'''
+    def p_variable_dim_definition(self, p):
+        '''variable_dim_definition : LBRACKET CONST_INT RBRACKET'''
+        dimension_size = int(p[2])
+        
+        dimension_node = self.create_dimension_node(dimension_size)
+        self.variable_builder.append_dimension_node(dimension_node)
 
-    
+        array_size = self.get_array_size() * dimension_size
+        self.set_array_size(array_size)
+
+
     def p_instruction_block_1(self, p):
         '''instruction_block : LBRACE statements RBRACE'''
 
@@ -902,7 +967,7 @@ class Parser(object):
 
             global_function_variable = self.get_global_variable(function_call_id)
             temporal_function_return_variable = self.create_function_temporal_variable(function_scope, function_call_return_type)
-            self.increment_function_temporal_variable_counter(function_scope, function_call_return_type)
+            self.increment_function_temporal_counter(function_scope, function_call_return_type)
             
             assignment_quadruple = self.generate_assignment_quadruple(global_function_variable, temporal_function_return_variable)
             self.insert_quadruple(assignment_quadruple)
@@ -929,7 +994,7 @@ class Parser(object):
 
             global_function_variable = self.get_global_variable(function_call_id)
             temporal_function_return_variable = self.create_function_temporal_variable(function_scope, function_call_return_type)
-            self.increment_function_temporal_variable_counter(function_scope, function_call_return_type)
+            self.increment_function_temporal_counter(function_scope, function_call_return_type)
             
             assignment_quadruple = self.generate_assignment_quadruple(global_function_variable, temporal_function_return_variable)
             self.insert_quadruple(assignment_quadruple)
@@ -1093,7 +1158,7 @@ class Parser(object):
         operator = Operator.PLUS
 
         updated_index_variable = self.create_function_temporal_variable(function_id, result_type)
-        self.increment_function_temporal_variable_counter(function_id, result_type)
+        self.increment_function_temporal_counter(function_id, result_type)
 
         addition_quadruple = self.generate_arithmetic_quadruple(operator, index_variable, step_variable, updated_index_variable)
         self.insert_quadruple(addition_quadruple)
@@ -1124,7 +1189,7 @@ class Parser(object):
         operator = Operator.PLUS
 
         updated_index_variable = self.create_function_temporal_variable(function_id, result_type)
-        self.increment_function_temporal_variable_counter(function_id, result_type)
+        self.increment_function_temporal_counter(function_id, result_type)
 
         addition_quadruple = self.generate_arithmetic_quadruple(operator, index_variable, step_variable, updated_index_variable)
         self.insert_quadruple(addition_quadruple)
@@ -1154,7 +1219,7 @@ class Parser(object):
         initial_value = p[3]
         initial_value_type = Type.INT
         initial_value_variable = self.create_function_constant_variable(function_id, initial_value_type)
-        self.increment_function_constant_variable_counter(function_id, initial_value_type)
+        self.increment_function_constant_counter(function_id, initial_value_type)
 
         initial_value_storage_quadruple = self.generate_constant_storage_quadruple(initial_value, initial_value_variable)
         self.insert_quadruple(initial_value_storage_quadruple)
@@ -1182,14 +1247,14 @@ class Parser(object):
         absolute_initial_value = p[4]
         initial_value_type = Type.INT
         absolute_initial_value_variable = self.create_function_temporal_variable(function_id, initial_value_type)
-        self.increment_function_temporal_variable_counter(function_id, initial_value_type)
+        self.increment_function_temporal_counter(function_id, initial_value_type)
 
         absolute_initial_value_storage_quadruple = self.generate_constant_storage_quadruple(absolute_initial_value, absolute_initial_value_variable)
         self.insert_quadruple(absolute_initial_value_storage_quadruple)
         self.increment_program_counter()
 
         initial_value_variable = self.create_function_constant_variable(function_id, initial_value_type)
-        self.increment_function_constant_variable_counter(function_id, initial_value_type)
+        self.increment_function_constant_counter(function_id, initial_value_type)
 
         unary_minus_operator = Operator.UNARY_MINUS
         unary_minus_quadruple = self.generate_unary_arithmetic_quadruple(unary_minus_operator, absolute_initial_value_variable, initial_value_variable)
@@ -1216,7 +1281,7 @@ class Parser(object):
         limit_type = Type.INT
         limit_value = p[1]
         limit_variable = self.create_function_constant_variable(function_id, limit_type)
-        self.increment_function_constant_variable_counter(function_id, limit_type)
+        self.increment_function_constant_counter(function_id, limit_type)
 
         limit_storage_quadruple = self.generate_constant_storage_quadruple(limit_value, limit_variable)
         self.insert_quadruple(limit_storage_quadruple)
@@ -1232,14 +1297,14 @@ class Parser(object):
         limit_type = Type.INT
         absolute_limit_value = p[2]
         absolute_limit_variable = self.create_function_temporal_variable(function_id, limit_type)
-        self.increment_function_temporal_variable_counter(function_id, limit_type)
+        self.increment_function_temporal_counter(function_id, limit_type)
 
         absolute_limit_storage_quadruple = self.generate_constant_storage_quadruple(absolute_limit_value, absolute_limit_variable)
         self.insert_quadruple(absolute_limit_storage_quadruple)
         self.increment_program_counter()
 
         limit_variable = self.create_function_constant_variable(function_id, limit_type)
-        self.increment_function_constant_variable_counter(function_id, limit_type)
+        self.increment_function_constant_counter(function_id, limit_type)
 
         unary_minus_operator = Operator.UNARY_MINUS
         quadruple = self.generate_unary_arithmetic_quadruple(unary_minus_operator, absolute_limit_variable, limit_variable)
@@ -1256,7 +1321,7 @@ class Parser(object):
         step_type = Type.INT
         step_value = '1'
         step_variable = self.create_function_constant_variable(function_id, step_type)
-        self.increment_function_constant_variable_counter(function_id, step_type)
+        self.increment_function_constant_counter(function_id, step_type)
 
         step_storage_quadruple = self.generate_constant_storage_quadruple(step_value, step_variable)
         self.insert_quadruple(step_storage_quadruple)
@@ -1267,7 +1332,7 @@ class Parser(object):
         
         boolean_type = Type.BOOL
         boolean_variable = self.create_function_temporal_variable(function_id, boolean_type)
-        self.increment_function_temporal_variable_counter(function_id, boolean_type)
+        self.increment_function_temporal_counter(function_id, boolean_type)
 
         self.push_current_count_jump_stack()
         relational_operator = Operator.LTHAN_EQUAL
@@ -1293,7 +1358,7 @@ class Parser(object):
         step_type = Type.INT
         step_value = p[1]
         step_variable = self.create_function_constant_variable(function_id, step_type)
-        self.increment_function_constant_variable_counter(function_id, step_type)
+        self.increment_function_constant_counter(function_id, step_type)
 
         step_storage_quadruple = self.generate_constant_storage_quadruple(step_value, step_variable)
         self.insert_quadruple(step_storage_quadruple)
@@ -1304,7 +1369,7 @@ class Parser(object):
         
         boolean_type = Type.BOOL
         boolean_variable = self.create_function_temporal_variable(function_id, boolean_type)
-        self.increment_function_temporal_variable_counter(function_id, boolean_type)
+        self.increment_function_temporal_counter(function_id, boolean_type)
 
         self.push_current_count_jump_stack()
         relational_operator = Operator.LTHAN_EQUAL
@@ -1330,14 +1395,14 @@ class Parser(object):
         step_type = Type.INT
         absolute_step_value = p[2]
         absolute_step_variable = self.create_function_temporal_variable(function_id, step_type)
-        self.increment_function_temporal_variable_counter(function_id, step_type)
+        self.increment_function_temporal_counter(function_id, step_type)
         
         absolute_step_storage_quadruple = self.generate_constant_storage_quadruple(absolute_step_value, absolute_step_variable)
         self.insert_quadruple(absolute_step_storage_quadruple)
         self.increment_program_counter()
 
         step_variable = self.create_function_constant_variable(function_id, step_type)
-        self.increment_function_constant_variable_counter(function_id, step_type)
+        self.increment_function_constant_counter(function_id, step_type)
 
         unary_minus_operator = Operator.UNARY_MINUS
         unary_minus_quadruple = self.generate_unary_arithmetic_quadruple(unary_minus_operator, absolute_step_variable, step_variable)
@@ -1349,7 +1414,7 @@ class Parser(object):
         
         boolean_type = Type.BOOL
         boolean_variable = self.create_function_temporal_variable(function_id, boolean_type)
-        self.increment_function_temporal_variable_counter(function_id, boolean_type)
+        self.increment_function_temporal_counter(function_id, boolean_type)
 
         self.push_current_count_jump_stack()
         relational_operator = Operator.GTHAN_EQUAL
@@ -1431,7 +1496,7 @@ class Parser(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_function_temporal_variable(function_id, result_type)
-            self.increment_function_temporal_variable_counter(function_id, result_type)
+            self.increment_function_temporal_counter(function_id, result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1458,7 +1523,7 @@ class Parser(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_function_temporal_variable(function_id, result_type)
-            self.increment_function_temporal_variable_counter(function_id, result_type)
+            self.increment_function_temporal_counter(function_id, result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1489,7 +1554,7 @@ class Parser(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_function_temporal_variable(function_id, result_type)
-            self.increment_function_temporal_variable_counter(function_id, result_type)
+            self.increment_function_temporal_counter(function_id, result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1516,7 +1581,7 @@ class Parser(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_function_temporal_variable(function_id, result_type)
-            self.increment_function_temporal_variable_counter(function_id, result_type)
+            self.increment_function_temporal_counter(function_id, result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1543,7 +1608,7 @@ class Parser(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_function_temporal_variable(function_id, result_type)
-            self.increment_function_temporal_variable_counter(function_id, result_type)
+            self.increment_function_temporal_counter(function_id, result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1570,7 +1635,7 @@ class Parser(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_function_temporal_variable(function_id, result_type)
-            self.increment_function_temporal_variable_counter(function_id, result_type)
+            self.increment_function_temporal_counter(function_id, result_type)
 
             quadruple = self.generate_relational_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1601,7 +1666,7 @@ class Parser(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_function_temporal_variable(function_id, result_type)
-            self.increment_function_temporal_variable_counter(function_id, result_type)
+            self.increment_function_temporal_counter(function_id, result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1628,7 +1693,7 @@ class Parser(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_function_temporal_variable(function_id, result_type)
-            self.increment_function_temporal_variable_counter(function_id, result_type)
+            self.increment_function_temporal_counter(function_id, result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1659,7 +1724,7 @@ class Parser(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_function_temporal_variable(function_id, result_type)
-            self.increment_function_temporal_variable_counter(function_id, result_type)
+            self.increment_function_temporal_counter(function_id, result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1686,7 +1751,7 @@ class Parser(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_function_temporal_variable(function_id, result_type)
-            self.increment_function_temporal_variable_counter(function_id, result_type)
+            self.increment_function_temporal_counter(function_id, result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1713,7 +1778,7 @@ class Parser(object):
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_function_temporal_variable(function_id, result_type)
-            self.increment_function_temporal_variable_counter(function_id, result_type)
+            self.increment_function_temporal_counter(function_id, result_type)
 
             quadruple = self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
             self.insert_quadruple(quadruple)
@@ -1781,7 +1846,7 @@ class Parser(object):
         constant_type = Type.INT
 
         constant_storage_variable = self.create_function_constant_variable(function_id, constant_type)
-        self.increment_function_constant_variable_counter(function_id, constant_type)
+        self.increment_function_constant_counter(function_id, constant_type)
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_storage_variable)
         self.insert_quadruple(quadruple)
@@ -1796,7 +1861,7 @@ class Parser(object):
         constant_type = Type.REAL
 
         constant_storage_variable = self.create_function_constant_variable(function_id, constant_type)
-        self.increment_function_constant_variable_counter(function_id, constant_type)
+        self.increment_function_constant_counter(function_id, constant_type)
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_storage_variable)
         self.insert_quadruple(quadruple)
@@ -1811,7 +1876,7 @@ class Parser(object):
         constant_type = Type.CHAR
 
         constant_storage_variable = self.create_function_constant_variable(function_id, constant_type)
-        self.increment_function_constant_variable_counter(function_id, constant_type)
+        self.increment_function_constant_counter(function_id, constant_type)
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_storage_variable)
         self.insert_quadruple(quadruple)
@@ -1826,7 +1891,7 @@ class Parser(object):
         constant_type = Type.STRING
 
         constant_storage_variable = self.create_function_constant_variable(function_id, constant_type)
-        self.increment_function_constant_variable_counter(function_id, constant_type)
+        self.increment_function_constant_counter(function_id, constant_type)
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_storage_variable)
         self.insert_quadruple(quadruple)
@@ -1841,7 +1906,7 @@ class Parser(object):
         constant_type = Type.BOOL
 
         constant_storage_variable = self.create_function_constant_variable(function_id, constant_type)
-        self.increment_function_constant_variable_counter(function_id, constant_type)
+        self.increment_function_constant_counter(function_id, constant_type)
 
         quadruple = self.generate_constant_storage_quadruple(constant_value, constant_storage_variable)
         self.insert_quadruple(quadruple)

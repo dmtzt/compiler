@@ -1,5 +1,6 @@
 from compiler.memory import GlobalActivationRecord, LocalActivationRecord, ConstantTableActivationRecord
 from compiler.memory import Memory
+from compiler.functions import Function, Module
 
 from compiler.variables import Type
 
@@ -11,4 +12,11 @@ from compiler.variables import Type
 # print(l)
 # print(c)
 
-print(Memory.type_dict)
+# print(Memory.type_dict)
+
+f = Function()
+m = Module()
+
+print(m)
+print()
+print(f)

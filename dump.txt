@@ -240,3 +240,156 @@
         with self.assertRaises(LexError):
             self.lexer.testSingleToken(testValue)
     
+
+
+
+class IntegerConstantStorageQuadruple():
+    def __init__(
+        self,
+        integer_constant: int,
+        storage_variable: Variable,
+    ) -> None:
+        self._operator = Operator.STORE_CONSTANT
+        self._integer_constant = integer_constant
+        self._storage_variable = storage_variable
+
+    
+    def __str__(self) -> str:
+        return f'IntegerConstantStorageQuadruple(op={self._operator} value={self._integer_constant} storage_var={self._storage_variable})'
+
+
+class RealConstantStorageQuadruple():
+    def __init__(
+        self,
+        real_value: float,
+        storage_variable: Variable,
+    ) -> None:
+        self._operator = Operator.STORE_CONSTANT
+        self._real_value = real_value
+        self._storage_variable = storage_variable
+
+    
+    def __str__(self) -> str:
+        return f'RealConstantStorageQuadruple(op={self._operator} value={self._real_value} storage_var={self._storage_variable})'
+
+
+class BooleanConstantStorageQuadruple():
+    def __init__(
+        self,
+        bool_value: bool,
+        storage_variable: Variable,
+    ) -> None:
+        self._operator = Operator.STORE_CONSTANT
+        self._bool_value = bool_value
+        self._storage_variable = storage_variable
+
+    
+    def __str__(self) -> str:
+        return f'CharConstantStorageQuadruple(op={self._operator} value={self._bool_value} storage_var={self._storage_variable})'
+
+
+class CharacterConstantStorageQuadruple():
+    def __init__(
+        self,
+        char_value: str,
+        storage_variable: Variable,
+    ) -> None:
+        self._operator = Operator.STORE_CONSTANT
+        self._char_value = char_value
+        self._storage_variable = storage_variable
+
+    
+    def __str__(self) -> str:
+        return f'CharConstantStorageQuadruple(op={self._operator} value={self._char_value} storage_var={self._storage_variable})'
+
+
+class StringConstantStorageQuadruple():
+    def __init__(
+        self,
+        str_value: str,
+        storage_variable: Variable,
+    ) -> None:
+        self._operator = Operator.STORE_CONSTANT
+        self._str_value = str_value
+        self._storage_variable = storage_variable
+
+    
+    def __str__(self) -> str:
+        return f'CharConstantStorageQuadruple(op={self._operator} value={self._str_value} storage_var={self._storage_variable})'
+
+
+
+    
+    def insert_integer_constant_storage_quadruple(self, quadruple: IntegerConstantStorageQuadruple) -> None:
+        self.quadruple_list.insert_integer_constant_storage_quadruple(quadruple)
+
+    
+    def insert_real_constant_storage_quadruple(self, quadruple: RealConstantStorageQuadruple) -> None:
+        self.quadruple_list.insert_real_constant_storage_quadruple(quadruple)
+
+    
+    def insert_boolean_constant_storage_quadruple(self, quadruple: BooleanConstantStorageQuadruple) -> None:
+        self.quadruple_list.insert_boolean_constant_storage_quadruple(quadruple)
+    
+
+    def insert_character_constant_storage_quadruple(self, quadruple: CharacterConstantStorageQuadruple) -> None:
+        self.quadruple_list.insert_char_constant_storage_quadruple(quadruple)
+
+    
+    def insert_string_constant_storage_quadruple(self, quadruple: StringConstantStorageQuadruple) -> None:
+        self.quadruple_list.insert_string_constant_storage_quadruple(quadruple)
+
+
+    
+    
+    def generate_integer_constant_storage_quadruple(self, integer_constant: str) -> ConstantStorageQuadruple:
+        storage_variable_type = Type.INT
+
+        storage_variable = self.create_constant_variable(storage_variable_type)
+        self.push_operand_stack(storage_variable)
+        self.increment_constant_counter(storage_variable_type)
+        
+        return ConstantStorageQuadruple(integer_constant, storage_variable)
+
+    
+    def generate_real_constant_storage_quadruple(self, real_constant: str) -> RealConstantStorageQuadruple:
+        storage_variable_type = Type.REAL
+
+        storage_variable = self.create_constant_variable(storage_variable_type)
+        self.push_operand_stack(storage_variable)
+        self.increment_constant_counter(storage_variable_type)
+        
+        return RealConstantStorageQuadruple(real_constant, storage_variable)
+
+    
+    def generate_character_constant_storage_quadruple(self, character_constant: str) -> CharacterConstantStorageQuadruple:
+        storage_variable_type = Type.CHAR
+
+        storage_variable = self.create_constant_variable(storage_variable_type)
+        self.push_operand_stack(storage_variable)
+        self.increment_constant_counter(storage_variable_type)
+        
+        return CharacterConstantStorageQuadruple(character_constant, storage_variable)
+
+    
+    def generate_string_constant_storage_quadruple(self, string_constant: str) -> StringConstantStorageQuadruple:
+        storage_variable_type = Type.CHAR
+
+        storage_variable = self.create_constant_variable(storage_variable_type)
+        self.push_operand_stack(storage_variable)
+        self.increment_constant_counter(storage_variable_type)
+        
+        return StringConstantStorageQuadruple(string_constant, storage_variable)
+
+    
+
+    
+        constant_value = p[3]
+        constant_type = Type.INT
+        constant_variable = self.create_constant_variable(constant_type)
+        self.increment_constant_counter(constant_type)
+
+        
+        constant_storage_quadruple = self.generate_constant_storage_quadruple(constant_value, constant_variable)
+        self.insert_quadruple(constant_storage_quadruple)
+        self.increment_program_counter()

@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
+from .operators import Operator
 
 class Type(Enum):
     ERROR = -1
@@ -15,75 +16,45 @@ class Type(Enum):
     POINTER = 6
 
 
-class Operator(Enum):
-    ASGMT = 0
-
-    PLUS = 1
-    MINUS = 2
-    TIMES = 3
-    DIVIDE = 4
-    MODULO = 5
-
-    UNARY_PLUS = 6
-    UNARY_MINUS = 7
-
-    EQUAL = 8
-    NEQUAL = 9
-    LTHAN_EQUAL = 10
-    GTHAN_EQUAL = 11
-    LTHAN = 12
-    GTHAN = 13
-
-    AND = 14
-    OR = 15
-    NOT = 16
-
-    READ = 17
-    PRINT = 18
-
-    STORE_CONSTANT = 19
-
-    GOTO = 20
-    GOTOF = 21
-    GOTOT = 22
-    GOSUB = 23
-
-    ERA = 24
-    PARAM = 25
-    RETURN_VALUE = 26
-    RETURN_VOID = 27
-    ENDFUNC = 28
-
-    END = 29
-
-    @classmethod
-    def assignment_operator(cls):
-        return cls.ASGMT
-
-
-    @classmethod
-    def arithmetic_operators(cls):
-        return cls.PLUS, cls.MINUS, cls.TIMES, cls.DIVIDE, cls.MODULO
-
-
-    @classmethod
-    def unary_arithmetic_operators(cls):
-        return cls.UNARY_PLUS, cls.UNARY_MINUS
-
-
-    @classmethod
-    def relational_operators(cls):
-        return cls.EQUAL, cls.NEQUAL, cls.LTHAN_EQUAL, cls.GTHAN_EQUAL, cls.LTHAN, cls.GTHAN
-
-
 class Boolean(Enum):
-    FALSE = 0
-    TRUE = 1
+    FALSE = 'False'
+    TRUE = 'True'
 
 
+@dataclass
+class DimensionNode:
+    _size : int
+    _m : int = field(init=False, default=0)
+
+    def get_size(self) -> int:
+        return self._size
+
+
+    def set_m(self, m: int) -> None:
+        self._m = m
+
+
+@dataclass
 class Variable:
-    def __init__(self) -> None:
-        pass
+    _id : str = field(init=False)
+    _type : Type = field(init=False)
+    _virtual_memory_address : int = field(init=False)
+    _dimension_nodes : deque[DimensionNode] = field(default_factory=deque)
+
+    def get_id(self) -> str:
+        return self._id
+
+    
+    def get_type(self) -> Type:
+        return self._type
+
+    
+    def get_virtual_memory_address(self) -> int:
+        return self._virtual_memory_address
+
+    
+    def get_number_dimensions(self) -> int:
+        return len(self._dimension_nodes)
 
 
     def set_id(self, id: str) -> None:
@@ -97,21 +68,21 @@ class Variable:
     def set_virtual_memory_address(self, virtual_memory_address: int) -> None:
         self._virtual_memory_address = virtual_memory_address
 
-    
-    def get_id(self) -> str:
-        return self._id
 
-    
-    def get_type(self) -> Type:
-        return self._type
+    def append_dimension_node(self, dimension_node: DimensionNode) -> None:
+        self._dimension_nodes.append(dimension_node)
 
-    
-    def get_virtual_memory_address(self) -> int:
-        return self._virtual_memory_address
+
+    def get_dimension_size(self, dimension: int) -> int:
+        return self._dimension_nodes[dimension].get_size()
+
+
+    def set_dimension_node_m(self, dimension: int, m: int) -> None:
+        self._dimension_nodes[dimension].set_m(m)
 
     
     def __str__(self) -> str:
-        return f'{self._id} {self._type.name} {self._virtual_memory_address}'
+        return f'Variable({self._id} {self._type} {self._virtual_memory_address} {self._dimension_nodes})'
 
 
 class Builder(ABC):
@@ -133,6 +104,26 @@ class Builder(ABC):
 
     @abstractmethod
     def set_virtual_memory_address(self, virtual_memory_address: int) -> None:
+        pass
+
+
+    @abstractmethod
+    def append_dimension_node(self, dimension_node: DimensionNode) -> None:
+        pass
+
+
+    @abstractmethod
+    def get_number_dimensions(self) -> int:
+        pass
+
+
+    @abstractmethod
+    def get_dimension_size(self, dimension: int) -> int:
+        pass
+
+
+    @abstractmethod
+    def set_dimension_node_m(self, dimension: int, m: int) -> None:
         pass
 
     
@@ -163,17 +154,25 @@ class VariableBuilder(Builder):
         self.__variable.set_virtual_memory_address(virtual_memory_address)
 
 
+    def append_dimension_node(self, dimension_node: DimensionNode) -> None:
+        self.__variable.append_dimension_node(dimension_node)
+
+
+    def get_number_dimensions(self) -> int:
+        return self.__variable.get_number_dimensions()
+
+
+    def get_dimension_size(self, dimension: int) -> int:
+        return self.__variable.get_dimension_size(dimension)
+
+
+    def set_dimension_node_m(self, dimension: int, m: int) -> None:
+        self.__variable.set_dimension_node_m(dimension, m)
+
+
+@dataclass
 class VariableTable:
-    def __init__(self) -> None:
-        self._table: dict[str, Variable] = dict()
-
-    
-    def insert_variable(self, variable_id: str, variable: Variable) -> None:
-        if variable_id in self._table:
-            raise VariableAlreadyDeclaredException()
-
-        self._table[variable_id] = variable
-
+    _table: dict[str, Variable] = field(default_factory=dict)
 
     def get_variable(self, variable_id: str) -> Variable:
         if variable_id not in self._table:
@@ -181,26 +180,34 @@ class VariableTable:
 
         return self._table[variable_id]
 
+
+    def insert_variable(self, variable_id: str, variable: Variable) -> None:
+        if variable_id in self._table:
+            raise VariableAlreadyDeclaredException()
+
+        self._table[variable_id] = variable
+
     
     def variable_exists(self, variable_id: str) -> bool:
         return variable_id in self._table
+
     
-
     def __str__(self) -> str:
-        s = "VariableTable[\n"
+        s = f'VariableTable(\n'
 
-        for id in self._table:
-            s += f'\t\t{id}: {self._table[id].__str__()},\n'
+        for variable_id in self._table:
+            s += '\t'
+            s += self._table[variable_id].__str__()
+            s += '\n'
 
-        s += ']'
+        s += ')'
 
         return s
 
 
+@dataclass
 class ParameterTable:
-    def __init__(self) -> None:
-        self._table: deque[Variable] = deque()
-
+    _table: deque[Variable] = field(default_factory=deque)
 
     def get_number_parameters(self) -> int:
         return len(self._table)
@@ -215,12 +222,13 @@ class ParameterTable:
 
     
     def __str__(self) -> str:
-        s = "ParameterTable[\n"
+        s = f'ParameterTable('
 
-        for param in self._table:
-            s += f'\t\t{param.__str__()},\n'
+        for parameter in self._table:
+            s += parameter.__str__()
+            s += '\n'
 
-        s += ']'
+        s += ')'
 
         return s
 

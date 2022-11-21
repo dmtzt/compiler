@@ -1,38 +1,27 @@
+from dataclasses import dataclass, field
+
 from .variables import Operator
 from .variables import Variable
 
-class OperandStack():
-    def __init__(self) -> None:
-        self._stack = list()
-
+@dataclass
+class OperandStack:
+    _stack : list[Variable] = field(default_factory=list)
     
     def push(self, operand: Variable) -> None:
         self._stack.append(operand)
 
-    
+
     def pop(self) -> Variable:
         return self._stack.pop()
 
-    
+
     def top(self) -> Variable:
         return self._stack[-1]
 
-    
-    def __str__(self) -> str:
-        s = 'OperandStack(stack='
 
-        for item in self._stack:
-            s += f'{item.__str__()}, '
-
-        s += ')'
-
-        return s
-
-
-class OperatorStack():
-    def __init__(self) -> None:
-        self._stack = list()
-
+@dataclass
+class OperatorStack:
+    _stack : list[Operator] = field(default_factory=list)
     
     def push(self, operator: Operator) -> None:
         self._stack.append(operator)
@@ -45,15 +34,10 @@ class OperatorStack():
     def top(self) -> Operator:
         return self._stack[-1]
 
-    
-    def __str__(self) -> str:
-        return f'OperatorStack(stack={self._stack})'
 
-
-class JumpStack():
-    def __init__(self) -> None:
-        self._stack = list()
-
+@dataclass
+class JumpStack:
+    _stack : list[int] = field(default_factory=list)
     
     def push(self, jump: int) -> None:
         self._stack.append(jump)
@@ -66,22 +50,10 @@ class JumpStack():
     def top(self) -> int:
         return self._stack[-1]
 
-    
-    def __str__(self) -> str:
-        s = 'JumpStack(stack='
 
-        for item in self._stack:
-            s += f'{item}'
-
-        s += ')'
-
-        return s
-
-
-class FunctionParameterCountStack():
-    def __init__(self) -> None:
-        self._stack : list[tuple[str, int]] = list()
-
+@dataclass
+class FunctionParameterCountStack:
+    _stack : list[tuple[str, int]] = field(default_factory=list)
     
     def push_count(self, function_id: str) -> None:
         self._stack.append((function_id, 0))
@@ -100,14 +72,3 @@ class FunctionParameterCountStack():
         count +=1
 
         self._stack[-1] = (function_id, count)
-
-    
-    def __str__(self) -> str:
-        s = 'FunctionParameterStack(stack='
-
-        for item in self._stack:
-            s += f'{item}'
-
-        s += ')'
-
-        return s

@@ -1,0 +1,21 @@
+funkcio ent a(ent i)
+{
+    redonu i;
+}
+
+funkcio ent b(ent j)
+{
+    redonu j;
+}
+
+funkcio ent c(ent m, ent n)
+{
+    redonu m + n;
+}
+
+komenco()
+lokaj variabloj:
+    ent i, j;
+{
+    presi(c(a(i), b(j)));
+}

@@ -244,9 +244,9 @@ class ReturnValueQuadruple(Quadruple):
     
     def get_intermediate_code_representation(self) -> str:
         q1 = str(self.operator.value)
-        q2 = str(self.return_variable.get_id())
+        q2 = str(self.return_variable.get_virtual_memory_address())
         q3 = str(self.UNUSED_STATEMENT)
-        q4 = str(self.function_global_variable.get_id())
+        q4 = str(self.function_global_variable.get_virtual_memory_address())
         return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 

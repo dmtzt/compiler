@@ -640,6 +640,7 @@ class Parser(object):
         function_return_type = function.get_return_type()
         global_function_variable = self.create_global_function_variable(function_id, function_return_type)
         self.insert_global_variable(function_id, global_function_variable)
+        self.increment_global_local_variable_counter(function_return_type)
 
 
     def p_parsed_void_function_id(self, p):

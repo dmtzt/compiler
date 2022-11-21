@@ -12,6 +12,7 @@ class Type(Enum):
     CHAR = 3
     BOOL = 4
     STRING = 5
+    POINTER = 6
 
 
 class Operator(Enum):

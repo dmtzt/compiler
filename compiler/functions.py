@@ -259,10 +259,10 @@ class FunctionDirectory:
 
     
     def get_intermediate_code_representation(self) -> list:
-        data = [
-            function.get_intermediate_code_representation()
-            for function in self._directory.values()
-        ]
+        data = {
+            function_id: self._directory[function_id].get_intermediate_code_representation()
+            for function_id in self._directory
+        }
 
         return data
 

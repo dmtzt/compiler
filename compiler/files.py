@@ -1,4 +1,5 @@
-from csv import reader
+import json
+
 from pathlib import Path
 from .quadruples import QuadrupleList
 from .intermediate_code import IntermediateCodeContainer
@@ -54,17 +55,21 @@ class IntermediateCodeFilePrinter:
 
 
 class IntermediateCodeFileReader:
-    def read_quadruples_list(self, fpath: Path) -> str:
+    def read_file(self, fpath: Path) -> str:
         if not fpath.is_file():
             raise FileNotFoundError()
 
         with open(fpath) as f:
-            return [line.rstrip() for line in f]
+            data = json.load(f)
+            return data
+        
+    
+    def generate_file_path(self, fname: str) -> Path:
+        return Path().absolute() / fname
 
 
-    def parse_quadruple(quadruple: str) -> tuple[str, str, str, str]:
-        toks = quadruple.split()
-        return toks[0], toks[1], toks[2], toks[3]
+    def get_file_suffix(self, fpath: Path) -> str:
+        return fpath.suffix
 
 
 class FileNotFoundError(RuntimeError):

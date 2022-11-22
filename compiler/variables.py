@@ -214,10 +214,10 @@ class VariableTable:
     
 
     def get_intermediate_code_representation(self) -> list:
-        return [
-            variable.get_intermediate_code_representation()
-            for variable in self._table.values()
-        ]
+        return {
+            variable_id: self._table[variable_id].get_intermediate_code_representation()
+            for variable_id in self._table
+        }
 
     
     def __str__(self) -> str:

@@ -76,15 +76,15 @@ class ActivationRecord:
     def get_intermediate_code_representation(self) -> dict:
         data = {
             "variable": {
-                str(key): self._variable[key]
+                str(key.value): self._variable[key]
                 for key in self._variable
             },
             "temporal": {
-                str(key): self._temporal[key]
+                str(key.value): self._temporal[key]
                 for key in self._temporal
             },
             "constant": {
-                str(key): self._constant[key]
+                str(key.value): self._constant[key]
                 for key in self._constant
             },
         }

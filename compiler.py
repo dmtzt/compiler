@@ -4,7 +4,6 @@ from pathlib import Path
 from compiler.files import SourceCodeFileReader
 from compiler.files import IntermediateCodeFilePrinter
 from compiler.parser import Parser
-from compiler.intermediate_code import IntermediateCodeContainer
 
 class InvalidFileExtensionError(RuntimeError):
     pass

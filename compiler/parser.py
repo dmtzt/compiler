@@ -84,8 +84,9 @@ class Parser(object):
         self.reset()
         self.parser.parse(file_data)
 
-        intermediate_code = self.generate_intermediate_code_container(self.function_directory, self.quadruple_list)
-        return intermediate_code
+        intermediate_code_container = self.generate_intermediate_code_container(self.function_directory, self.quadruple_list)
+        return intermediate_code_container
+        # return self.quadruple_list
 
     
     def generate_intermediate_code_container(
@@ -531,9 +532,6 @@ class Parser(object):
         end_program_quadruple = self.generate_end_program_quadruple()
         self.insert_quadruple(end_program_quadruple)
         self.increment_program_counter()
-
-        print(self.function_directory.__str__())
-        # print(self.operand_stack.__str__())
 
 
     def p_init(self, p):

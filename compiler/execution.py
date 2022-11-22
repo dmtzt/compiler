@@ -276,7 +276,11 @@ class Quadruple:
         self._q3 = quadruple[2]
         self._q4 = quadruple[3]
 
-    
+        
+    def get_operator(self) -> Operator:
+        return self._q1
+
+
     def __str__(self) -> str:
         return f'Quadruple({self._q1} {self._q2} {self._q3} {self._q4})'
         
@@ -287,6 +291,10 @@ class QuadrupleList:
             Quadruple(quadruple)
             for quadruple in quadruple_list
         ]
+
+
+    def get_quadruple(self, number: int) -> Quadruple:
+        return self._list[number]
 
 
     def __str__(self) -> str:

@@ -53,63 +53,95 @@ print(function_directory.__str__())
 print(quadruple_list.__str__())
 print(execution_stack.__str__())
 
+quadruple = quadruple_list.get_quadruple(0)
+operator = quadruple.get_operator()
 
+while operator != Operator.END:
+    match operator:
+        case Operator.ASGMT:
+            print('ASGMT')
+            program_counter += 1
+        case Operator.PLUS:
+            print('PLUS')
+            program_counter += 1
+        case Operator.MINUS:
+            print('MINUS')
+            program_counter += 1
+        case Operator.TIMES:
+            print('TIMES')
+            program_counter += 1
+        case Operator.DIVIDE:
+            print('DIVIDE')
+            program_counter += 1
+        case Operator.MODULO:
+            print('MODULE')
+            program_counter += 1
+        case Operator.UNARY_PLUS:
+            print('UNARY PLUS')
+            program_counter += 1
+        case Operator.UNARY_MINUS:
+            print('UNARY MINUS')
+            program_counter += 1
+        case Operator.EQUAL:
+            print('EQUAL')
+            program_counter += 1
+        case Operator.NEQUAL:
+            print('NEQUAL')
+            program_counter += 1
+        case Operator.LTHAN_EQUAL:
+            print('LTHAN EQUAL')
+            program_counter += 1
+        case Operator.GTHAN_EQUAL:
+            print('GTHAN EQUAL')
+            program_counter += 1
+        case Operator.LTHAN:
+            print('LTHAN')
+            program_counter += 1
+        case Operator.GTHAN:
+            print('GTHAN')
+            program_counter += 1
+        case Operator.AND:
+            print('AND')
+            program_counter += 1
+        case Operator.OR:
+            print('OR')
+            program_counter += 1
+        case Operator.NOT:
+            print('NOT')
+            program_counter += 1
+        case Operator.READ:
+            print('READ')
+            program_counter += 1
+        case Operator.PRINT:
+            print('PRINT')
+            program_counter += 1
+        case Operator.STORE_CONSTANT:
+            print('STORE_CONSTANT')
+            program_counter += 1
+        case Operator.GOTO:
+            print('GOTO')
+            program_counter += 1
+        case Operator.GOTOF:
+            print('GOTOF')
+            program_counter += 1
+        case Operator.GOSUB:
+            print('GOSUB')
+            program_counter += 1
+        case Operator.ERA:
+            print('ERA')
+            program_counter += 1
+        case Operator.PARAM:
+            print('PARAM')
+            program_counter += 1
+        case Operator.RETURN_VALUE:
+            print('RETURN VALUE')
+            program_counter += 1
+        case Operator.RETURN_VOID:
+            print('RETURN VOID')
+            program_counter += 1
+        case Operator.ENDFUNC:
+            print('ENDFUNC')
+            program_counter += 1
 
-# for quadruple in quadruple_list:
-#     match operator:
-#         case Operator.PLUS:
-#             pass
-#         case Operator.MINUS:
-#             pass
-#         case Operator.TIMES:
-#             pass
-#         case Operator.DIVIDE:
-#             pass
-#         case Operator.MODULO:
-#             pass
-#         case Operator.UNARY_PLUS:
-#             pass
-#         case Operator.UNARY_MINUS:
-#             pass
-#         case Operator.EQUAL:
-#             pass
-#         case Operator.NEQUAL:
-#             pass
-#         case Operator.LTHAN_EQUAL:
-#             pass
-#         case Operator.GTHAN_EQUAL:
-#             pass
-#         case Operator.LTHAN:
-#             pass
-#         case Operator.GTHAN:
-#             pass
-#         case Operator.AND:
-#             pass
-#         case Operator.OR:
-#             pass
-#         case Operator.NOT:
-#             pass
-#         case Operator.READ:
-#             pass
-#         case Operator.PRINT:
-#             pass
-#         case Operator.STORE_CONSTANT:
-#             pass
-#         case Operator.GOTO:
-#             pass
-#         case Operator.GOTOF:
-#             pass
-#         case Operator.GOSUB:
-#             pass
-#         case Operator.ERA:
-#             pass
-#         case Operator.PARAM:
-#             pass
-#         case Operator.RETURN_VALUE:
-#             pass
-#         case Operator.RETURN_VOID:
-#             pass
-#         case Operator.ENDFUNC:
-#             pass
-#         case Operator.END:
-#             pass
+    quadruple = quadruple_list.get_quadruple(program_counter)
+    operator = quadruple.get_operator()

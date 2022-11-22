@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
+import json
 
 from .operators import Operator
 
@@ -68,6 +69,10 @@ class Variable:
     def set_virtual_memory_address(self, virtual_memory_address: int) -> None:
         self._virtual_memory_address = virtual_memory_address
 
+    
+    def create_dimension_node_list(self) -> None:
+        self._dimension_nodes = deque()
+
 
     def append_dimension_node(self, dimension_node: DimensionNode) -> None:
         self._dimension_nodes.append(dimension_node)
@@ -81,7 +86,23 @@ class Variable:
         self._dimension_nodes[dimension].set_m(m)
 
     
+    def get_intermediate_code_representation(self) -> dict:
+        data = {
+            "id": self._id,
+            "type": self._type.value,
+            "virtual_memory_address": self._virtual_memory_address,
+        }
+
+        if self._dimension_nodes:
+            data["dimensions"] = [node.get_size() for node in self._dimension_nodes]
+        else:
+            data["dimensions"] = None
+
+        return data
+
+    
     def __str__(self) -> str:
+        print(self.get_intermediate_code_representation())
         return f'Variable({self._id} {self._type} {self._virtual_memory_address} {self._dimension_nodes})'
 
 
@@ -190,6 +211,13 @@ class VariableTable:
     
     def variable_exists(self, variable_id: str) -> bool:
         return variable_id in self._table
+    
+
+    def get_intermediate_code_representation(self) -> list:
+        return [
+            variable.get_intermediate_code_representation()
+            for variable in self._table.values()
+        ]
 
     
     def __str__(self) -> str:
@@ -203,7 +231,7 @@ class VariableTable:
         s += ')'
 
         return s
-
+    
 
 @dataclass
 class ParameterTable:
@@ -231,6 +259,13 @@ class ParameterTable:
         s += ')'
 
         return s
+    
+
+    def get_intermediate_code_representation(self) -> list:
+        return [
+                {"number": number + 1, "virtual_memory_address": param.get_virtual_memory_address()}
+                for number, param in enumerate(self._table)
+        ]
 
 
 class SemanticTable():

@@ -17,6 +17,18 @@ class InvalidFileExtensionError(RuntimeError):
     pass
 
 
+def get_base_virtual_memory_address(virtual_memory_address: int) -> int:
+    return VirtualMemoryAddressResolver.get_base_virtual_memory_address(virtual_memory_address)
+
+
+def resolve_base_virtual_memory_address(base_virtual_memory_address: int) -> tuple[str, Type]:
+    return VirtualMemoryAddressResolver.resolve_base_virtual_memory_address(base_virtual_memory_address)
+
+
+def get_variable_index(virtual_memory_address: int) -> int:
+    return VirtualMemoryAddressResolver.get_index(virtual_memory_address)
+
+
 def cast_constant(value: str, type: type) -> Union[int, float, bool, str]:
     match type:
         case Type.INT:
@@ -81,21 +93,134 @@ while operator != Operator.END:
     match operator:
         case Operator.ASGMT:
             print('ASGMT')
+            result_address = int(quadruple.get_q2())
+            result_base_address = get_base_virtual_memory_address(result_address)
+            result_index = get_variable_index(result_address)
+            result_memory, result_type = resolve_base_virtual_memory_address(result_base_address)
+            result_value = execution_stack.get_value_top_function_call(result_memory, result_type, result_index)
+
+            storage_address = int(quadruple.get_q4())
+            storage_base_address = get_base_virtual_memory_address(storage_address)
+            storage_index = get_variable_index(storage_address)
+            storage_memory, storage_type = resolve_base_virtual_memory_address(storage_base_address)
+
+            execution_stack.set_value_top_function_call(storage_memory, storage_type, storage_index, result_value)
+
             program_counter += 1
         case Operator.PLUS:
             print('PLUS')
+            left_address = int(quadruple.get_q2())
+            left_base_address = get_base_virtual_memory_address(left_address)
+            left_index = get_variable_index(left_address)
+            left_memory, left_type = resolve_base_virtual_memory_address(left_base_address)
+            left_value = execution_stack.get_value_top_function_call(left_memory, left_type, left_index)
+
+            right_address = int(quadruple.get_q3())
+            right_base_address = get_base_virtual_memory_address(right_address)
+            right_index = get_variable_index(right_address)
+            right_memory, right_type = resolve_base_virtual_memory_address(right_base_address)
+            right_value = execution_stack.get_value_top_function_call(right_memory, right_type, right_index)
+
+            result_address = int(quadruple.get_q4())
+            result_base_address = get_base_virtual_memory_address(result_address)
+            result_index = get_variable_index(result_address)
+            result_memory, result_type = resolve_base_virtual_memory_address(result_base_address)
+            
+            result_value = left_value + right_value
+            execution_stack.set_value_top_function_call(result_memory, result_type, result_index, result_value)
+            
             program_counter += 1
         case Operator.MINUS:
             print('MINUS')
+            left_address = int(quadruple.get_q2())
+            left_base_address = get_base_virtual_memory_address(left_address)
+            left_index = get_variable_index(left_address)
+            left_memory, left_type = resolve_base_virtual_memory_address(left_base_address)
+            left_value = execution_stack.get_value_top_function_call(left_memory, left_type, left_index)
+
+            right_address = int(quadruple.get_q3())
+            right_base_address = get_base_virtual_memory_address(right_address)
+            right_index = get_variable_index(right_address)
+            right_memory, right_type = resolve_base_virtual_memory_address(right_base_address)
+            right_value = execution_stack.get_value_top_function_call(right_memory, right_type, right_index)
+
+            result_address = int(quadruple.get_q4())
+            result_base_address = get_base_virtual_memory_address(result_address)
+            result_index = get_variable_index(result_address)
+            result_memory, result_type = resolve_base_virtual_memory_address(result_base_address)
+            
+            result_value = left_value - right_value
+            execution_stack.set_value_top_function_call(result_memory, result_type, result_index, result_value)
             program_counter += 1
         case Operator.TIMES:
             print('TIMES')
+
+            left_address = int(quadruple.get_q2())
+            left_base_address = get_base_virtual_memory_address(left_address)
+            left_index = get_variable_index(left_address)
+            left_memory, left_type = resolve_base_virtual_memory_address(left_base_address)
+            left_value = execution_stack.get_value_top_function_call(left_memory, left_type, left_index)
+
+            right_address = int(quadruple.get_q3())
+            right_base_address = get_base_virtual_memory_address(right_address)
+            right_index = get_variable_index(right_address)
+            right_memory, right_type = resolve_base_virtual_memory_address(right_base_address)
+            right_value = execution_stack.get_value_top_function_call(right_memory, right_type, right_index)
+
+            result_address = int(quadruple.get_q4())
+            result_base_address = get_base_virtual_memory_address(result_address)
+            result_index = get_variable_index(result_address)
+            result_memory, result_type = resolve_base_virtual_memory_address(result_base_address)
+            
+            result_value = left_value * right_value
+            execution_stack.set_value_top_function_call(result_memory, result_type, result_index, result_value)
+
             program_counter += 1
         case Operator.DIVIDE:
             print('DIVIDE')
+            left_address = int(quadruple.get_q2())
+            left_base_address = get_base_virtual_memory_address(left_address)
+            left_index = get_variable_index(left_address)
+            left_memory, left_type = resolve_base_virtual_memory_address(left_base_address)
+            left_value = execution_stack.get_value_top_function_call(left_memory, left_type, left_index)
+
+            right_address = int(quadruple.get_q3())
+            right_base_address = get_base_virtual_memory_address(right_address)
+            right_index = get_variable_index(right_address)
+            right_memory, right_type = resolve_base_virtual_memory_address(right_base_address)
+            right_value = execution_stack.get_value_top_function_call(right_memory, right_type, right_index)
+
+            result_address = int(quadruple.get_q4())
+            result_base_address = get_base_virtual_memory_address(result_address)
+            result_index = get_variable_index(result_address)
+            result_memory, result_type = resolve_base_virtual_memory_address(result_base_address)
+            
+            result_value = left_value // right_value
+            execution_stack.set_value_top_function_call(result_memory, result_type, result_index, result_value)
+            
             program_counter += 1
         case Operator.MODULO:
-            print('MODULE')
+            print('MODULO')
+            left_address = int(quadruple.get_q2())
+            left_base_address = get_base_virtual_memory_address(left_address)
+            left_index = get_variable_index(left_address)
+            left_memory, left_type = resolve_base_virtual_memory_address(left_base_address)
+            left_value = execution_stack.get_value_top_function_call(left_memory, left_type, left_index)
+
+            right_address = int(quadruple.get_q3())
+            right_base_address = get_base_virtual_memory_address(right_address)
+            right_index = get_variable_index(right_address)
+            right_memory, right_type = resolve_base_virtual_memory_address(right_base_address)
+            right_value = execution_stack.get_value_top_function_call(right_memory, right_type, right_index)
+
+            result_address = int(quadruple.get_q4())
+            result_base_address = get_base_virtual_memory_address(result_address)
+            result_index = get_variable_index(result_address)
+            result_memory, result_type = resolve_base_virtual_memory_address(result_base_address)
+            
+            result_value = left_value % right_value
+            execution_stack.set_value_top_function_call(result_memory, result_type, result_index, result_value)
+            
             program_counter += 1
         case Operator.UNARY_PLUS:
             print('UNARY PLUS')
@@ -132,24 +257,38 @@ while operator != Operator.END:
             program_counter += 1
         case Operator.READ:
             print('READ')
+            storage_address = int(quadruple.get_q4())
+            storage_base_address = get_base_virtual_memory_address(storage_address)
+            storage_index = get_variable_index(storage_address)
+            storage_memory, storage_type = resolve_base_virtual_memory_address(storage_base_address)
+
+            reading_value = input()
+            storage_value = cast_constant(reading_value, storage_type)
+
+            execution_stack.set_value_top_function_call(storage_memory, storage_type, storage_index, storage_value)
             program_counter += 1
         case Operator.PRINT:
             # print('PRINT')
-            virtual_memory_address = int(quadruple.get_q4())
-            base_virtual_memory_address = VirtualMemoryAddressResolver.get_base_virtual_memory_address(virtual_memory_address)
-            count = VirtualMemoryAddressResolver.get_counter(virtual_memory_address)
-            memory, constant_type = VirtualMemoryAddressResolver.resolve_base_virtual_memory_address(base_virtual_memory_address)
-            value = execution_stack.get_variable_top_function_call(memory, constant_type, count)
+            address = int(quadruple.get_q4())
+            base_address = get_base_virtual_memory_address(address)
+            index = get_variable_index(address)
+
+            memory, type = resolve_base_virtual_memory_address(base_address)
+            value = execution_stack.get_value_top_function_call(memory, type, index)
+            
             print(value)
+
             program_counter += 1
         case Operator.STORE_CONSTANT:
             # print('STORE_CONSTANT')
-            virtual_memory_address = int(quadruple.get_q4())
-            base_virtual_memory_address = VirtualMemoryAddressResolver.get_base_virtual_memory_address(virtual_memory_address)
-            count = VirtualMemoryAddressResolver.get_counter(virtual_memory_address)
-            memory, constant_type = VirtualMemoryAddressResolver.resolve_base_virtual_memory_address(base_virtual_memory_address)
-            constant = cast_constant(quadruple.get_q2(), constant_type)
-            execution_stack.set_variable_top_function_call(memory, constant_type, count, constant)
+            address = int(quadruple.get_q4())
+            base_address = get_base_virtual_memory_address(address)
+            index = get_variable_index(address)
+
+            memory, type = resolve_base_virtual_memory_address(base_address)
+            constant = cast_constant(quadruple.get_q2(), type)
+            execution_stack.set_value_top_function_call(memory, type, index, constant)
+            
             program_counter += 1
         case Operator.GOTO:
             # print('GOTO')

@@ -41,13 +41,13 @@ class VirtualMemoryAddressResolver:
     
 
     @staticmethod
-    def get_counter(virtual_memory_address: int) -> int:
+    def get_index(virtual_memory_address: int) -> int:
         return virtual_memory_address % 1000
 
 
     @classmethod
-    def resolve_base_virtual_memory_address(cls, base_virtual_address: VirtualMemoryAddressEnumeration) -> tuple[str, Type]:
-        return cls._address_dict[VirtualMemoryAddressEnumeration(base_virtual_address)]
+    def resolve_base_virtual_memory_address(cls, base_virtual_memory_address: VirtualMemoryAddressEnumeration) -> tuple[str, Type]:
+        return cls._address_dict[VirtualMemoryAddressEnumeration(base_virtual_memory_address)]
 
 
 class Variable:
@@ -170,19 +170,19 @@ class FunctionCall:
             self,
             memory: str,
             type: Type,
-            count: int,
+            index: int,
             value: Union[int, float, bool, str],
     ) -> None:
-        self._memory[memory][type][count] = value
+        self._memory[memory][type][index] = value
 
     
     def get_variable(
             self,
             memory: str,
             type: Type,
-            count: int,
-    ) -> None:
-        return self._memory[memory][type][count]
+            index: int,
+    ) -> Union[int, float, bool, str]:
+        return self._memory[memory][type][index]
 
 
     def get_variable_int(self, count: int) -> int:
@@ -371,7 +371,7 @@ class ExecutionStack:
         self._stack.pop()
 
     
-    def set_variable_top_function_call(
+    def set_value_top_function_call(
             self,
             memory: str,
             type: Type,
@@ -381,7 +381,7 @@ class ExecutionStack:
         self._stack[-1].set_variable(memory, type, count, value)
 
     
-    def get_variable_top_function_call(
+    def get_value_top_function_call(
             self,
             memory: str,
             type: Type,

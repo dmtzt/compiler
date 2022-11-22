@@ -5,4 +5,5 @@ compiler/intermediate_code_generation.py
 compiler/dump.py
 dump.txt
 test.names
+test.debug
 test.obj

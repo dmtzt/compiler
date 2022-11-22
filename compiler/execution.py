@@ -4,9 +4,37 @@ from enum import Enum
 
 from compiler.operators import Operator
 from compiler.variables import Type
+from compiler.memory import VirtualMemoryAddressEnumeration
 
 class Limit(Enum):
     EXECUTION_STACK_LIMIT = 1000
+
+
+class VirtualMemoryAddressResolver:
+    _address_dict = {
+        VirtualMemoryAddressEnumeration.GLOBAL_VARIABLE_INT: ('global', Type.INT),
+        VirtualMemoryAddressEnumeration.GLOBAL_VARIABLE_REAL: ('global', Type.REAL),
+        VirtualMemoryAddressEnumeration.GLOBAL_VARIABLE_CHAR: ('global', Type.CHAR),
+        VirtualMemoryAddressEnumeration.GLOBAL_VARIABLE_BOOL: ('global', Type.BOOL),
+        VirtualMemoryAddressEnumeration.LOCAL_VARIABLE_INT: ('variable', Type.INT),
+        VirtualMemoryAddressEnumeration.LOCAL_VARIABLE_REAL: ('variable', Type.REAL),
+        VirtualMemoryAddressEnumeration.LOCAL_VARIABLE_CHAR: ('variable', Type.CHAR),
+        VirtualMemoryAddressEnumeration.LOCAL_VARIABLE_BOOL: ('variable', Type.BOOL),
+        VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_INT: ('temporal', Type.INT),
+        VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_REAL: ('temporal', Type.REAL),
+        VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_CHAR: ('temporal', Type.CHAR),
+        VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_BOOL: ('temporal', Type.BOOL),
+        VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_POINTER: ('temporal', Type.POINTER),
+        VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_INT: ('constant', Type.INT),
+        VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_REAL: ('constant', Type.REAL),
+        VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_CHAR: ('constant', Type.CHAR),
+        VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_BOOL: ('constant', Type.BOOL),
+        VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_STRING: ('constant', Type.STRING),
+    }
+
+    @classmethod
+    def resolve_virtual_address(cls, base_virtual_address: VirtualMemoryAddressEnumeration) -> tuple[str, Type]:
+        return cls._address_dict[base_virtual_address]
 
 
 class Variable:
@@ -86,7 +114,11 @@ class FunctionDirectory:
 class FunctionCall:
     def __init__(self) -> None:
         self._function_id = None
-        self._memory = None
+        self._memory = {
+            'variable': {},
+            'temporal': {},
+            'constant': {},
+        }
 
 
     def get_variable_int(self, count: int) -> int:
@@ -137,7 +169,7 @@ class FunctionCall:
         return self._memory['temporal'][Type.CHAR][count]
     
 
-    def get_temporal_pointer(self, count: int) -> str:
+    def get_temporal_pointer(self, count: int) -> int:
         return self._memory['temporal'][Type.POINTER][count]
 
 
@@ -159,6 +191,46 @@ class FunctionCall:
     
     def set_temporal_pointer(self, count: int, value: int) -> None:
         self._memory['temporal'][Type.POINTER][count] = value
+
+    
+    def get_constant_int(self, count: int) -> int:
+        return self._memory['constant'][Type.INT][count]
+
+
+    def get_constant_real(self, count: int) -> float:
+        return self._memory['constant'][Type.REAL][count]
+
+
+    def get_constant_bool(self, count: int) -> bool:
+        return self._memory['constant'][Type.BOOL][count]
+
+
+    def get_constant_char(self, count: int) -> str:
+        return self._memory['constant'][Type.CHAR][count]
+    
+
+    def get_constant_string(self, count: int) -> str:
+        return self._memory['constant'][Type.STRING][count]
+
+
+    def set_constant_int(self, count: int, value: int) -> None:
+        self._memory['constant'][Type.INT][count] = value
+
+
+    def set_constant_real(self, count: int, value: float) -> None:
+        self._memory['constant'][Type.REAL][count] = value
+
+
+    def set_constant_bool(self, count: int, value: bool) -> None:
+        self._memory['constant'][Type.BOOL][count] = value
+
+
+    def set_constant_char(self, count: int, value: int) -> None:
+        self._memory['constant'][Type.CHAR][count] = value
+
+    
+    def set_constant_string(self, count: int, value: str) -> None:
+        self._memory['constant'][Type.STRING][count] = value
 
         
 class Quadruple:
@@ -197,17 +269,33 @@ class QuadrupleList:
 
 @dataclass
 class ExecutionStack:
-    _stack : deque[FunctionCall] = field(default_factory=deque)
+    _stack : list[FunctionCall] = field(default_factory=list)
     _limit : int = field(default=Limit.EXECUTION_STACK_LIMIT)
 
-    def push_function(self, function: Function) -> None:
+    def push_function_call(self, function_call: FunctionCall) -> None:
         if len(self._stack) > self._limit:
             raise StackOverflow()
         
         self._stack.append(function)
 
 
-class FunctionParametersStack:
+    def pop_function_call(self) -> None:
+        self._stack.pop()
+
+
+
+class InstructionPointerStack:
+    _stack : list[int] = field(default_factory=list)
+
+    def push_pointer(self, pointer: int) -> None:
+        self._stack.append(pointer)
+
+
+    def pop_pointer(self) -> int:
+        return self._stack.pop()
+
+
+class FunctionParameterStack:
     pass
 
 

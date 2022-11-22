@@ -19,10 +19,10 @@ def main():
     arg_parser = argparse.ArgumentParser(description='Esperanto compiler')
 
     arg_parser.add_argument('infile', type=str, help='Input file name')
-    arg_parser.add_argument('-n',
-                            '--names',
+    arg_parser.add_argument('-d',
+                            '--debug',
                             action='store_true',
-                            help='Generate additional named representation file')
+                            help='Generate additional debug file')
     arg_parser.add_argument('-o',
                             metavar='outfile',
                             action='store',
@@ -42,12 +42,12 @@ def main():
     fdata = file_reader.read_file(fpath)
     intermediate_code_container = parser.parse(fdata)
 
-    if args.names:
-        named_repr_fpath = file_printer.generate_named_representation_file_path(fstem)
-        file_printer.generate_named_representation_file(named_repr_fpath, quadruple_list)
+    if args.debug:
+        named_repr_fpath = file_printer.generate_debug_file_path(fstem)
+        file_printer.generate_debug_file(named_repr_fpath, intermediate_code_container)
 
     code_repr_fpath = file_printer.generate_intermediate_code_representation_file_path(fstem)
-    file_printer.generate_intermediate_code_representation_file(code_repr_fpath, quadruple_list)
+    file_printer.generate_intermediate_code_representation_file(code_repr_fpath, intermediate_code_container)
 
 
 if __name__ == '__main__':

@@ -4,13 +4,14 @@ from pathlib import Path
 from compiler.execution import ExecutionStack
 from compiler.execution import FunctionCall
 from compiler.execution import FunctionDirectory
+from compiler.execution import FunctionParameterStack
+from compiler.execution import InstructionPointerStack
 from compiler.execution import QuadrupleList
 from compiler.files import IntermediateCodeFileReader
 from compiler.operators import Operator
 
 class InvalidFileExtensionError(RuntimeError):
     pass
-
 
 
 FILE_EXTENSION = '.obj'
@@ -21,8 +22,11 @@ SECOND_OPERAND = 2
 THIRD_OPERAND = 3
 
 file_reader = IntermediateCodeFileReader()
+
 execution_stack = ExecutionStack()
-operator = 1
+instruction_pointer_stack = InstructionPointerStack()
+function_parameter_stack = FunctionParameterStack()
+
 program_counter = 0
 
 arg_parser = argparse.ArgumentParser(description='Esperanto executer')

@@ -107,7 +107,7 @@ class VirtualMemoryAddressEnumeration(Enum):
     LOCAL_TEMPORAL_REAL = 9000
     LOCAL_TEMPORAL_CHAR = 10000
     LOCAL_TEMPORAL_BOOL = 11000
-    LOCAL_TEMP_POINTER = 12000
+    LOCAL_TEMPORAL_POINTER = 12000
 
     LOCAL_CONSTANT_INT = 13000
     LOCAL_CONSTANT_REAL = 14000
@@ -136,7 +136,7 @@ class VirtualMemoryAddress:
         Type.REAL: VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_REAL.value,
         Type.CHAR: VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_CHAR.value,
         Type.BOOL: VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_BOOL.value,
-        Type.POINTER: VirtualMemoryAddressEnumeration.LOCAL_TEMP_POINTER.value,
+        Type.POINTER: VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_POINTER.value,
     }
 
     _constant = {

@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+from typing import Union
 
 from compiler.execution import ExecutionStack
 from compiler.execution import FunctionCall
@@ -7,11 +8,31 @@ from compiler.execution import FunctionDirectory
 from compiler.execution import FunctionParameterStack
 from compiler.execution import InstructionPointerStack
 from compiler.execution import QuadrupleList
+from compiler.execution import VirtualMemoryAddressResolver
 from compiler.files import IntermediateCodeFileReader
 from compiler.operators import Operator
+from compiler.variables import Type
 
 class InvalidFileExtensionError(RuntimeError):
     pass
+
+
+def cast_constant(value: str, type: type) -> Union[int, float, bool, str]:
+    match type:
+        case Type.INT:
+            return int(value)
+        case Type.REAL:
+            return float(value)
+        case Type.BOOL:
+            return bool(value)
+        case Type.CHAR:
+            return str(value)
+        case Type.STRING:
+            return str(value)
+        case Type.POINTER:
+            return int(value)
+        case _:
+            return str(value)
 
 
 FILE_EXTENSION = '.obj'
@@ -113,14 +134,27 @@ while operator != Operator.END:
             print('READ')
             program_counter += 1
         case Operator.PRINT:
-            print('PRINT')
+            # print('PRINT')
+            virtual_memory_address = int(quadruple.get_q4())
+            base_virtual_memory_address = VirtualMemoryAddressResolver.get_base_virtual_memory_address(virtual_memory_address)
+            count = VirtualMemoryAddressResolver.get_counter(virtual_memory_address)
+            memory, constant_type = VirtualMemoryAddressResolver.resolve_base_virtual_memory_address(base_virtual_memory_address)
+            value = execution_stack.get_variable_top_function_call(memory, constant_type, count)
+            print(value)
             program_counter += 1
         case Operator.STORE_CONSTANT:
-            print('STORE_CONSTANT')
+            # print('STORE_CONSTANT')
+            virtual_memory_address = int(quadruple.get_q4())
+            base_virtual_memory_address = VirtualMemoryAddressResolver.get_base_virtual_memory_address(virtual_memory_address)
+            count = VirtualMemoryAddressResolver.get_counter(virtual_memory_address)
+            memory, constant_type = VirtualMemoryAddressResolver.resolve_base_virtual_memory_address(base_virtual_memory_address)
+            constant = cast_constant(quadruple.get_q2(), constant_type)
+            execution_stack.set_variable_top_function_call(memory, constant_type, count, constant)
             program_counter += 1
         case Operator.GOTO:
-            print('GOTO')
-            program_counter += 1
+            # print('GOTO')
+            jumped_to_program_counter = int(quadruple.get_q4())
+            program_counter = jumped_to_program_counter
         case Operator.GOTOF:
             print('GOTOF')
             program_counter += 1

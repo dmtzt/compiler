@@ -32,8 +32,10 @@ def activation_record_constant_factory():
 
 
 @dataclass
-class GlobalActivationRecord:
+class ActivationRecord:
     _variable : dict[Type, int] = field(default_factory=activation_record_variable_factory)
+    _temporal : dict[Type, int] = field(default_factory=activation_record_temporal_factory)
+    _constant : dict[Type, int] = field(default_factory=activation_record_constant_factory)
 
     def get_variable_counter(self, type: Type) -> int:
         return self._variable[type]
@@ -46,16 +48,6 @@ class GlobalActivationRecord:
     def increment_variable_counter_array(self, type: Type, array_size: int) -> None:
         self._variable[type] += array_size
         print(self._variable[type])
-
-    
-    # def __str__(self) -> str:
-    #     self.__class__
-
-
-@dataclass
-class LocalActivationRecord(GlobalActivationRecord):
-    _temporal : dict[Type, int] = field(default_factory=activation_record_temporal_factory)
-    _constant : dict[Type, int] = field(default_factory=activation_record_constant_factory)
 
     def get_temporal_counter(self, type: Type) -> int:
         return self._temporal[type]
@@ -79,6 +71,25 @@ class LocalActivationRecord(GlobalActivationRecord):
 
     def increment_constant_counter(self, type: Type) -> None:
         self._constant[type] += 1
+
+    
+    def get_intermediate_code_representation(self) -> dict:
+        data = {
+            "variable": {
+                str(key): self._variable[key]
+                for key in self._variable
+            },
+            "temporal": {
+                str(key): self._temporal[key]
+                for key in self._temporal
+            },
+            "constant": {
+                str(key): self._constant[key]
+                for key in self._constant
+            },
+        }
+
+        return data
 
 
 class VirtualMemoryAddressEnumeration(Enum):

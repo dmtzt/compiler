@@ -45,8 +45,15 @@ data = file_reader.read_file(fpath)
 function_directory = FunctionDirectory(data['function_directory'])
 quadruple_list = QuadrupleList(data['quadruple_list'])
 
+main_function = function_directory.get_function('main')
+main_function_call = FunctionCall(main_function)
+execution_stack.push_function_call(main_function_call)
+
 print(function_directory.__str__())
 print(quadruple_list.__str__())
+print(execution_stack.__str__())
+
+
 
 # for quadruple in quadruple_list:
 #     match operator:

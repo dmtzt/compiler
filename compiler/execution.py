@@ -1,4 +1,3 @@
-from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -78,6 +77,22 @@ class Function:
         }
 
 
+    def get_id(self) -> str:
+        return self._id
+    
+
+    def get_variable_activation_record(self) -> dict:
+        return self._activation_record['variable']
+    
+
+    def get_temporal_activation_record(self) -> dict:
+        return self._activation_record['temporal']
+
+
+    def get_constant_activation_record(self) -> dict:
+        return self._activation_record['constant']
+
+
     def __str__(self) -> str:
         s = f'Function({self._id} {self._return_type} {self._start_quadruple_number} {self._activation_record}\n'
         
@@ -111,13 +126,30 @@ class FunctionDirectory:
         return s
     
 
+    def get_function(self, function_id: str) -> Function:
+        return self._directory[function_id]
+
 class FunctionCall:
-    def __init__(self) -> None:
-        self._function_id = None
+    def __init__(self, function: Function) -> None:
+        self._function_id = function.get_id()
+
+        variable_activation_record = function.get_variable_activation_record()
+        temporal_activation_record = function.get_temporal_activation_record()
+        constant_activation_record = function.get_constant_activation_record()
+
         self._memory = {
-            'variable': {},
-            'temporal': {},
-            'constant': {},
+            'variable': {
+                type : [None] * variable_activation_record[type]
+                for type in variable_activation_record
+            },
+            'temporal': {
+                type : [None] * temporal_activation_record[type]
+                for type in temporal_activation_record
+            },
+            'constant': {
+                type : [None] * constant_activation_record[type]
+                for type in constant_activation_record
+            },
         }
 
 
@@ -232,6 +264,10 @@ class FunctionCall:
     def set_constant_string(self, count: int, value: str) -> None:
         self._memory['constant'][Type.STRING][count] = value
 
+    
+    def __str__(self) -> str:
+        return f'FunctionCall({self._function_id}: {self._memory})'
+
         
 class Quadruple:
     def __init__(self, quadruple: list) -> None:
@@ -270,17 +306,30 @@ class QuadrupleList:
 @dataclass
 class ExecutionStack:
     _stack : list[FunctionCall] = field(default_factory=list)
-    _limit : int = field(default=Limit.EXECUTION_STACK_LIMIT)
+    _limit : int = field(default=Limit.EXECUTION_STACK_LIMIT.value)
 
     def push_function_call(self, function_call: FunctionCall) -> None:
         if len(self._stack) > self._limit:
             raise StackOverflow()
         
-        self._stack.append(function)
+        self._stack.append(function_call)
 
 
     def pop_function_call(self) -> None:
         self._stack.pop()
+
+    
+    def __str__(self) -> str:
+        s = 'ExecutionStack(\n'
+
+        for function_call in self._stack:
+            s += '\t'
+            s += function_call.__str__()
+            s += '\n'
+
+        s += ')'
+
+        return s
 
 
 

@@ -2,8 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 
-from .memory import GlobalActivationRecord
-from .memory import LocalActivationRecord
+from .memory import ActivationRecord
 from .variables import Variable
 from .variables import VariableTable
 from .variables import ParameterTable
@@ -16,11 +15,15 @@ class Names(Enum):
 
 
 @dataclass
-class Module:
+class Function:
     _id : str = field(init=False)
-    _activation_record : GlobalActivationRecord = field(default_factory=GlobalActivationRecord)
+    _return_type : Type = field(init=False, default=None)
+    _start_quadruple_number : int = field(init=False, default=None)
+    _activation_record : ActivationRecord = field(default_factory=ActivationRecord)
     _variable_table : VariableTable = field(default_factory=VariableTable)
+    _parameter_table : ParameterTable = field(default_factory=ParameterTable)
 
+    
     def get_id(self) -> Type:
         return self._id
 
@@ -51,18 +54,6 @@ class Module:
 
     def variable_exists(self, variable_id: str) -> bool:
         return self._variable_table.variable_exists(variable_id)
-
-    
-    def __str__(self) -> str:
-        return f'Module({self._id} {self._activation_record.__str__()} {self._variable_table.__str__()}'
-
-
-@dataclass
-class Function(Module):
-    _return_type : Type = field(init=False, default=None)
-    _start_quadruple_number : int = field(init=False, default=None)
-    _activation_record : LocalActivationRecord = field(default_factory=LocalActivationRecord)
-    _parameter_table : ParameterTable = field(default_factory=ParameterTable)
 
 
     def get_return_type(self) -> Type:
@@ -113,6 +104,19 @@ class Function(Module):
         self._activation_record.increment_constant_counter(variable_type)
 
     
+    def get_intermediate_code_representation(self) -> dict:
+        data = {
+            "id": self._id,
+            "return_type": self._return_type.value if self._return_type else None,
+            "start_quadruple_number": self._start_quadruple_number,
+            "activation_record": self._activation_record.get_intermediate_code_representation(),
+            "variable_table": self._variable_table.get_intermediate_code_representation(),
+            "parameter_table": self._parameter_table.get_intermediate_code_representation(),
+        }
+
+        return data
+
+    
     def __str__(self) -> str:
         return f'Function({self._id} {self._activation_record.__str__()} {self._variable_table.__str__()} {self._parameter_table.__str__()}'
 
@@ -129,7 +133,7 @@ class FunctionDirectory:
     def generate_global_module(self) -> None:
         global_id = Names.GLOBAL.value
 
-        global_module = Module()
+        global_module = Function()
         global_module.set_id(global_id)
         self.insert_function(global_id, global_module)
 
@@ -252,6 +256,15 @@ class FunctionDirectory:
 
     def increment_function_constant_counter(self, function_id: str, variable_type: Type) -> None:
         self._directory[function_id].increment_constant_counter(variable_type)
+
+    
+    def get_intermediate_code_representation(self) -> list:
+        data = [
+            function.get_intermediate_code_representation()
+            for function in self._directory.values()
+        ]
+
+        return data
 
     
     def __str__(self) -> str:

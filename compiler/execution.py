@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Union
 
 from compiler.operators import Operator
 from compiler.variables import Type
@@ -31,9 +32,22 @@ class VirtualMemoryAddressResolver:
         VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_STRING: ('constant', Type.STRING),
     }
 
+    @staticmethod
+    def get_base_virtual_memory_address(virtual_memory_address: int) -> int:
+        base = int(virtual_memory_address / 1000)
+        base *= 1000
+
+        return base
+    
+
+    @staticmethod
+    def get_counter(virtual_memory_address: int) -> int:
+        return virtual_memory_address % 1000
+
+
     @classmethod
-    def resolve_virtual_address(cls, base_virtual_address: VirtualMemoryAddressEnumeration) -> tuple[str, Type]:
-        return cls._address_dict[base_virtual_address]
+    def resolve_base_virtual_memory_address(cls, base_virtual_address: VirtualMemoryAddressEnumeration) -> tuple[str, Type]:
+        return cls._address_dict[VirtualMemoryAddressEnumeration(base_virtual_address)]
 
 
 class Variable:
@@ -152,6 +166,24 @@ class FunctionCall:
             },
         }
 
+    def set_variable(
+            self,
+            memory: str,
+            type: Type,
+            count: int,
+            value: Union[int, float, bool, str],
+    ) -> None:
+        self._memory[memory][type][count] = value
+
+    
+    def get_variable(
+            self,
+            memory: str,
+            type: Type,
+            count: int,
+    ) -> None:
+        return self._memory[memory][type][count]
+
 
     def get_variable_int(self, count: int) -> int:
         return self._memory['variable'][Type.INT][count]
@@ -220,7 +252,7 @@ class FunctionCall:
     def set_temporal_char(self, count: int, value: int) -> None:
         self._memory['temporal'][Type.CHAR][count] = value
 
-    
+
     def set_temporal_pointer(self, count: int, value: int) -> None:
         self._memory['temporal'][Type.POINTER][count] = value
 
@@ -279,6 +311,18 @@ class Quadruple:
         
     def get_operator(self) -> Operator:
         return self._q1
+    
+
+    def get_q2(self) -> str:
+        return self._q2
+    
+
+    def get_q3(self) -> str:
+        return self._q3
+
+
+    def get_q4(self) -> str:
+        return self._q4
 
 
     def __str__(self) -> str:
@@ -325,6 +369,25 @@ class ExecutionStack:
 
     def pop_function_call(self) -> None:
         self._stack.pop()
+
+    
+    def set_variable_top_function_call(
+            self,
+            memory: str,
+            type: Type,
+            count: int,
+            value: Union[int, float, bool, str],
+    ) -> None:
+        self._stack[-1].set_variable(memory, type, count, value)
+
+    
+    def get_variable_top_function_call(
+            self,
+            memory: str,
+            type: Type,
+            count: int,
+    ) -> None:
+        return self._stack[-1].get_variable(memory, type, count)
 
     
     def __str__(self) -> str:

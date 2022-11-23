@@ -82,9 +82,9 @@ main_function = function_directory.get_function('main')
 main_function_call = FunctionCall(main_function)
 execution_stack.push_function_call(main_function_call)
 
-print(function_directory.__str__())
-print(quadruple_list.__str__())
-print(execution_stack.__str__())
+
+
+
 
 quadruple = quadruple_list.get_quadruple(0)
 operator = quadruple.get_operator()
@@ -92,7 +92,7 @@ operator = quadruple.get_operator()
 while operator != Operator.END:
     match operator:
         case Operator.ASGMT:
-            print('ASGMT')
+            
             result_address = int(quadruple.get_q2())
             result_base_address = get_base_virtual_memory_address(result_address)
             result_index = get_variable_index(result_address)
@@ -108,7 +108,7 @@ while operator != Operator.END:
 
             program_counter += 1
         case Operator.PLUS:
-            print('PLUS')
+            
             left_address = int(quadruple.get_q2())
             left_base_address = get_base_virtual_memory_address(left_address)
             left_index = get_variable_index(left_address)
@@ -131,7 +131,7 @@ while operator != Operator.END:
             
             program_counter += 1
         case Operator.MINUS:
-            print('MINUS')
+            
             left_address = int(quadruple.get_q2())
             left_base_address = get_base_virtual_memory_address(left_address)
             left_index = get_variable_index(left_address)
@@ -153,7 +153,7 @@ while operator != Operator.END:
             execution_stack.set_value_top_function_call(result_memory, result_type, result_index, result_value)
             program_counter += 1
         case Operator.TIMES:
-            print('TIMES')
+            
 
             left_address = int(quadruple.get_q2())
             left_base_address = get_base_virtual_memory_address(left_address)
@@ -177,7 +177,7 @@ while operator != Operator.END:
 
             program_counter += 1
         case Operator.DIVIDE:
-            print('DIVIDE')
+            
             left_address = int(quadruple.get_q2())
             left_base_address = get_base_virtual_memory_address(left_address)
             left_index = get_variable_index(left_address)
@@ -200,7 +200,7 @@ while operator != Operator.END:
             
             program_counter += 1
         case Operator.MODULO:
-            print('MODULO')
+            
             left_address = int(quadruple.get_q2())
             left_base_address = get_base_virtual_memory_address(left_address)
             left_index = get_variable_index(left_address)
@@ -223,40 +223,40 @@ while operator != Operator.END:
             
             program_counter += 1
         case Operator.UNARY_PLUS:
-            print('UNARY PLUS')
+            
             program_counter += 1
         case Operator.UNARY_MINUS:
-            print('UNARY MINUS')
+            
             program_counter += 1
         case Operator.EQUAL:
-            print('EQUAL')
+            
             program_counter += 1
         case Operator.NEQUAL:
-            print('NEQUAL')
+            
             program_counter += 1
         case Operator.LTHAN_EQUAL:
-            print('LTHAN EQUAL')
+            
             program_counter += 1
         case Operator.GTHAN_EQUAL:
-            print('GTHAN EQUAL')
+            
             program_counter += 1
         case Operator.LTHAN:
-            print('LTHAN')
+            
             program_counter += 1
         case Operator.GTHAN:
-            print('GTHAN')
+            
             program_counter += 1
         case Operator.AND:
-            print('AND')
+            
             program_counter += 1
         case Operator.OR:
-            print('OR')
+            
             program_counter += 1
         case Operator.NOT:
-            print('NOT')
+            
             program_counter += 1
         case Operator.READ:
-            print('READ')
+            
             storage_address = int(quadruple.get_q4())
             storage_base_address = get_base_virtual_memory_address(storage_address)
             storage_index = get_variable_index(storage_address)
@@ -268,7 +268,7 @@ while operator != Operator.END:
             execution_stack.set_value_top_function_call(storage_memory, storage_type, storage_index, storage_value)
             program_counter += 1
         case Operator.PRINT:
-            # print('PRINT')
+            # 
             address = int(quadruple.get_q4())
             base_address = get_base_virtual_memory_address(address)
             index = get_variable_index(address)
@@ -280,7 +280,7 @@ while operator != Operator.END:
 
             program_counter += 1
         case Operator.STORE_CONSTANT:
-            # print('STORE_CONSTANT')
+            # 
             address = int(quadruple.get_q4())
             base_address = get_base_virtual_memory_address(address)
             index = get_variable_index(address)
@@ -291,29 +291,29 @@ while operator != Operator.END:
             
             program_counter += 1
         case Operator.GOTO:
-            # print('GOTO')
+            # 
             jumped_to_program_counter = int(quadruple.get_q4())
             program_counter = jumped_to_program_counter
         case Operator.GOTOF:
-            print('GOTOF')
+            
             program_counter += 1
         case Operator.GOSUB:
-            print('GOSUB')
+            
             program_counter += 1
         case Operator.ERA:
-            print('ERA')
+            
             program_counter += 1
         case Operator.PARAM:
-            print('PARAM')
+            
             program_counter += 1
         case Operator.RETURN_VALUE:
-            print('RETURN VALUE')
+            
             program_counter += 1
         case Operator.RETURN_VOID:
-            print('RETURN VOID')
+            
             program_counter += 1
         case Operator.ENDFUNC:
-            print('ENDFUNC')
+            
             program_counter += 1
 
     quadruple = quadruple_list.get_quadruple(program_counter)

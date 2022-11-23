@@ -1,0 +1,14 @@
+komenco()
+lokaj variabloj:
+   ent i, j;
+{
+   i = 1;
+   j = 2;
+
+   se (i > 1)
+   {
+      presi(i);
+   }
+
+   presi(j);
+}

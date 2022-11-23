@@ -1,0 +1,5 @@
+komenco()
+{
+    presi("Hello world");
+    presi("ESTA VIVOOOOO");
+}

@@ -1,0 +1,7 @@
+komenco()
+lokaj variabloj:
+   ent i;
+{
+   i = 1 + 10/5 - 2 * 4;
+   presi(i);
+}

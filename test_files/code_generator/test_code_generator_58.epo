@@ -1,0 +1,9 @@
+komenco()
+lokaj variabloj:
+   ent i;
+{
+   i = 69;
+   presi(i);
+   i = 420;
+   presi(i);
+}

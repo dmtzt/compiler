@@ -1,0 +1,15 @@
+tutmondaj variabloj:
+    ent x;
+
+
+funkcio ent fun(ent y)
+lokaj variabloj:
+    ent z;
+{
+
+}
+
+komenco()
+{
+
+}

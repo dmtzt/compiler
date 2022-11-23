@@ -166,7 +166,7 @@ class FunctionCall:
             },
         }
 
-    def set_variable(
+    def set_value(
             self,
             memory: str,
             type: Type,
@@ -176,125 +176,18 @@ class FunctionCall:
         self._memory[memory][type][index] = value
 
     
-    def get_variable(
+    def get_value(
             self,
             memory: str,
             type: Type,
             index: int,
     ) -> Union[int, float, bool, str]:
+        value = self._memory[memory][type][index]
+
+        if value is None:
+            raise VariableNotInitializedError()
+
         return self._memory[memory][type][index]
-
-
-    def get_variable_int(self, count: int) -> int:
-        return self._memory['variable'][Type.INT][count]
-
-
-    def get_variable_real(self, count: int) -> float:
-        return self._memory['variable'][Type.REAL][count]
-
-
-    def get_variable_bool(self, count: int) -> bool:
-        return self._memory['variable'][Type.BOOL][count]
-
-
-    def get_variable_char(self, count: int) -> str:
-        return self._memory['variable'][Type.CHAR][count]
-
-
-    def set_variable_int(self, count: int, value: int) -> None:
-        self._memory['variable'][Type.INT][count] = value
-
-
-    def set_variable_real(self, count: int, value: float) -> None:
-        self._memory['variable'][Type.REAL][count] = value
-
-
-    def set_variable_bool(self, count: int, value: bool) -> None:
-        self._memory['variable'][Type.BOOL][count] = value
-
-
-    def set_variable_char(self, count: int, value: int) -> None:
-        self._memory['variable'][Type.CHAR][count] = value
-
-    
-    def get_temporal_int(self, count: int) -> int:
-        return self._memory['temporal'][Type.INT][count]
-
-
-    def get_temporal_real(self, count: int) -> float:
-        return self._memory['temporal'][Type.REAL][count]
-
-
-    def get_temporal_bool(self, count: int) -> bool:
-        return self._memory['temporal'][Type.BOOL][count]
-
-
-    def get_temporal_char(self, count: int) -> str:
-        return self._memory['temporal'][Type.CHAR][count]
-    
-
-    def get_temporal_pointer(self, count: int) -> int:
-        return self._memory['temporal'][Type.POINTER][count]
-
-
-    def set_temporal_int(self, count: int, value: int) -> None:
-        self._memory['temporal'][Type.INT][count] = value
-
-
-    def set_temporal_real(self, count: int, value: float) -> None:
-        self._memory['temporal'][Type.REAL][count] = value
-
-
-    def set_temporal_bool(self, count: int, value: bool) -> None:
-        self._memory['temporal'][Type.BOOL][count] = value
-
-
-    def set_temporal_char(self, count: int, value: int) -> None:
-        self._memory['temporal'][Type.CHAR][count] = value
-
-
-    def set_temporal_pointer(self, count: int, value: int) -> None:
-        self._memory['temporal'][Type.POINTER][count] = value
-
-    
-    def get_constant_int(self, count: int) -> int:
-        return self._memory['constant'][Type.INT][count]
-
-
-    def get_constant_real(self, count: int) -> float:
-        return self._memory['constant'][Type.REAL][count]
-
-
-    def get_constant_bool(self, count: int) -> bool:
-        return self._memory['constant'][Type.BOOL][count]
-
-
-    def get_constant_char(self, count: int) -> str:
-        return self._memory['constant'][Type.CHAR][count]
-    
-
-    def get_constant_string(self, count: int) -> str:
-        return self._memory['constant'][Type.STRING][count]
-
-
-    def set_constant_int(self, count: int, value: int) -> None:
-        self._memory['constant'][Type.INT][count] = value
-
-
-    def set_constant_real(self, count: int, value: float) -> None:
-        self._memory['constant'][Type.REAL][count] = value
-
-
-    def set_constant_bool(self, count: int, value: bool) -> None:
-        self._memory['constant'][Type.BOOL][count] = value
-
-
-    def set_constant_char(self, count: int, value: int) -> None:
-        self._memory['constant'][Type.CHAR][count] = value
-
-    
-    def set_constant_string(self, count: int, value: str) -> None:
-        self._memory['constant'][Type.STRING][count] = value
 
     
     def __str__(self) -> str:
@@ -378,7 +271,7 @@ class ExecutionStack:
             count: int,
             value: Union[int, float, bool, str],
     ) -> None:
-        self._stack[-1].set_variable(memory, type, count, value)
+        self._stack[-1].set_value(memory, type, count, value)
 
     
     def get_value_top_function_call(
@@ -387,7 +280,7 @@ class ExecutionStack:
             type: Type,
             count: int,
     ) -> None:
-        return self._stack[-1].get_variable(memory, type, count)
+        return self._stack[-1].get_value(memory, type, count)
 
     
     def __str__(self) -> str:
@@ -427,6 +320,10 @@ class Memory:
 
 
 class StackOverflow(RuntimeError):
+    pass
+
+
+class VariableNotInitializedError(RuntimeError):
     pass
 
 

@@ -19,6 +19,7 @@ from compiler.quadruples import ConstantStorageQuadruple
 from compiler.quadruples import ConditionalControlTransferQuadruple
 from compiler.quadruples import EndFunctionQuadruple
 from compiler.quadruples import EndProgramQuadruple
+from compiler.quadruples import LimitsVerificationQuadruple
 from compiler.quadruples import ParameterPassingQuadruple
 from compiler.quadruples import PrintQuadruple
 from compiler.quadruples import ReadQuadruple
@@ -30,10 +31,11 @@ from compiler.quadruples import Quadruple
 from compiler.quadruples import QuadrupleList
 from compiler.quadruples import UnaryArithmeticQuadruple
 from compiler.quadruples import UnconditionalControlTransferQuadruple
+from compiler.stacks import DimensionedVariableAccessStack
+from compiler.stacks import FunctionParameterCountStack
 from compiler.stacks import JumpStack
 from compiler.stacks import OperandStack
 from compiler.stacks import OperatorStack
-from compiler.stacks import FunctionParameterCountStack
 from compiler.variables import Boolean
 from compiler.variables import DimensionNode
 from compiler.variables import SemanticTable
@@ -70,10 +72,11 @@ class Parser(object):
         self.array_size = 1
         self.global_scope = Scope()
         self.function_directory = FunctionDirectory()
+        self.dimensioned_variable_access_stack = DimensionedVariableAccessStack()
+        self.function_parameter_count_stack = FunctionParameterCountStack()
         self.jump_stack = JumpStack()
         self.operator_stack = OperatorStack()
         self.operand_stack = OperandStack()
-        self.function_parameter_count_stack = FunctionParameterCountStack()
         self.quadruple_list = QuadrupleList()
 
         self.function_builder.reset()
@@ -103,15 +106,6 @@ class Parser(object):
         quadruple_list: QuadrupleList
     ) -> IntermediateCodeContainer:
         return IntermediateCodeContainer(global_scope, function_directory, quadruple_list)
-
-
-    def create_main_function(self):
-        function_id = self.get_main_function_id()
-        function_return_type = Type.VOID
-        function_start_quadruple_number = self.get_program_counter()
-
-        function = self.build_function(function_id, function_return_type, function_start_quadruple_number)
-        self.insert_function_to_directory(function_id, function)
 
     
     def generate_assignment_quadruple(
@@ -191,6 +185,10 @@ class Parser(object):
     
     def generate_read_quadruple(self, storage_variable: Variable) -> ReadQuadruple:
         return ReadQuadruple(storage_variable)
+
+    
+    def generate_limits_verification_quadruple(self, index_variable: Variable, upper_bound: int) -> LimitsVerificationQuadruple:
+        return LimitsVerificationQuadruple(index_variable, upper_bound)
 
     
     def generate_parameter_passing_quadruple(self, variable: Variable, parameter_number: int) -> ParameterPassingQuadruple:
@@ -335,15 +333,6 @@ class Parser(object):
         return variable
 
 
-    def build_function(self, function_id: str, function_return_type, function_start_quadruple_number: int) -> Function:
-        self.function_builder.set_id(function_id)
-        self.function_builder.set_return_type(function_return_type)
-        self.function_builder.set_start_quadruple_number(function_start_quadruple_number)
-
-        function = self.function_builder.build()
-        return function
-
-
     def build_variable(self, variable_id: str, variable_type: Type, variable_virtual_memory_address: int) -> Variable:
         self.variable_builder.set_id(variable_id)
         self.variable_builder.set_type(variable_type)
@@ -415,6 +404,22 @@ class Parser(object):
     
     def pop_jump_stack(self) -> int:
         return self.jump_stack.pop()
+    
+
+    def push_dimensioned_variable_access_stack(self, variable_id: str) -> None:
+        self.dimensioned_variable_access_stack.push_id_dim(variable_id)
+
+    
+    def pop_dimensioned_variable_access_stack(self) -> tuple[str, int]:
+        return self.dimensioned_variable_access_stack.pop_id_dim()
+    
+
+    def top_dimensioned_variable_access_stack(self) -> tuple[str, int]:
+        return self.dimensioned_variable_access_stack.get_top_id()
+    
+
+    def increment_top_dimensioned_variable_access_stack(self) -> None:
+        self.dimensioned_variable_access_stack.increment_top_id_dim()
 
 
     def get_operation_result_type(
@@ -885,6 +890,7 @@ class Parser(object):
 
     def p_variable_access(self, p):
         '''variable_access : ID parsed_id_variable_access dims_access'''
+        self.pop_dimensioned_variable_access_stack()
 
     
     def p_parsed_id_variable_access(self, p):
@@ -897,23 +903,37 @@ class Parser(object):
         else:
             variable = self.get_global_variable(variable_id)
 
-        self.operand_stack.push(variable)
+        self.push_dimensioned_variable_access_stack(variable_id)
+        self.push_operand_stack(variable)
 
 
     def p_dims_access_1(self, p):
-        '''dims_access : single_dim_access single_dim_access'''
+        '''dims_access : dim_access dim_access'''
 
 
     def p_dims_access_2(self, p):
-        '''dims_access : single_dim_access'''
+        '''dims_access : dim_access'''
 
     
     def p_dims_access_3(self, p):
         '''dims_access : empty'''
 
 
-    def p_single_dim_access(self, p):
-        '''single_dim_access : LBRACKET expr RBRACKET'''
+    def p_dim_access(self, p):
+        '''dim_access : LBRACKET expr RBRACKET'''
+        function_id = self.get_function_scope()
+        variable_id, dim = self.top_dimensioned_variable_access_stack()
+
+        dimensioned_variable = self.get_function_variable(function_id, variable_id)
+        upper_bound = dimensioned_variable.get_dimension_size(dim)
+        
+        index_variable = self.pop_operand_stack()
+
+        limits_verification_quadruple = self.generate_limits_verification_quadruple(index_variable, upper_bound)
+        self.insert_quadruple(limits_verification_quadruple)
+        self.increment_program_counter()
+
+        self.increment_top_dimensioned_variable_access_stack()
 
     
     def p_function_call_stmt(self, p):

@@ -72,3 +72,26 @@ class FunctionParameterCountStack:
         count +=1
 
         self._stack[-1] = (function_id, count)
+
+
+@dataclass
+class DimensionedVariableAccessStack:
+    _stack : list[tuple[str, int]] = field(default_factory=list)
+
+    def push_id_dim(self, variable_id: str) -> None:
+        self._stack.append((variable_id, 0))
+
+    
+    def pop_id_dim(self) -> tuple[str, int]:
+        return self._stack.pop()
+
+
+    def get_top_id(self) -> tuple[str, int]:
+        return self._stack[-1]
+
+
+    def increment_top_id_dim(self) -> None:
+        variable_id, dim = self._stack[-1]
+        dim +=1
+
+        self._stack[-1] = (variable_id, dim)

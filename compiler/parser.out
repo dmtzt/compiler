@@ -53,10 +53,10 @@ Rule 47    assignment -> variable_access ASGMT expr SEMI
 Rule 48    assignment -> variable_access ASGMT READ LPAREN RPAREN SEMI
 Rule 49    variable_access -> ID parsed_id_variable_access dims_access
 Rule 50    parsed_id_variable_access -> <empty>
-Rule 51    dims_access -> single_dim_access single_dim_access
-Rule 52    dims_access -> single_dim_access
+Rule 51    dims_access -> dim_access dim_access
+Rule 52    dims_access -> dim_access
 Rule 53    dims_access -> empty
-Rule 54    single_dim_access -> LBRACKET expr RBRACKET
+Rule 54    dim_access -> LBRACKET expr RBRACKET
 Rule 55    function_call_stmt -> function_call SEMI
 Rule 56    function_call -> ID parsed_function_call_id LPAREN function_call_params RPAREN
 Rule 57    function_call -> ID parsed_function_call_id LPAREN RPAREN
@@ -200,6 +200,7 @@ assignment           : 41
 conditional          : 44
 constant             : 124
 constant_bool        : 129
+dim_access           : 51 51 52
 dims_access          : 49
 distinct_type_variables_declaration : 25 26
 empty                : 5 13 24 53
@@ -256,7 +257,6 @@ relational_expr      : 91 91 93 93 95
 return               : 46
 shared_type_variables_declaration : 26 27
 shared_type_variables_declaration_list : 28 30
-single_dim_access    : 51 51 52
 single_function_call_param : 59 60
 single_print_param   : 64 65
 single_statement     : 39 40
@@ -2191,10 +2191,10 @@ state 116
 state 117
 
     (49) variable_access -> ID parsed_id_variable_access . dims_access
-    (51) dims_access -> . single_dim_access single_dim_access
-    (52) dims_access -> . single_dim_access
+    (51) dims_access -> . dim_access dim_access
+    (52) dims_access -> . dim_access
     (53) dims_access -> . empty
-    (54) single_dim_access -> . LBRACKET expr RBRACKET
+    (54) dim_access -> . LBRACKET expr RBRACKET
     (136) empty -> .
 
     LBRACKET        shift and go to state 155
@@ -2218,7 +2218,7 @@ state 117
     RBRACKET        reduce using rule 136 (empty -> .)
 
     dims_access                    shift and go to state 152
-    single_dim_access              shift and go to state 153
+    dim_access                     shift and go to state 153
     empty                          shift and go to state 154
 
 state 118
@@ -2809,31 +2809,31 @@ state 152
 
 state 153
 
-    (51) dims_access -> single_dim_access . single_dim_access
-    (52) dims_access -> single_dim_access .
-    (54) single_dim_access -> . LBRACKET expr RBRACKET
+    (51) dims_access -> dim_access . dim_access
+    (52) dims_access -> dim_access .
+    (54) dim_access -> . LBRACKET expr RBRACKET
 
-    ASGMT           reduce using rule 52 (dims_access -> single_dim_access .)
-    TIMES           reduce using rule 52 (dims_access -> single_dim_access .)
-    DIVIDE          reduce using rule 52 (dims_access -> single_dim_access .)
-    MODULO          reduce using rule 52 (dims_access -> single_dim_access .)
-    LTHAN_EQUAL     reduce using rule 52 (dims_access -> single_dim_access .)
-    LTHAN           reduce using rule 52 (dims_access -> single_dim_access .)
-    GTHAN_EQUAL     reduce using rule 52 (dims_access -> single_dim_access .)
-    GTHAN           reduce using rule 52 (dims_access -> single_dim_access .)
-    PLUS            reduce using rule 52 (dims_access -> single_dim_access .)
-    MINUS           reduce using rule 52 (dims_access -> single_dim_access .)
-    EQUAL           reduce using rule 52 (dims_access -> single_dim_access .)
-    NEQUAL          reduce using rule 52 (dims_access -> single_dim_access .)
-    AND             reduce using rule 52 (dims_access -> single_dim_access .)
-    SEMI            reduce using rule 52 (dims_access -> single_dim_access .)
-    OR              reduce using rule 52 (dims_access -> single_dim_access .)
-    RPAREN          reduce using rule 52 (dims_access -> single_dim_access .)
-    COMMA           reduce using rule 52 (dims_access -> single_dim_access .)
-    RBRACKET        reduce using rule 52 (dims_access -> single_dim_access .)
+    ASGMT           reduce using rule 52 (dims_access -> dim_access .)
+    TIMES           reduce using rule 52 (dims_access -> dim_access .)
+    DIVIDE          reduce using rule 52 (dims_access -> dim_access .)
+    MODULO          reduce using rule 52 (dims_access -> dim_access .)
+    LTHAN_EQUAL     reduce using rule 52 (dims_access -> dim_access .)
+    LTHAN           reduce using rule 52 (dims_access -> dim_access .)
+    GTHAN_EQUAL     reduce using rule 52 (dims_access -> dim_access .)
+    GTHAN           reduce using rule 52 (dims_access -> dim_access .)
+    PLUS            reduce using rule 52 (dims_access -> dim_access .)
+    MINUS           reduce using rule 52 (dims_access -> dim_access .)
+    EQUAL           reduce using rule 52 (dims_access -> dim_access .)
+    NEQUAL          reduce using rule 52 (dims_access -> dim_access .)
+    AND             reduce using rule 52 (dims_access -> dim_access .)
+    SEMI            reduce using rule 52 (dims_access -> dim_access .)
+    OR              reduce using rule 52 (dims_access -> dim_access .)
+    RPAREN          reduce using rule 52 (dims_access -> dim_access .)
+    COMMA           reduce using rule 52 (dims_access -> dim_access .)
+    RBRACKET        reduce using rule 52 (dims_access -> dim_access .)
     LBRACKET        shift and go to state 155
 
-    single_dim_access              shift and go to state 182
+    dim_access                     shift and go to state 182
 
 state 154
 
@@ -2861,7 +2861,7 @@ state 154
 
 state 155
 
-    (54) single_dim_access -> LBRACKET . expr RBRACKET
+    (54) dim_access -> LBRACKET . expr RBRACKET
     (87) expr -> . expr OR and_expr
     (88) expr -> . and_expr
     (89) and_expr -> . equality_expr AND equality_expr
@@ -3788,31 +3788,31 @@ state 181
 
 state 182
 
-    (51) dims_access -> single_dim_access single_dim_access .
+    (51) dims_access -> dim_access dim_access .
 
-    ASGMT           reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    TIMES           reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    DIVIDE          reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    MODULO          reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    LTHAN_EQUAL     reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    LTHAN           reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    GTHAN_EQUAL     reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    GTHAN           reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    PLUS            reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    MINUS           reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    EQUAL           reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    NEQUAL          reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    AND             reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    SEMI            reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    OR              reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    RPAREN          reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    COMMA           reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
-    RBRACKET        reduce using rule 51 (dims_access -> single_dim_access single_dim_access .)
+    ASGMT           reduce using rule 51 (dims_access -> dim_access dim_access .)
+    TIMES           reduce using rule 51 (dims_access -> dim_access dim_access .)
+    DIVIDE          reduce using rule 51 (dims_access -> dim_access dim_access .)
+    MODULO          reduce using rule 51 (dims_access -> dim_access dim_access .)
+    LTHAN_EQUAL     reduce using rule 51 (dims_access -> dim_access dim_access .)
+    LTHAN           reduce using rule 51 (dims_access -> dim_access dim_access .)
+    GTHAN_EQUAL     reduce using rule 51 (dims_access -> dim_access dim_access .)
+    GTHAN           reduce using rule 51 (dims_access -> dim_access dim_access .)
+    PLUS            reduce using rule 51 (dims_access -> dim_access dim_access .)
+    MINUS           reduce using rule 51 (dims_access -> dim_access dim_access .)
+    EQUAL           reduce using rule 51 (dims_access -> dim_access dim_access .)
+    NEQUAL          reduce using rule 51 (dims_access -> dim_access dim_access .)
+    AND             reduce using rule 51 (dims_access -> dim_access dim_access .)
+    SEMI            reduce using rule 51 (dims_access -> dim_access dim_access .)
+    OR              reduce using rule 51 (dims_access -> dim_access dim_access .)
+    RPAREN          reduce using rule 51 (dims_access -> dim_access dim_access .)
+    COMMA           reduce using rule 51 (dims_access -> dim_access dim_access .)
+    RBRACKET        reduce using rule 51 (dims_access -> dim_access dim_access .)
 
 
 state 183
 
-    (54) single_dim_access -> LBRACKET expr . RBRACKET
+    (54) dim_access -> LBRACKET expr . RBRACKET
     (87) expr -> expr . OR and_expr
 
     RBRACKET        shift and go to state 206
@@ -4159,27 +4159,27 @@ state 205
 
 state 206
 
-    (54) single_dim_access -> LBRACKET expr RBRACKET .
+    (54) dim_access -> LBRACKET expr RBRACKET .
 
-    LBRACKET        reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    ASGMT           reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    TIMES           reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    DIVIDE          reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    MODULO          reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    LTHAN_EQUAL     reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    LTHAN           reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    GTHAN_EQUAL     reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    GTHAN           reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    PLUS            reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    MINUS           reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    EQUAL           reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    NEQUAL          reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    AND             reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    SEMI            reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    OR              reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    RPAREN          reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    COMMA           reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
-    RBRACKET        reduce using rule 54 (single_dim_access -> LBRACKET expr RBRACKET .)
+    LBRACKET        reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    ASGMT           reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    TIMES           reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    DIVIDE          reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    MODULO          reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    LTHAN_EQUAL     reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    LTHAN           reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    GTHAN_EQUAL     reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    GTHAN           reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    PLUS            reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    MINUS           reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    EQUAL           reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    NEQUAL          reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    AND             reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    SEMI            reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    OR              reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    RPAREN          reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    COMMA           reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
+    RBRACKET        reduce using rule 54 (dim_access -> LBRACKET expr RBRACKET .)
 
 
 state 207

@@ -33,13 +33,14 @@ class Operator(Enum):
     GOTOT = 22
     GOSUB = 23
 
-    ERA = 24
-    PARAM = 25
-    RETURN_VALUE = 26
-    RETURN_VOID = 27
-    ENDFUNC = 28
+    VER = 24
+    ERA = 25
+    PARAM = 26
+    RETURN_VALUE = 27
+    RETURN_VOID = 28
+    ENDFUNC = 29
 
-    END = 29
+    END = 30
 
     @classmethod
     def assignment_operator(cls):

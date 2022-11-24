@@ -1,7 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .variables import Variable
 from .variables import Operator
@@ -10,7 +10,7 @@ class Quadruple(ABC):
     UNUSED_STATEMENT = '-'
 
     @abstractmethod
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         pass
 
     
@@ -23,7 +23,7 @@ class Quadruple(ABC):
         return [q1, q2, q3, q4]
     
 
-    def _generate_debug_representation(self, q1: str, q2: str, q3: str, q4: str) -> str:
+    def _generate_debug_repr(self, q1: str, q2: str, q3: str, q4: str) -> str:
          return f"{q1 : <16} {q2 : <20} {q3 : <20} {q4}"
 
 
@@ -40,7 +40,7 @@ class ArithmeticQuadruple(Quadruple):
     right_operand: Variable
     temporal_storage_variable: Variable
     
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         left_id = self.left_operand.get_id()
         left_address = self.left_operand.get_virtual_memory_address()
@@ -49,7 +49,7 @@ class ArithmeticQuadruple(Quadruple):
         temp_id = self.temporal_storage_variable.get_id()
         temp_address = self.temporal_storage_variable.get_virtual_memory_address()
 
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
                 operator_name,
                 f'{left_id}({left_address})',
                 f'{right_id}({right_address})',
@@ -71,14 +71,14 @@ class UnaryArithmeticQuadruple(Quadruple):
     value_variable: Variable
     temporal_storage_variable: Variable
     
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         value_id = self.value_variable.get_id()
         value_address = self.value_variable.get_virtual_memory_address()
         temp_id = self.temporal_storage_variable.get_id()
         temp_address = self.temporal_storage_variable.get_virtual_memory_address()
         
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
             operator_name,
             f'{value_id}({value_address})',
             '',
@@ -101,7 +101,7 @@ class RelationalQuadruple(Quadruple):
     right_operand: Variable
     temporal_storage_variable: Variable
     
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         left_id = self.left_operand.get_id()
         left_address = self.left_operand.get_virtual_memory_address()
@@ -110,7 +110,7 @@ class RelationalQuadruple(Quadruple):
         temp_id = self.temporal_storage_variable.get_id()
         temp_address = self.temporal_storage_variable.get_virtual_memory_address()
 
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
             operator_name,
             f'{left_id}({left_address})',
             f'{right_id}({right_address})',
@@ -132,14 +132,14 @@ class AssignmentQuadruple(Quadruple):
     value_variable: Variable
     storage_variable: Variable
     
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         value_id = self.value_variable.get_id()
         value_address = self.value_variable.get_virtual_memory_address()
         storage_id = self.storage_variable.get_id()
         storage_address = self.storage_variable.get_virtual_memory_address()
         
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
             operator_name,
             f'{value_id}({value_address})',
             '',
@@ -165,13 +165,13 @@ class ConditionalControlTransferQuadruple(ControlTransferQuadruple):
         self.program_count = program_count
 
     
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         boolean_id = self.boolean_variable.get_id()
         boolean_address = self.boolean_variable.get_virtual_memory_address()
         program_count = self.program_count
         
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
             operator_name,
             f'{boolean_id}({boolean_address})',
             '',
@@ -196,11 +196,11 @@ class UnconditionalControlTransferQuadruple(ControlTransferQuadruple):
         self.program_count = program_count
 
     
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         program_count = self.program_count
         
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
             operator_name,
             '',
             '',
@@ -222,13 +222,13 @@ class ConstantStorageQuadruple(Quadruple):
     constant_value: str
     storage_variable: Variable
     
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         constant_value = self.constant_value
         storage_id = self.storage_variable.get_id()
         storage_address = self.storage_variable.get_virtual_memory_address()
         
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
             operator_name,
             constant_value,
             '',
@@ -249,12 +249,12 @@ class ReadQuadruple(Quadruple):
     storage_variable: Variable
     operator: Operator = Operator.READ
     
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         storage_id = self.storage_variable.get_id()
         storage_address = self.storage_variable.get_virtual_memory_address()
         
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
             operator_name,
             '',
             '',
@@ -275,12 +275,12 @@ class PrintQuadruple(Quadruple):
     printed_variable: Variable
     operator: Operator = Operator.PRINT
 
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         printed_id = self.printed_variable.get_id()
         printed_address = self.printed_variable.get_virtual_memory_address()
         
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
             operator_name,
             '',
             '',
@@ -294,6 +294,35 @@ class PrintQuadruple(Quadruple):
         q3 = str(self.UNUSED_STATEMENT)
         q4 = str(self.printed_variable.get_virtual_memory_address())
         return self._generate_intermediate_code_representation(q1, q2, q3, q4)
+    
+
+@dataclass
+class LimitsVerificationQuadruple(Quadruple):
+    index_variable: Variable
+    upper_bound: int
+    lower_bound: int = field(init=False, default=0)
+    operator: Operator = field(init=False, default=Operator.VER)
+
+    def get_debug_repr(self) -> str:
+        operator_name = self.operator.name
+        index_variable_address = self.index_variable.get_id()
+        lower_bound = self.lower_bound
+        upper_bound = self.upper_bound
+
+        return self._generate_debug_repr(
+            operator_name,
+            index_variable_address,
+            lower_bound,
+            upper_bound,
+        )
+    
+
+    def get_json_obj(self) -> str:
+        q1 = str(self.operator.value)
+        q2 = str(self.index_variable.get_virtual_memory_address())
+        q3 = str(self.lower_bound)
+        q4 = str(self.upper_bound)
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
 
 @dataclass
@@ -301,11 +330,11 @@ class ActivationRecordExpansionQuadruple(Quadruple):
     function_id: str
     operator: Operator = Operator.ERA
 
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         function_id = self.function_id
         
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
             operator_name,
             '',
             '',
@@ -327,13 +356,13 @@ class ParameterPassingQuadruple(Quadruple):
     parameter_number : int
     operator : Operator = Operator.PARAM
 
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         variable_id = self.variable.get_id()
         variable_address = self.variable.get_virtual_memory_address()
         parameter_number = self.parameter_number
         
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
             operator_name,
             f'{variable_id}({variable_address})',
             '',
@@ -355,14 +384,14 @@ class ReturnValueQuadruple(Quadruple):
     function_global_variable : Variable
     operator : Operator = Operator.RETURN_VALUE
 
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         return_id = self.return_variable.get_id()
         return_address = self.return_variable.get_virtual_memory_address()
         function_id = self.function_global_variable.get_id()
         function_address = self.function_global_variable.get_virtual_memory_address()
         
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
             operator_name,
             f'{return_id}({return_address})',
             '',
@@ -382,7 +411,7 @@ class ReturnValueQuadruple(Quadruple):
 class ReturnVoidQuadruple(Quadruple):
     operator : Operator = Operator.RETURN_VOID
 
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         
         return f'{operator_name}'
@@ -401,11 +430,11 @@ class StartSubroutineQuadruple(Quadruple):
     function_id : str
     operator : Operator = Operator.GOSUB
 
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
         function_id = self.function_id
 
-        return self._generate_debug_representation(
+        return self._generate_debug_repr(
             operator_name,
             '',
             '',
@@ -429,7 +458,7 @@ class EndFunctionQuadruple(Quadruple):
         return f'{self.operator.name}'
 
     
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
 
         return f'{operator_name}'
@@ -451,7 +480,7 @@ class EndProgramQuadruple(Quadruple):
         return f'{self.operator.name}'
 
 
-    def get_debug_representation(self) -> str:
+    def get_debug_repr(self) -> str:
         operator_name = self.operator.name
 
         return f'{operator_name}'

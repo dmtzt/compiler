@@ -32,7 +32,7 @@ class IntermediateCodeFilePrinter:
 
         with open(fpath,'w',encoding = 'utf-8') as f:
             for count, quadruple in enumerate(quadruples):
-                f.write(f'{count : < 5}{quadruple.get_debug_representation()}')
+                f.write(f'{count : < 5}{quadruple.get_debug_repr()}')
                 f.write('\n')
 
 

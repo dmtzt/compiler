@@ -4,7 +4,7 @@ from typing import Union
 
 from compiler.operators import Operator
 from compiler.variables import Type
-from compiler.memory import VirtualMemoryAddressEnumeration
+from compiler.memory import BaseVirtualMemoryAddressEnum
 
 class Limit(Enum):
     EXECUTION_STACK_LIMIT = 1000
@@ -12,24 +12,24 @@ class Limit(Enum):
 
 class VirtualMemoryAddressResolver:
     _address_dict = {
-        VirtualMemoryAddressEnumeration.GLOBAL_VARIABLE_INT: ('global', Type.INT),
-        VirtualMemoryAddressEnumeration.GLOBAL_VARIABLE_REAL: ('global', Type.REAL),
-        VirtualMemoryAddressEnumeration.GLOBAL_VARIABLE_CHAR: ('global', Type.CHAR),
-        VirtualMemoryAddressEnumeration.GLOBAL_VARIABLE_BOOL: ('global', Type.BOOL),
-        VirtualMemoryAddressEnumeration.LOCAL_VARIABLE_INT: ('variable', Type.INT),
-        VirtualMemoryAddressEnumeration.LOCAL_VARIABLE_REAL: ('variable', Type.REAL),
-        VirtualMemoryAddressEnumeration.LOCAL_VARIABLE_CHAR: ('variable', Type.CHAR),
-        VirtualMemoryAddressEnumeration.LOCAL_VARIABLE_BOOL: ('variable', Type.BOOL),
-        VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_INT: ('temporal', Type.INT),
-        VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_REAL: ('temporal', Type.REAL),
-        VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_CHAR: ('temporal', Type.CHAR),
-        VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_BOOL: ('temporal', Type.BOOL),
-        VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_POINTER: ('temporal', Type.POINTER),
-        VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_INT: ('constant', Type.INT),
-        VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_REAL: ('constant', Type.REAL),
-        VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_CHAR: ('constant', Type.CHAR),
-        VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_BOOL: ('constant', Type.BOOL),
-        VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_STRING: ('constant', Type.STRING),
+        BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_INT: ('global', Type.INT),
+        BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_REAL: ('global', Type.REAL),
+        BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_CHAR: ('global', Type.CHAR),
+        BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_BOOL: ('global', Type.BOOL),
+        BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_INT: ('variable', Type.INT),
+        BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_REAL: ('variable', Type.REAL),
+        BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_CHAR: ('variable', Type.CHAR),
+        BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_BOOL: ('variable', Type.BOOL),
+        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_INT: ('temporal', Type.INT),
+        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_REAL: ('temporal', Type.REAL),
+        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_CHAR: ('temporal', Type.CHAR),
+        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_BOOL: ('temporal', Type.BOOL),
+        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_POINTER: ('temporal', Type.POINTER),
+        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_INT: ('constant', Type.INT),
+        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_REAL: ('constant', Type.REAL),
+        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_CHAR: ('constant', Type.CHAR),
+        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_BOOL: ('constant', Type.BOOL),
+        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_STRING: ('constant', Type.STRING),
     }
 
     @staticmethod
@@ -46,8 +46,8 @@ class VirtualMemoryAddressResolver:
 
 
     @classmethod
-    def resolve_base_virtual_memory_address(cls, base_virtual_memory_address: VirtualMemoryAddressEnumeration) -> tuple[str, Type]:
-        return cls._address_dict[VirtualMemoryAddressEnumeration(base_virtual_memory_address)]
+    def resolve_base_virtual_memory_address(cls, base_virtual_memory_address: BaseVirtualMemoryAddressEnum) -> tuple[str, Type]:
+        return cls._address_dict[BaseVirtualMemoryAddressEnum(base_virtual_memory_address)]
 
 
 class Variable:

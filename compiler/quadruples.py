@@ -15,7 +15,7 @@ class Quadruple(ABC):
 
     
     @abstractmethod
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         pass
 
 
@@ -57,7 +57,7 @@ class ArithmeticQuadruple(Quadruple):
         )
 
     
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.left_operand.get_virtual_memory_address())
         q3 = str(self.right_operand.get_virtual_memory_address())
@@ -86,7 +86,7 @@ class UnaryArithmeticQuadruple(Quadruple):
         )
 
 
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.value_variable.get_virtual_memory_address())
         q3 = str(self.UNUSED_STATEMENT)
@@ -118,7 +118,7 @@ class RelationalQuadruple(Quadruple):
         )
 
 
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.left_operand.get_virtual_memory_address())
         q3 = str(self.right_operand.get_virtual_memory_address())
@@ -147,7 +147,7 @@ class AssignmentQuadruple(Quadruple):
         )
 
 
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.value_variable.get_virtual_memory_address())
         q3 = str(self.UNUSED_STATEMENT)
@@ -179,7 +179,7 @@ class ConditionalControlTransferQuadruple(ControlTransferQuadruple):
         )
 
     
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.boolean_variable.get_virtual_memory_address())
         q3 = str(self.UNUSED_STATEMENT)
@@ -208,7 +208,7 @@ class UnconditionalControlTransferQuadruple(ControlTransferQuadruple):
         )
 
     
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.UNUSED_STATEMENT)
         q3 = str(self.UNUSED_STATEMENT)
@@ -236,7 +236,7 @@ class ConstantStorageQuadruple(Quadruple):
         )
 
     
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.constant_value)
         q3 = str(self.UNUSED_STATEMENT)
@@ -262,7 +262,7 @@ class ReadQuadruple(Quadruple):
         )
 
 
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.UNUSED_STATEMENT)
         q3 = str(self.UNUSED_STATEMENT)
@@ -288,7 +288,7 @@ class PrintQuadruple(Quadruple):
         )
 
 
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.UNUSED_STATEMENT)
         q3 = str(self.UNUSED_STATEMENT)
@@ -313,7 +313,7 @@ class ActivationRecordExpansionQuadruple(Quadruple):
         )
 
 
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.UNUSED_STATEMENT)
         q3 = str(self.UNUSED_STATEMENT)
@@ -341,7 +341,7 @@ class ParameterPassingQuadruple(Quadruple):
         )
 
 
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.variable.get_virtual_memory_address())
         q3 = str(self.UNUSED_STATEMENT)
@@ -370,7 +370,7 @@ class ReturnValueQuadruple(Quadruple):
         )
 
 
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.return_variable.get_virtual_memory_address())
         q3 = str(self.UNUSED_STATEMENT)
@@ -388,7 +388,7 @@ class ReturnVoidQuadruple(Quadruple):
         return f'{operator_name}'
 
     
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.UNUSED_STATEMENT)
         q3 = str(self.UNUSED_STATEMENT)
@@ -413,7 +413,7 @@ class StartSubroutineQuadruple(Quadruple):
         )
 
     
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.UNUSED_STATEMENT)
         q3 = str(self.UNUSED_STATEMENT)
@@ -435,7 +435,7 @@ class EndFunctionQuadruple(Quadruple):
         return f'{operator_name}'
 
 
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.UNUSED_STATEMENT)
         q3 = str(self.UNUSED_STATEMENT)
@@ -457,7 +457,7 @@ class EndProgramQuadruple(Quadruple):
         return f'{operator_name}'
 
     
-    def get_intermediate_code_representation(self) -> str:
+    def get_json_obj(self) -> str:
         q1 = str(self.operator.value)
         q2 = str(self.UNUSED_STATEMENT)
         q3 = str(self.UNUSED_STATEMENT)
@@ -485,20 +485,20 @@ class QuadrupleList():
         return self._list
     
 
-    def get_intermediate_code_representation(self) -> list:
-        data = [
-            quadruple.get_intermediate_code_representation()
+    def get_json_obj(self) -> list:
+        obj = [
+            quadruple.get_json_obj()
             for quadruple in self._list
         ]
 
-        return data
+        return obj
 
     
     def __str__(self) -> str:
         s = 'QuadrupleList(\n'
 
         for count, item in enumerate(self._list):
-            s += f'\t{count : <4} {item.get_intermediate_code_representation()}\n'
+            s += f'\t{count : <4} {item.get_json_obj()}\n'
         
         s += ')'
 

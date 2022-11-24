@@ -86,23 +86,23 @@ class Variable:
         self._dimension_nodes[dimension].set_m(m)
 
     
-    def get_intermediate_code_representation(self) -> dict:
-        data = {
+    def get_json_obj(self) -> dict:
+        obj = {
             "id": self._id,
             "type": self._type.value,
             "virtual_memory_address": self._virtual_memory_address,
         }
 
         if self._dimension_nodes:
-            data["dimensions"] = [node.get_size() for node in self._dimension_nodes]
+            obj["dimensions"] = [node.get_size() for node in self._dimension_nodes]
         else:
-            data["dimensions"] = None
+            obj["dimensions"] = None
 
-        return data
+        return obj
 
     
     def __str__(self) -> str:
-        print(self.get_intermediate_code_representation())
+        print(self.get_json_obj())
         return f'Variable({self._id} {self._type} {self._virtual_memory_address} {self._dimension_nodes})'
 
 
@@ -213,9 +213,9 @@ class VariableTable:
         return variable_id in self._table
     
 
-    def get_intermediate_code_representation(self) -> list:
+    def get_json_obj(self) -> list:
         return {
-            variable_id: self._table[variable_id].get_intermediate_code_representation()
+            variable_id: self._table[variable_id].get_json_obj()
             for variable_id in self._table
         }
 
@@ -261,7 +261,7 @@ class ParameterTable:
         return s
     
 
-    def get_intermediate_code_representation(self) -> list:
+    def get_json_obj(self) -> list:
         return [
                 {"number": number + 1, "virtual_memory_address": param.get_virtual_memory_address()}
                 for number, param in enumerate(self._table)

@@ -2,34 +2,43 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 
-from .memory import ActivationRecord
+from .memory import FunctionActivationRecord
+from .memory import GlobalActivationRecord
 from .variables import Variable
 from .variables import VariableTable
 from .variables import ParameterTable
 from .variables import Type
 
 
-class Names(Enum):
+class ScopeNames(Enum):
     GLOBAL = 'global'
     MAIN = 'main'
 
 
 @dataclass
-class Function:
-    _id : str = field(init=False)
-    _return_type : Type = field(init=False, default=None)
-    _start_quadruple_number : int = field(init=False, default=None)
-    _activation_record : ActivationRecord = field(default_factory=ActivationRecord)
-    _variable_table : VariableTable = field(default_factory=VariableTable)
-    _parameter_table : ParameterTable = field(default_factory=ParameterTable)
+class Scope:
+    _id : str = field(init=False, default=ScopeNames.GLOBAL.value)
+    _activation_record : GlobalActivationRecord = field(init=False, default_factory=GlobalActivationRecord)
+    _variable_table : VariableTable = field(init=False, default_factory=VariableTable)
 
-    
     def get_id(self) -> Type:
         return self._id
 
 
     def set_id(self, id) -> None:
         self._id = id
+
+
+    def get_variable(self, variable_id) -> Variable:
+        return self._variable_table.get_variable(variable_id)
+
+
+    def insert_variable(self, id: str, variable: Variable) -> None:
+        self._variable_table.insert_variable(id, variable)
+
+
+    def variable_exists(self, variable_id: str) -> bool:
+        return self._variable_table.variable_exists(variable_id)
 
 
     def get_variable_counter(self, variable_type: Type) -> int:
@@ -39,22 +48,26 @@ class Function:
     def increment_variable_counter(self, variable_type: Type) -> None:
         self._activation_record.increment_variable_counter(variable_type)
 
-    
+
     def increment_variable_counter_array(self, variable_type: Type, array_size: int) -> None:
         self._activation_record.increment_variable_counter_array(variable_type, array_size)
 
+    def get_json_obj(self) -> dict:
+        obj = {
+            "id": self._id,
+            "activation_record": self._activation_record.get_json_obj(),
+            "variable_table": self._variable_table.get_json_obj(),
+        }
 
-    def get_variable(self, variable_id) -> Variable:
-        return self._variable_table.get_variable(variable_id)
-
-    
-    def insert_variable(self, id: str, variable: Variable) -> None:
-        self._variable_table.insert_variable(id, variable)
+        return obj
 
 
-    def variable_exists(self, variable_id: str) -> bool:
-        return self._variable_table.variable_exists(variable_id)
-
+@dataclass
+class Function(Scope):
+    _return_type : Type = field(init=False, default=None)
+    _start_quadruple_number : int = field(init=False, default=None)
+    _activation_record : FunctionActivationRecord = field(default_factory=FunctionActivationRecord)
+    _parameter_table : ParameterTable = field(default_factory=ParameterTable)
 
     def get_return_type(self) -> Type:
         return self._return_type
@@ -62,6 +75,10 @@ class Function:
 
     def set_return_type(self, return_type) -> None:
         self._return_type = return_type
+
+
+    def get_start_quadruple_number(self) -> None:
+        return self._start_quadruple_number
 
 
     def set_start_quadruple_number(self, start_quadruple_number) -> None:
@@ -103,20 +120,20 @@ class Function:
     def increment_constant_counter(self, variable_type: Type) -> None:
         self._activation_record.increment_constant_counter(variable_type)
 
-    
-    def get_intermediate_code_representation(self) -> dict:
-        data = {
+
+    def get_json_obj(self) -> dict:
+        obj = {
             "id": self._id,
             "return_type": self._return_type.value if self._return_type else None,
             "start_quadruple_number": self._start_quadruple_number,
-            "activation_record": self._activation_record.get_intermediate_code_representation(),
-            "variable_table": self._variable_table.get_intermediate_code_representation(),
-            "parameter_table": self._parameter_table.get_intermediate_code_representation(),
+            "activation_record": self._activation_record.get_json_obj(),
+            "variable_table": self._variable_table.get_json_obj(),
+            "parameter_table": self._parameter_table.get_json_obj(),
         }
 
-        return data
+        return obj
 
-    
+
     def __str__(self) -> str:
         return f'Function({self._id} {self._activation_record.__str__()} {self._variable_table.__str__()} {self._parameter_table.__str__()}'
 
@@ -124,26 +141,6 @@ class Function:
 @dataclass
 class FunctionDirectory:
     _directory : dict[str, Function] = field(default_factory=dict)
-
-    def __post_init__(self):
-        self.generate_global_module()
-        self.generate_main_function()
-
-
-    def generate_global_module(self) -> None:
-        global_id = Names.GLOBAL.value
-
-        global_module = Function()
-        global_module.set_id(global_id)
-        self.insert_function(global_id, global_module)
-
-
-    def generate_main_function(self) -> None:
-        main_id = Names.MAIN.value
-        main_module = Function()
-        main_module.set_id(main_id)
-        self.insert_function(main_id, main_module)
-
 
     def insert_function(self, id: str, function: Function) -> None:
         if id in self._directory:
@@ -153,11 +150,11 @@ class FunctionDirectory:
 
     
     def get_global_variable(self, variable_id: str) -> Variable:
-        return self._directory[Names.GLOBAL.value].get_variable(variable_id)
+        return self._directory[ScopeNames.GLOBAL.value].get_variable(variable_id)
 
     
     def insert_global_variable(self, variable_id: str, variable: Variable) -> None:
-        self._directory[Names.GLOBAL.value].insert_variable(variable_id, variable)
+        self._directory[ScopeNames.GLOBAL.value].insert_variable(variable_id, variable)
 
     
     def get_function_local_variable(self, function_id: str, variable_id: str) -> Variable:
@@ -211,15 +208,15 @@ class FunctionDirectory:
 
 
     def get_global_variable_counter(self, variable_type: Type) -> int:
-        return self._directory[Names.GLOBAL.value].get_variable_counter(variable_type)
+        return self._directory[ScopeNames.GLOBAL.value].get_variable_counter(variable_type)
 
     
     def increment_global_variable_counter(self, variable_type: Type) -> None:
-        self._directory[Names.GLOBAL.value].increment_variable_counter(variable_type)
+        self._directory[ScopeNames.GLOBAL.value].increment_variable_counter(variable_type)
 
     
     def increment_global_variable_counter_array(self, variable_type: Type, array_size: int) -> None:
-        self._directory[Names.GLOBAL.value].increment_variable_counter_array(variable_type, array_size)
+        self._directory[ScopeNames.GLOBAL.value].increment_variable_counter_array(variable_type, array_size)
 
 
     def get_function_variable_counter(self, function_id: str, variable_type: Type) -> int:
@@ -258,13 +255,13 @@ class FunctionDirectory:
         self._directory[function_id].increment_constant_counter(variable_type)
 
     
-    def get_intermediate_code_representation(self) -> list:
-        data = {
-            function_id: self._directory[function_id].get_intermediate_code_representation()
+    def get_json_obj(self) -> list:
+        obj = {
+            function_id: self._directory[function_id].get_json_obj()
             for function_id in self._directory
         }
 
-        return data
+        return obj
 
     
     def __str__(self) -> str:

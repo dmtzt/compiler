@@ -1,45 +1,46 @@
 from ply import yacc
 
-from .lexer import Lexer
-from .functions import Function
-from .functions import FunctionBuilder
-from .functions import FunctionDirectory
-from .functions import IncorrectFunctionParameterAmountException
-from .functions import IncorrectFunctionParameterTypeException
-from .functions import IncorrectFunctionReturnTypeException
-from .functions import FunctionUndefinedException
-from .functions import Names
-from .intermediate_code import IntermediateCodeContainer
-from .memory import VirtualMemoryAddress
-from .quadruples import ActivationRecordExpansionQuadruple
-from .quadruples import ArithmeticQuadruple
-from .quadruples import AssignmentQuadruple
-from .quadruples import ConstantStorageQuadruple
-from .quadruples import ConditionalControlTransferQuadruple
-from .quadruples import EndFunctionQuadruple
-from .quadruples import EndProgramQuadruple
-from .quadruples import ParameterPassingQuadruple
-from .quadruples import PrintQuadruple
-from .quadruples import ReadQuadruple
-from .quadruples import RelationalQuadruple
-from .quadruples import ReturnValueQuadruple
-from .quadruples import ReturnVoidQuadruple
-from .quadruples import StartSubroutineQuadruple
-from .quadruples import Quadruple
-from .quadruples import QuadrupleList
-from .quadruples import UnaryArithmeticQuadruple
-from .quadruples import UnconditionalControlTransferQuadruple
-from .stacks import JumpStack
-from .stacks import OperandStack
-from .stacks import OperatorStack
-from .stacks import FunctionParameterCountStack
-from .variables import Boolean
-from .variables import DimensionNode
-from .variables import SemanticTable
-from .variables import Type
-from .variables import Variable
-from .variables import VariableBuilder
-from .variables import Operator
+from compiler.lexer import Lexer
+from compiler.functions import Function
+from compiler.functions import FunctionBuilder
+from compiler.functions import FunctionDirectory
+from compiler.functions import IncorrectFunctionParameterAmountException
+from compiler.functions import IncorrectFunctionParameterTypeException
+from compiler.functions import IncorrectFunctionReturnTypeException
+from compiler.functions import FunctionUndefinedException
+from compiler.functions import ScopeNames
+from compiler.functions import Scope
+from compiler.intermediate_code import IntermediateCodeContainer
+from compiler.memory import BaseVirtualMemoryAddress
+from compiler.quadruples import ActivationRecordExpansionQuadruple
+from compiler.quadruples import ArithmeticQuadruple
+from compiler.quadruples import AssignmentQuadruple
+from compiler.quadruples import ConstantStorageQuadruple
+from compiler.quadruples import ConditionalControlTransferQuadruple
+from compiler.quadruples import EndFunctionQuadruple
+from compiler.quadruples import EndProgramQuadruple
+from compiler.quadruples import ParameterPassingQuadruple
+from compiler.quadruples import PrintQuadruple
+from compiler.quadruples import ReadQuadruple
+from compiler.quadruples import RelationalQuadruple
+from compiler.quadruples import ReturnValueQuadruple
+from compiler.quadruples import ReturnVoidQuadruple
+from compiler.quadruples import StartSubroutineQuadruple
+from compiler.quadruples import Quadruple
+from compiler.quadruples import QuadrupleList
+from compiler.quadruples import UnaryArithmeticQuadruple
+from compiler.quadruples import UnconditionalControlTransferQuadruple
+from compiler.stacks import JumpStack
+from compiler.stacks import OperandStack
+from compiler.stacks import OperatorStack
+from compiler.stacks import FunctionParameterCountStack
+from compiler.variables import Boolean
+from compiler.variables import DimensionNode
+from compiler.variables import SemanticTable
+from compiler.variables import Type
+from compiler.variables import Variable
+from compiler.variables import VariableBuilder
+from compiler.variables import Operator
 
 
 class Parser(object):
@@ -55,6 +56,7 @@ class Parser(object):
 
         self.program_counter = None
         self.array_size = None
+        self.global_scope = None
         self.function_directory = None
         self.jump_stack = None
         self.operator_stack = None
@@ -66,6 +68,7 @@ class Parser(object):
     def reset(self):
         self.program_counter = 0
         self.array_size = 1
+        self.global_scope = Scope()
         self.function_directory = FunctionDirectory()
         self.jump_stack = JumpStack()
         self.operator_stack = OperatorStack()
@@ -84,17 +87,22 @@ class Parser(object):
         self.reset()
         self.parser.parse(file_data)
 
-        intermediate_code_container = self.generate_intermediate_code_container(self.function_directory, self.quadruple_list)
+        intermediate_code_container = self.generate_intermediate_code_container(
+            self.global_scope,
+            self.function_directory,
+            self.quadruple_list,
+        )
         return intermediate_code_container
         # return self.quadruple_list
 
     
     def generate_intermediate_code_container(
         self,
+        global_scope: Scope,
         function_directory: FunctionDirectory,
         quadruple_list: QuadrupleList
     ) -> IntermediateCodeContainer:
-        return IntermediateCodeContainer(function_directory, quadruple_list)
+        return IntermediateCodeContainer(global_scope, function_directory, quadruple_list)
 
 
     def create_main_function(self):
@@ -237,7 +245,7 @@ class Parser(object):
 
 
     def insert_global_variable(self, variable_id: str, variable: Variable) -> None:
-        self.function_directory.insert_global_variable(variable_id, variable)
+        self.global_scope.insert_variable(variable_id, variable)
 
     
     def get_function_variable(self, function_id: str, variable_id: str) -> Variable:
@@ -271,15 +279,15 @@ class Parser(object):
     
 
     def get_global_variable_counter(self, variable_type: Type) -> int:
-        return self.function_directory.get_global_variable_counter(variable_type)    
+        return self.global_scope.get_variable_counter(variable_type)
     
 
     def increment_global_variable_counter(self, variable_type: Type) -> None:
-        self.function_directory.increment_global_variable_counter(variable_type)
+        self.global_scope.increment_variable_counter(variable_type)
 
     
     def increment_global_variable_counter_array(self, variable_type: Type, array_size: int) -> None:
-        self.function_directory.increment_global_variable_counter_array(variable_type, array_size)
+        self.global_scope.increment_variable_counter_array(variable_type, array_size)
 
     
     def push_current_count_jump_stack(self) -> None:
@@ -346,11 +354,11 @@ class Parser(object):
 
     
     def get_global_module_id(self) -> str:
-        return Names.GLOBAL.value
+        return ScopeNames.GLOBAL.value
 
     
     def get_main_function_id(self) -> str:
-        return Names.MAIN.value
+        return ScopeNames.MAIN.value
 
     
     def get_temporal_variable_name(self, variable_type: Type, count: int) -> str:
@@ -366,23 +374,23 @@ class Parser(object):
 
     
     def get_global_base_virtual_memory_address(self, variable_type: Type) -> int:
-        return VirtualMemoryAddress.get_global_base_virtual_memory_address(variable_type)
+        return BaseVirtualMemoryAddress.get_global_base_virtual_memory_address(variable_type)
     
 
     def get_local_base_virtual_memory_address(self, variable_type: Type) -> int:
-        return VirtualMemoryAddress.get_local_base_virtual_memory_address(variable_type)
+        return BaseVirtualMemoryAddress.get_local_base_virtual_memory_address(variable_type)
 
     
     def get_constant_base_virtual_memory_address(self, variable_type: Type) -> int:
-        return VirtualMemoryAddress.get_constant_base_virtual_memory_address(variable_type)
+        return BaseVirtualMemoryAddress.get_constant_base_virtual_memory_address(variable_type)
 
     
     def get_temporal_base_virtual_memory_address(self, variable_type: Type) -> int:
-        return VirtualMemoryAddress.get_temporal_base_virtual_memory_address(variable_type)
+        return BaseVirtualMemoryAddress.get_temporal_base_virtual_memory_address(variable_type)
 
     
     def get_pointer_base_virtual_memory_address(self, variable_type: Type) -> int:
-        return VirtualMemoryAddress.get_pointer_base_virtual_memory_address(variable_type)
+        return BaseVirtualMemoryAddress.get_pointer_base_virtual_memory_address(variable_type)
 
 
     def push_operand_stack(self, operand: Variable) -> None:
@@ -455,10 +463,6 @@ class Parser(object):
         return self.shared_variable_declaration_type
 
 
-    def get_global_variable_counter(self, variable_type: Type) -> int:
-        return self.function_directory.get_global_variable_counter(variable_type)
-
-
     def get_function_variable_counter(self, function_id: str, variable_type: Type) -> int:
         return self.function_directory.get_function_variable_counter(function_id, variable_type)
 
@@ -529,6 +533,20 @@ class Parser(object):
     
     def p_program(self, p):
         '''program : init start'''
+        main_function_id = ScopeNames.MAIN.value
+        quadruple_number = self.pop_jump_stack()
+        program_counter = self.get_program_counter()
+
+        self.fill_control_transfer_quadruple(quadruple_number, program_counter)
+        
+        main_activation_record_expansion_quadruple = self.generate_activation_record_expansion_quadruple(main_function_id)
+        self.insert_quadruple(main_activation_record_expansion_quadruple)
+        self.increment_program_counter()
+
+        start_main_subroutine_quadruple = self.generate_start_subroutine_quadruple(main_function_id)
+        self.insert_quadruple(start_main_subroutine_quadruple)
+        self.increment_program_counter()
+        
         end_program_quadruple = self.generate_end_program_quadruple()
         self.insert_quadruple(end_program_quadruple)
         self.increment_program_counter()
@@ -543,24 +561,13 @@ class Parser(object):
         self.increment_program_counter()
 
 
-    def p_start_1(self, p):
+    def p_start(self, p):
         '''start : global_variables_declaration functions_definition entry_point_definition'''
 
 
-    def p_start_2(self, p):
-        '''start : global_variables_declaration entry_point_definition'''
-
-
-    def p_start_3(self, p):
-        '''start : functions_definition entry_point_definition'''
-
-
-    def p_start_4(self, p):
-        '''start : entry_point_definition'''
-
-
     def p_global_variables_declaration(self, p):
-        '''global_variables_declaration : GLOBAL parsed_global_scope variables_declaration'''
+        '''global_variables_declaration : GLOBAL parsed_global_scope variables_declaration
+                                        | empty'''
 
 
     def p_parsed_global_scope(self, p):
@@ -569,50 +576,20 @@ class Parser(object):
         self.set_function_scope(global_scope_id)
 
 
-    def p_functions_definition_1(self, p):
-        '''functions_definition : functions_definition single_function_definition'''
+    def p_functions_definition(self, p):
+        '''functions_definition : functions_definition function_definition
+                                | function_definition'''
         end_function_quadruple = self.generate_end_function_quadruple()
         self.insert_quadruple(end_function_quadruple)
         self.increment_program_counter()
 
 
-    def p_functions_definition_2(self, p):
-        '''functions_definition : single_function_definition'''
-        end_function_quadruple = self.generate_end_function_quadruple()
-        self.insert_quadruple(end_function_quadruple)
-        self.increment_program_counter()
-
-
-    def p_single_function_definition_primitive_type_1(self, p):
-        '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_type_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
-
-
-    def p_single_function_definition_primitive_type_2(self, p):
-        '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_type_function_id LPAREN function_definition_params RPAREN instruction_block'''
-
-    
-    def p_single_function_definition_primitive_type_3(self, p):
-        '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_type_function_id LPAREN RPAREN local_variables_declaration instruction_block'''
-
-    
-    def p_single_function_definition_primitive_type_4(self, p):
-        '''single_function_definition : FUNCTION type parsed_function_return_type ID parsed_type_function_id LPAREN RPAREN instruction_block'''
-
-
-    def p_single_function_definition_void_type_1(self, p):
-        '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_void_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block'''
-
-
-    def p_single_function_definition_void_type_2(self, p):
-        '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_void_function_id LPAREN function_definition_params RPAREN instruction_block'''
-
-
-    def p_single_function_definition_void_type_3(self, p):
-        '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_void_function_id LPAREN RPAREN local_variables_declaration instruction_block'''
-
-    
-    def p_single_function_definition_void_type_4(self, p):
-        '''single_function_definition : FUNCTION VOID parsed_function_void_return_type ID parsed_void_function_id LPAREN RPAREN instruction_block'''
+    def p_function_definition(self, p):
+        '''function_definition : FUNCTION type parsed_function_return_type ID parsed_type_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block
+                               | FUNCTION type parsed_function_return_type ID parsed_type_function_id LPAREN RPAREN local_variables_declaration instruction_block
+                               | FUNCTION VOID parsed_function_void_return_type ID parsed_void_function_id LPAREN function_definition_params RPAREN local_variables_declaration instruction_block
+                               | FUNCTION VOID parsed_function_void_return_type ID parsed_void_function_id LPAREN RPAREN local_variables_declaration instruction_block
+                               | empty'''
 
 
     def p_parsed_type_function_id(self, p):
@@ -658,16 +635,13 @@ class Parser(object):
         self.function_builder.set_return_type(function_return_type)
 
 
-    def p_function_definition_params_1(self, p):
-        '''function_definition_params : function_definition_params COMMA single_function_definition_param'''
-
-    
-    def p_function_definition_params_2(self, p):
-        '''function_definition_params : single_function_definition_param'''
+    def p_function_definition_params(self, p):
+        '''function_definition_params : function_definition_params COMMA function_definition_param
+                                      | function_definition_param'''
 
 
-    def p_single_function_definition_param(self, p):
-        '''single_function_definition_param : type ID'''
+    def p_function_definition_param(self, p):
+        '''function_definition_param : type ID'''
         variable_id = p[2]
         variable_type = p[1]
 
@@ -683,38 +657,40 @@ class Parser(object):
         self.function_directory.insert_function_parameter(function_id, variable)
 
     
-    def p_entry_point_definition_1(self, p):
+    def p_entry_point_definition(self, p):
         '''entry_point_definition : START parsed_main_id LPAREN RPAREN local_variables_declaration instruction_block'''
-
-    
-    def p_entry_point_definition_2(self, p):
-        '''entry_point_definition : START parsed_main_id LPAREN RPAREN instruction_block'''
+        end_function_quadruple = self.generate_end_function_quadruple()
+        self.insert_quadruple(end_function_quadruple)
+        self.increment_program_counter()
 
  
     def p_parsed_main_id(self, p):
         '''parsed_main_id :'''
-        main_scope_id = self.get_main_function_id()
-        self.set_function_scope(main_scope_id)
-
+        main_function_id = ScopeNames.MAIN.value
         program_counter = self.get_program_counter()
-        quadruple_number = self.pop_jump_stack()
-        self.fill_control_transfer_quadruple(quadruple_number, program_counter)
+
+        self.function_builder.set_id(main_function_id)
+        self.function_builder.set_start_quadruple_number(program_counter)
+        self.function_builder.set_return_type(Type.VOID)
+
+        main_function = self.function_builder.build()
+        self.insert_function_to_directory(main_function_id, main_function)
+
+        self.set_function_scope(main_function_id)
 
 
     def p_local_variables_declaration(self, p):
-        '''local_variables_declaration : LOCAL variables_declaration'''
+        '''local_variables_declaration : LOCAL variables_declaration
+                                       | empty'''
 
     
     def p_variables_declaration(self, p):
         '''variables_declaration : VARIABLES COLON distinct_type_variables_declaration'''
 
-    
-    def p_distinct_type_variables_declaration_1(self, p):
-        '''distinct_type_variables_declaration : distinct_type_variables_declaration shared_type_variables_declaration'''
 
-
-    def p_distinct_type_variables_declaration_2(self, p):
-        '''distinct_type_variables_declaration : shared_type_variables_declaration'''
+    def p_distinct_type_variables_declaration(self, p):
+        '''distinct_type_variables_declaration : distinct_type_variables_declaration shared_type_variables_declaration
+                                               | shared_type_variables_declaration'''
 
 
     def p_shared_type_variables_declaration(self, p):
@@ -727,16 +703,13 @@ class Parser(object):
         self.set_shared_variable_type(variable_type)
 
     
-    def p_shared_type_variables_declaration_list_1(self, p):
-        '''shared_type_variables_declaration_list : shared_type_variables_declaration_list COMMA single_variable_declaration'''
+    def p_shared_type_variables_declaration_list(self, p):
+        '''shared_type_variables_declaration_list : shared_type_variables_declaration_list COMMA variable_declaration
+                                                  | variable_declaration'''
 
 
-    def p_shared_type_variables_declaration_list_2(self, p):
-        '''shared_type_variables_declaration_list : single_variable_declaration'''
-
-
-    def p_single_variable_declaration_1(self, p):
-        '''single_variable_declaration : variable_id_declaration variable_dim_definition variable_dim_definition'''
+    def p_variable_declaration_1(self, p):
+        '''variable_declaration : variable_id_declaration variable_dim_definition variable_dim_definition'''
         number_dimensions = self.variable_builder.get_number_dimensions()
         array_size = self.get_array_size()
 
@@ -764,8 +737,8 @@ class Parser(object):
             self.increment_function_variable_counter_array(function_id, variable_type, array_size)
 
 
-    def p_single_variable_declaration_2(self, p):
-        '''single_variable_declaration : variable_id_declaration variable_dim_definition'''
+    def p_variable_declaration_2(self, p):
+        '''variable_declaration : variable_id_declaration variable_dim_definition'''
         array_size = self.get_array_size()
         
         dimension = 0
@@ -795,8 +768,8 @@ class Parser(object):
         self.reset_array_size()
 
     
-    def p_single_variable_declaration_3(self, p):
-        '''single_variable_declaration : variable_id_declaration'''
+    def p_variable_declaration_3(self, p):
+        '''variable_declaration : variable_id_declaration'''
         function_id = self.get_function_scope()
         global_scope_id = self.get_global_module_id()
 

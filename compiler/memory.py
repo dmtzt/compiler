@@ -2,6 +2,86 @@ from dataclasses import dataclass, field
 from enum import Enum
 from .variables import Type
 
+class BaseVirtualMemoryAddressEnum(Enum):
+    GLOBAL_VARIABLE_INT = 0
+    GLOBAL_VARIABLE_REAL = 1000
+    GLOBAL_VARIABLE_CHAR = 2000
+    GLOBAL_VARIABLE_BOOL = 3000
+    
+    LOCAL_VARIABLE_INT = 4000
+    LOCAL_VARIABLE_REAL = 5000
+    LOCAL_VARIABLE_CHAR = 6000
+    LOCAL_VARIABLE_BOOL = 7000
+
+    LOCAL_TEMPORAL_INT = 8000
+    LOCAL_TEMPORAL_REAL = 9000
+    LOCAL_TEMPORAL_CHAR = 10000
+    LOCAL_TEMPORAL_BOOL = 11000
+    LOCAL_TEMPORAL_POINTER = 12000
+
+    LOCAL_CONSTANT_INT = 13000
+    LOCAL_CONSTANT_REAL = 14000
+    LOCAL_CONSTANT_CHAR = 15000
+    LOCAL_CONSTANT_BOOL = 16000
+    LOCAL_CONSTANT_STRING = 17000
+
+
+class BaseVirtualMemoryAddress:
+    _global = {
+        Type.INT: BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_INT.value,
+        Type.REAL: BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_REAL.value,
+        Type.CHAR: BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_CHAR.value,
+        Type.BOOL: BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_BOOL.value,
+    }
+
+    _local = {
+        Type.INT: BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_INT.value,
+        Type.REAL: BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_REAL.value,
+        Type.CHAR: BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_CHAR.value,
+        Type.BOOL: BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_BOOL.value,
+    }
+
+    _temporal = {
+        Type.INT: BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_INT.value,
+        Type.REAL: BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_REAL.value,
+        Type.CHAR: BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_CHAR.value,
+        Type.BOOL: BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_BOOL.value,
+        Type.POINTER: BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_POINTER.value,
+    }
+
+    _constant = {
+        Type.INT: BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_INT.value,
+        Type.REAL: BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_REAL.value,
+        Type.CHAR: BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_CHAR.value,
+        Type.BOOL: BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_BOOL.value,
+        Type.STRING: BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_STRING.value,
+    }
+
+    @classmethod
+    def get_global_base_virtual_memory_address(cls, variable_type: Type) -> int:
+        return cls._global[variable_type]
+
+
+    @classmethod
+    def get_local_base_virtual_memory_address(cls, variable_type: Type) -> int:
+        return cls._local[variable_type]
+
+
+    @classmethod
+    def get_temporal_base_virtual_memory_address(cls, variable_type: Type) -> int:
+        return cls._temporal[variable_type]
+    
+
+    @classmethod
+    def get_pointer_base_virtual_memory_address(cls) -> int:
+        return cls._temporal[Type.POINTER]
+
+
+    @classmethod
+    def get_constant_base_virtual_memory_address(cls, variable_type: Type) -> int:
+        return cls._constant[variable_type]    
+
+
 def activation_record_variable_factory():
     return {
         Type.INT: 0,
@@ -32,7 +112,35 @@ def activation_record_constant_factory():
 
 
 @dataclass
-class ActivationRecord:
+class GlobalActivationRecord:
+    _variable : dict[Type, int] = field(default_factory=activation_record_variable_factory)
+
+    def get_variable_counter(self, type: Type) -> int:
+        return self._variable[type]
+
+
+    def increment_variable_counter(self, type: Type) -> None:
+        self._variable[type] += 1
+
+
+    def increment_variable_counter_array(self, type: Type, array_size: int) -> None:
+        self._variable[type] += array_size
+        print(self._variable[type])
+
+    
+    def get_json_obj(self) -> dict:
+        obj = {
+            "variable": {
+                str(key.value): self._variable[key]
+                for key in self._variable
+            },
+        }
+
+        return obj
+
+
+@dataclass
+class FunctionActivationRecord:
     _variable : dict[Type, int] = field(default_factory=activation_record_variable_factory)
     _temporal : dict[Type, int] = field(default_factory=activation_record_temporal_factory)
     _constant : dict[Type, int] = field(default_factory=activation_record_constant_factory)
@@ -48,6 +156,7 @@ class ActivationRecord:
     def increment_variable_counter_array(self, type: Type, array_size: int) -> None:
         self._variable[type] += array_size
         print(self._variable[type])
+
 
     def get_temporal_counter(self, type: Type) -> int:
         return self._temporal[type]
@@ -73,8 +182,8 @@ class ActivationRecord:
         self._constant[type] += 1
 
     
-    def get_intermediate_code_representation(self) -> dict:
-        data = {
+    def get_json_obj(self) -> dict:
+        obj = {
             "variable": {
                 str(key.value): self._variable[key]
                 for key in self._variable
@@ -89,87 +198,7 @@ class ActivationRecord:
             },
         }
 
-        return data
-
-
-class VirtualMemoryAddressEnumeration(Enum):
-    GLOBAL_VARIABLE_INT = 0
-    GLOBAL_VARIABLE_REAL = 1000
-    GLOBAL_VARIABLE_CHAR = 2000
-    GLOBAL_VARIABLE_BOOL = 3000
-    
-    LOCAL_VARIABLE_INT = 4000
-    LOCAL_VARIABLE_REAL = 5000
-    LOCAL_VARIABLE_CHAR = 6000
-    LOCAL_VARIABLE_BOOL = 7000
-
-    LOCAL_TEMPORAL_INT = 8000
-    LOCAL_TEMPORAL_REAL = 9000
-    LOCAL_TEMPORAL_CHAR = 10000
-    LOCAL_TEMPORAL_BOOL = 11000
-    LOCAL_TEMPORAL_POINTER = 12000
-
-    LOCAL_CONSTANT_INT = 13000
-    LOCAL_CONSTANT_REAL = 14000
-    LOCAL_CONSTANT_CHAR = 15000
-    LOCAL_CONSTANT_BOOL = 16000
-    LOCAL_CONSTANT_STRING = 17000
-
-
-class VirtualMemoryAddress:
-    _global = {
-        Type.INT: VirtualMemoryAddressEnumeration.GLOBAL_VARIABLE_INT.value,
-        Type.REAL: VirtualMemoryAddressEnumeration.GLOBAL_VARIABLE_REAL.value,
-        Type.CHAR: VirtualMemoryAddressEnumeration.GLOBAL_VARIABLE_CHAR.value,
-        Type.BOOL: VirtualMemoryAddressEnumeration.GLOBAL_VARIABLE_BOOL.value,
-    }
-
-    _local = {
-        Type.INT: VirtualMemoryAddressEnumeration.LOCAL_VARIABLE_INT.value,
-        Type.REAL: VirtualMemoryAddressEnumeration.LOCAL_VARIABLE_REAL.value,
-        Type.CHAR: VirtualMemoryAddressEnumeration.LOCAL_VARIABLE_CHAR.value,
-        Type.BOOL: VirtualMemoryAddressEnumeration.LOCAL_VARIABLE_BOOL.value,
-    }
-
-    _temporal = {
-        Type.INT: VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_INT.value,
-        Type.REAL: VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_REAL.value,
-        Type.CHAR: VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_CHAR.value,
-        Type.BOOL: VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_BOOL.value,
-        Type.POINTER: VirtualMemoryAddressEnumeration.LOCAL_TEMPORAL_POINTER.value,
-    }
-
-    _constant = {
-        Type.INT: VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_INT.value,
-        Type.REAL: VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_REAL.value,
-        Type.CHAR: VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_CHAR.value,
-        Type.BOOL: VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_BOOL.value,
-        Type.STRING: VirtualMemoryAddressEnumeration.LOCAL_CONSTANT_STRING.value,
-    }
-
-    @classmethod
-    def get_global_base_virtual_memory_address(cls, variable_type: Type) -> int:
-        return cls._global[variable_type]
-
-
-    @classmethod
-    def get_local_base_virtual_memory_address(cls, variable_type: Type) -> int:
-        return cls._local[variable_type]
-
-
-    @classmethod
-    def get_temporal_base_virtual_memory_address(cls, variable_type: Type) -> int:
-        return cls._temporal[variable_type]
-    
-
-    @classmethod
-    def get_pointer_base_virtual_memory_address(cls) -> int:
-        return cls._temporal[Type.POINTER]
-
-
-    @classmethod
-    def get_constant_base_virtual_memory_address(cls, variable_type: Type) -> int:
-        return cls._constant[variable_type]
+        return obj
 
 
 class Memory:

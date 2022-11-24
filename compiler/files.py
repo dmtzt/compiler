@@ -37,7 +37,7 @@ class IntermediateCodeFilePrinter:
 
 
     def generate_intermediate_code_representation_file(self, fpath: Path, intermediate_code_container: IntermediateCodeContainer) -> None:
-        intermediate_code_representation = intermediate_code_container.get_intermediate_code_representation()
+        intermediate_code_representation = intermediate_code_container.get_json_obj()
 
         with open(fpath,'w',encoding = 'utf-8') as f:
             f.write(intermediate_code_representation)
@@ -61,7 +61,7 @@ class IntermediateCodeFileReader:
 
         with open(fpath) as f:
             data = json.load(f)
-            return data
+            return obj
         
     
     def generate_file_path(self, fname: str) -> Path:

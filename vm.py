@@ -1,3 +1,4 @@
+#
 import argparse
 from pathlib import Path
 from typing import Union
@@ -21,6 +22,12 @@ from compiler.variables import Type
 global_scope = None
 function_directory = None
 quadruple_list = None
+
+execution_stack = None
+program_counter_stack = None
+function_parameter_stack = None
+
+program_counter = 0
 
 class InvalidFileExtensionError(RuntimeError):
     pass
@@ -54,51 +61,118 @@ def dispatch_assignment(quadruple: Quadruple) -> None:
     resolved_result_variable = resolve_virtual_memory_address(result_virtual_memory_address)
     resolved_storage_variable = resolve_virtual_memory_address(storage_virtual_memory_address)
 
-    if resolved_result_variable.type == VariableScope.GLOBAL:
-        value = global_memory.get_value(
-            resolved_result_variable.type,
-            resolved_result_variable.index
-        )
-    else:
-        value = execution_stack.get_value_top_function_call(
-            resolved_result_variable.scope,
-            resolved_result_variable.type,
-            resolved_result_variable.index
-        )
-
-    if resolved_storage_variable.type == VariableScope.GLOBAL:
-        global_memory.set_value(
-            resolved_storage_variable.type,
-            resolved_storage_variable.index,
-            value
-        )
-    else:
-        execution_stack.set_value_top_function_call(
-            resolved_storage_variable.scope,
-            resolved_storage_variable.type,
-            resolved_storage_variable.index,
-            value
-        )
+    value = get_variable_value(resolved_result_variable)
+    set_variable_value(resolved_storage_variable, value)
 
 
-def dispatch_addition(quadruple: Quadruple) -> None:
-    pass
+def dispatch_addition(quadruple: Quadruple) -> None:            
+    left_operand_virtual_memory_address = int(quadruple.get_q2())
+    right_operand_virtual_memory_address = int(quadruple.get_q3())
+    result_virtual_memory_address = int(quadruple.get_q4())
+
+    left_operand_resolved_variable = resolve_virtual_memory_address(
+        left_operand_virtual_memory_address
+    )
+    right_operand_resolved_variable = resolve_virtual_memory_address(
+        right_operand_virtual_memory_address
+    )
+    result_resolved_variable = resolve_virtual_memory_address(
+        result_virtual_memory_address
+    )
+
+    left_value = get_variable_value(left_operand_resolved_variable)
+    right_value = get_variable_value(right_operand_resolved_variable)
+    result_value = left_value + right_value
+
+    set_variable_value(result_resolved_variable, result_value)
 
 
 def dispatch_subtraction(quadruple: Quadruple) -> None:
-    pass
+    left_operand_virtual_memory_address = int(quadruple.get_q2())
+    right_operand_virtual_memory_address = int(quadruple.get_q3())
+    result_virtual_memory_address = int(quadruple.get_q4())
+
+    left_operand_resolved_variable = resolve_virtual_memory_address(
+        left_operand_virtual_memory_address
+    )
+    right_operand_resolved_variable = resolve_virtual_memory_address(
+        right_operand_virtual_memory_address
+    )
+    result_resolved_variable = resolve_virtual_memory_address(
+        result_virtual_memory_address
+    )
+
+    left_value = get_variable_value(left_operand_resolved_variable)
+    right_value = get_variable_value(right_operand_resolved_variable)
+    result_value = left_value - right_value
+
+    set_variable_value(result_resolved_variable, result_value)
 
 
 def dispatch_multiplication(quadruple: Quadruple) -> None:
-    pass
+    left_operand_virtual_memory_address = int(quadruple.get_q2())
+    right_operand_virtual_memory_address = int(quadruple.get_q3())
+    result_virtual_memory_address = int(quadruple.get_q4())
+
+    left_operand_resolved_variable = resolve_virtual_memory_address(
+        left_operand_virtual_memory_address
+    )
+    right_operand_resolved_variable = resolve_virtual_memory_address(
+        right_operand_virtual_memory_address
+    )
+    result_resolved_variable = resolve_virtual_memory_address(
+        result_virtual_memory_address
+    )
+
+    left_value = get_variable_value(left_operand_resolved_variable)
+    right_value = get_variable_value(right_operand_resolved_variable)
+    result_value = left_value * right_value
+
+    set_variable_value(result_resolved_variable, result_value)
 
 
 def dispatch_division(quadruple: Quadruple) -> None:
-    pass
+    left_operand_virtual_memory_address = int(quadruple.get_q2())
+    right_operand_virtual_memory_address = int(quadruple.get_q3())
+    result_virtual_memory_address = int(quadruple.get_q4())
+
+    left_operand_resolved_variable = resolve_virtual_memory_address(
+        left_operand_virtual_memory_address
+    )
+    right_operand_resolved_variable = resolve_virtual_memory_address(
+        right_operand_virtual_memory_address
+    )
+    result_resolved_variable = resolve_virtual_memory_address(
+        result_virtual_memory_address
+    )
+
+    left_value = get_variable_value(left_operand_resolved_variable)
+    right_value = get_variable_value(right_operand_resolved_variable)
+    result_value = left_value // right_value
+
+    set_variable_value(result_resolved_variable, result_value)
 
 
 def dispatch_modulo(quadruple: Quadruple) -> None:
-    pass
+    left_operand_virtual_memory_address = int(quadruple.get_q2())
+    right_operand_virtual_memory_address = int(quadruple.get_q3())
+    result_virtual_memory_address = int(quadruple.get_q4())
+
+    left_operand_resolved_variable = resolve_virtual_memory_address(
+        left_operand_virtual_memory_address
+    )
+    right_operand_resolved_variable = resolve_virtual_memory_address(
+        right_operand_virtual_memory_address
+    )
+    result_resolved_variable = resolve_virtual_memory_address(
+        result_virtual_memory_address
+    )
+
+    left_value = get_variable_value(left_operand_resolved_variable)
+    right_value = get_variable_value(right_operand_resolved_variable)
+    result_value = left_value % right_value
+
+    set_variable_value(result_resolved_variable, result_value)
 
 
 def dispatch_read(quadruple: Quadruple) -> None:
@@ -113,19 +187,7 @@ def dispatch_read(quadruple: Quadruple) -> None:
     # Cast value to target type
     casted_value = cast_constant(reading_value, resolved_variable.type)
 
-    if resolved_variable.scope == VariableScope.GLOBAL:
-        global_memory.set_value(
-            resolved_variable.type,
-            resolved_variable.index,
-            casted_value
-        )
-    else:
-        execution_stack.set_value_top_function_call(
-            resolved_variable.scope,
-            resolved_variable.type,
-            resolved_variable.index,
-            casted_value
-        )
+    set_variable_value(resolved_variable, casted_value)
 
 
 def dispatch_print(quadruple: Quadruple) -> None:
@@ -134,18 +196,7 @@ def dispatch_print(quadruple: Quadruple) -> None:
     # Resolve virtual memory address
     resolved_variable = resolve_virtual_memory_address(variable_virtual_memory_address)
 
-    # Lookup in either global or local scope
-    if resolved_variable.scope == VariableScope.GLOBAL:
-        printed_value = global_memory.get_value(
-            resolved_variable.type,
-            resolved_variable.index
-        )
-    else:
-        printed_value = execution_stack.get_value_top_function_call(
-            resolved_variable.scope,
-            resolved_variable.type,
-            resolved_variable.index
-        )
+    printed_value = get_variable_value(resolved_variable)
 
     # Print value
     print(printed_value)
@@ -174,6 +225,48 @@ def dispatch_store_constant(quadruple: Quadruple) -> None:
             resolved_variable.type,
             resolved_variable.index,
             casted_constant
+        )
+
+
+def dispatch_goto(quadruple: Quadruple) -> int:
+    jumped_to_program_counter = int(quadruple.get_q4())
+    return jumped_to_program_counter
+
+
+def get_variable_value(
+        resolved_variable: ResolvedVariable,
+    ) -> Union[int, float, bool, str]:
+    if resolved_variable.scope == VariableScope.GLOBAL:
+        value = global_memory.get_value(
+            resolved_variable.type,
+            resolved_variable.index
+        )
+    else:
+        value = execution_stack.get_value_top_function_call(
+            resolved_variable.scope,
+            resolved_variable.type,
+            resolved_variable.index
+        )
+
+    return value
+
+
+def set_variable_value(
+        resolved_variable: ResolvedVariable,
+        value: Union[int, float, bool, str],
+    ) -> None:
+    if resolved_variable.scope == VariableScope.GLOBAL:
+        global_memory.set_value(
+            resolved_variable.type,
+            resolved_variable.index,
+            value
+        )
+    else:
+        execution_stack.set_value_top_function_call(
+            resolved_variable.scope,
+            resolved_variable.type,
+            resolved_variable.index,
+            value
         )
 
 
@@ -207,8 +300,6 @@ file_reader = IntermediateCodeFileReader()
 execution_stack = ExecutionStack()
 program_counter_stack = ProgramCounterStack()
 function_parameter_stack = FunctionParameterStack()
-
-program_counter = 0
 
 arg_parser = argparse.ArgumentParser(description='Esperanto executer')
 arg_parser.add_argument('infile', type=str, help='Object file name')
@@ -246,119 +337,19 @@ while operator != Operator.END:
             dispatch_assignment(quadruple)
             program_counter += 1
         case Operator.PLUS:
-            
-            left_address = int(quadruple.get_q2())
-            left_base_address = get_base_virtual_memory_address(left_address)
-            left_index = get_variable_index(left_address)
-            left_memory, left_type = resolve_base_virtual_memory_address(left_base_address)
-            left_value = execution_stack.get_value_top_function_call(left_memory, left_type, left_index)
-
-            right_address = int(quadruple.get_q3())
-            right_base_address = get_base_virtual_memory_address(right_address)
-            right_index = get_variable_index(right_address)
-            right_memory, right_type = resolve_base_virtual_memory_address(right_base_address)
-            right_value = execution_stack.get_value_top_function_call(right_memory, right_type, right_index)
-
-            result_address = int(quadruple.get_q4())
-            result_base_address = get_base_virtual_memory_address(result_address)
-            result_index = get_variable_index(result_address)
-            result_memory, result_type = resolve_base_virtual_memory_address(result_base_address)
-            
-            result_value = left_value + right_value
-            execution_stack.set_value_top_function_call(result_memory, result_type, result_index, result_value)
-            
+            dispatch_addition(quadruple)
             program_counter += 1
         case Operator.MINUS:
-            
-            left_address = int(quadruple.get_q2())
-            left_base_address = get_base_virtual_memory_address(left_address)
-            left_index = get_variable_index(left_address)
-            left_memory, left_type = resolve_base_virtual_memory_address(left_base_address)
-            left_value = execution_stack.get_value_top_function_call(left_memory, left_type, left_index)
-
-            right_address = int(quadruple.get_q3())
-            right_base_address = get_base_virtual_memory_address(right_address)
-            right_index = get_variable_index(right_address)
-            right_memory, right_type = resolve_base_virtual_memory_address(right_base_address)
-            right_value = execution_stack.get_value_top_function_call(right_memory, right_type, right_index)
-
-            result_address = int(quadruple.get_q4())
-            result_base_address = get_base_virtual_memory_address(result_address)
-            result_index = get_variable_index(result_address)
-            result_memory, result_type = resolve_base_virtual_memory_address(result_base_address)
-            
-            result_value = left_value - right_value
-            execution_stack.set_value_top_function_call(result_memory, result_type, result_index, result_value)
+            dispatch_subtraction(quadruple)
             program_counter += 1
         case Operator.TIMES:
-            
-
-            left_address = int(quadruple.get_q2())
-            left_base_address = get_base_virtual_memory_address(left_address)
-            left_index = get_variable_index(left_address)
-            left_memory, left_type = resolve_base_virtual_memory_address(left_base_address)
-            left_value = execution_stack.get_value_top_function_call(left_memory, left_type, left_index)
-
-            right_address = int(quadruple.get_q3())
-            right_base_address = get_base_virtual_memory_address(right_address)
-            right_index = get_variable_index(right_address)
-            right_memory, right_type = resolve_base_virtual_memory_address(right_base_address)
-            right_value = execution_stack.get_value_top_function_call(right_memory, right_type, right_index)
-
-            result_address = int(quadruple.get_q4())
-            result_base_address = get_base_virtual_memory_address(result_address)
-            result_index = get_variable_index(result_address)
-            result_memory, result_type = resolve_base_virtual_memory_address(result_base_address)
-            
-            result_value = left_value * right_value
-            execution_stack.set_value_top_function_call(result_memory, result_type, result_index, result_value)
-
+            dispatch_multiplication(quadruple)
             program_counter += 1
         case Operator.DIVIDE:
-            
-            left_address = int(quadruple.get_q2())
-            left_base_address = get_base_virtual_memory_address(left_address)
-            left_index = get_variable_index(left_address)
-            left_memory, left_type = resolve_base_virtual_memory_address(left_base_address)
-            left_value = execution_stack.get_value_top_function_call(left_memory, left_type, left_index)
-
-            right_address = int(quadruple.get_q3())
-            right_base_address = get_base_virtual_memory_address(right_address)
-            right_index = get_variable_index(right_address)
-            right_memory, right_type = resolve_base_virtual_memory_address(right_base_address)
-            right_value = execution_stack.get_value_top_function_call(right_memory, right_type, right_index)
-
-            result_address = int(quadruple.get_q4())
-            result_base_address = get_base_virtual_memory_address(result_address)
-            result_index = get_variable_index(result_address)
-            result_memory, result_type = resolve_base_virtual_memory_address(result_base_address)
-            
-            result_value = left_value // right_value
-            execution_stack.set_value_top_function_call(result_memory, result_type, result_index, result_value)
-            
+            dispatch_division(quadruple)
             program_counter += 1
         case Operator.MODULO:
-            
-            left_address = int(quadruple.get_q2())
-            left_base_address = get_base_virtual_memory_address(left_address)
-            left_index = get_variable_index(left_address)
-            left_memory, left_type = resolve_base_virtual_memory_address(left_base_address)
-            left_value = execution_stack.get_value_top_function_call(left_memory, left_type, left_index)
-
-            right_address = int(quadruple.get_q3())
-            right_base_address = get_base_virtual_memory_address(right_address)
-            right_index = get_variable_index(right_address)
-            right_memory, right_type = resolve_base_virtual_memory_address(right_base_address)
-            right_value = execution_stack.get_value_top_function_call(right_memory, right_type, right_index)
-
-            result_address = int(quadruple.get_q4())
-            result_base_address = get_base_virtual_memory_address(result_address)
-            result_index = get_variable_index(result_address)
-            result_memory, result_type = resolve_base_virtual_memory_address(result_base_address)
-            
-            result_value = left_value % right_value
-            execution_stack.set_value_top_function_call(result_memory, result_type, result_index, result_value)
-            
+            dispatch_modulo(quadruple)
             program_counter += 1
         case Operator.UNARY_PLUS:
             
@@ -403,8 +394,7 @@ while operator != Operator.END:
             dispatch_store_constant(quadruple)
             program_counter += 1
         case Operator.GOTO:
-            jumped_to_program_counter = int(quadruple.get_q4())
-            program_counter = jumped_to_program_counter
+            program_counter = dispatch_goto(quadruple)
         case Operator.GOTOF:
             program_counter += 1
         case Operator.ERA:

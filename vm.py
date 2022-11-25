@@ -6,7 +6,9 @@ from compiler.execution import ExecutionStack
 from compiler.execution import FunctionCall
 from compiler.execution import FunctionDirectory
 from compiler.execution import FunctionParameterStack
-from compiler.execution import InstructionPointerStack
+from compiler.execution import GlobalScope
+from compiler.execution import GlobalMemory
+from compiler.execution import ProgramCounterStack
 from compiler.execution import QuadrupleList
 from compiler.execution import VirtualMemoryAddressResolver
 from compiler.files import IntermediateCodeFileReader
@@ -57,7 +59,7 @@ THIRD_OPERAND = 3
 file_reader = IntermediateCodeFileReader()
 
 execution_stack = ExecutionStack()
-instruction_pointer_stack = InstructionPointerStack()
+program_counter_stack = ProgramCounterStack()
 function_parameter_stack = FunctionParameterStack()
 
 program_counter = 0
@@ -75,16 +77,19 @@ if fsuffix != FILE_EXTENSION:
     raise InvalidFileExtensionError()
 
 data = file_reader.read_file(fpath)
+
+global_scope = GlobalScope(data['global_scope'])
 function_directory = FunctionDirectory(data['function_directory'])
 quadruple_list = QuadrupleList(data['quadruple_list'])
+
+global_memory = GlobalMemory(global_scope)
 
 main_function = function_directory.get_function('main')
 main_function_call = FunctionCall(main_function)
 execution_stack.push_function_call(main_function_call)
 
-
-
-
+function_call = None
+function_start_quadruple_number = None
 
 quadruple = quadruple_list.get_quadruple(0)
 operator = quadruple.get_operator()
@@ -291,20 +296,22 @@ while operator != Operator.END:
             
             program_counter += 1
         case Operator.GOTO:
-            # 
             jumped_to_program_counter = int(quadruple.get_q4())
             program_counter = jumped_to_program_counter
         case Operator.GOTOF:
-            
-            program_counter += 1
-        case Operator.GOSUB:
-            
             program_counter += 1
         case Operator.ERA:
-            
+            function_id = quadruple.get_q4()
+            function = function_directory.get_function(function_id)
+            function_start_quadruple_number = function.get_start_quadruple_number()
+            function_call = FunctionCall(function)
             program_counter += 1
+        case Operator.GOSUB:
+            execution_stack.push_function_call(function_call)
+
+            program_counter_stack.push_counter(program_counter)
+            program_counter = function_start_quadruple_number
         case Operator.PARAM:
-            
             program_counter += 1
         case Operator.RETURN_VALUE:
             
@@ -313,7 +320,9 @@ while operator != Operator.END:
             
             program_counter += 1
         case Operator.ENDFUNC:
-            
+            execution_stack.pop_function_call()
+
+            program_counter = program_counter_stack.pop_counter()
             program_counter += 1
 
     quadruple = quadruple_list.get_quadruple(program_counter)

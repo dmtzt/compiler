@@ -60,21 +60,33 @@ class Variable:
 
     def __str__(self) -> str:
         return f'Variable({self._id} {self._type} {self._virtual_memory_address} {self._dimensions})'
+    
+
+class GlobalScope:
+    def __init__(self, global_scope_dict: dict) -> None:
+        self.id = global_scope_dict['id']
+
+        self._activation_record = {
+            'variable': {Type(int(type)): global_scope_dict['activation_record']['variable'][type]
+                         for type in global_scope_dict['activation_record']['variable']},
+        }
+
+        self._variable_table = {
+            variable_id : Variable(global_scope_dict['variable_table'][variable_id])
+            for variable_id in global_scope_dict['variable_table']
+        }
+
+
+    def get_variable_activation_record(self) -> dict:
+        return self._activation_record['variable']
+
 
 
 class Function:
     def __init__(self, function_dict: dict) -> None:
         self._id = function_dict['id']
-
-        if function_dict['start_quadruple_number'] is None:
-            self._start_quadruple_number = None
-        else:
-            self._start_quadruple_number = int(function_dict['start_quadruple_number'])
-
-        if function_dict['return_type'] is None:
-            self._return_type = None
-        else:
-            self._return_type = Type(int(function_dict['return_type']))
+        self._start_quadruple_number = int(function_dict['start_quadruple_number'])
+        self._return_type = Type(int(function_dict['return_type']))
 
         self._activation_record = {
             'variable': {Type(int(type)): function_dict['activation_record']['variable'][type]
@@ -93,6 +105,10 @@ class Function:
 
     def get_id(self) -> str:
         return self._id
+    
+
+    def get_start_quadruple_number(self) -> int:
+        return self._start_quadruple_number
     
 
     def get_variable_activation_record(self) -> dict:
@@ -142,6 +158,19 @@ class FunctionDirectory:
 
     def get_function(self, function_id: str) -> Function:
         return self._directory[function_id]
+
+
+class GlobalMemory:
+    def __init__(self, global_scope: GlobalScope) -> None:
+        variable_activation_record = global_scope.get_variable_activation_record()
+
+        self._memory = {
+            'variable': {
+                type : [None] * variable_activation_record[type]
+                for type in variable_activation_record
+            },
+        }
+    
 
 class FunctionCall:
     def __init__(self, function: Function) -> None:
@@ -296,15 +325,15 @@ class ExecutionStack:
         return s
 
 
-
-class InstructionPointerStack:
+@dataclass
+class ProgramCounterStack:
     _stack : list[int] = field(default_factory=list)
 
-    def push_pointer(self, pointer: int) -> None:
+    def push_counter(self, pointer: int) -> None:
         self._stack.append(pointer)
 
 
-    def pop_pointer(self) -> int:
+    def pop_counter(self) -> int:
         return self._stack.pop()
 
 

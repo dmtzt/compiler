@@ -60,7 +60,7 @@ class IntermediateCodeFileReader:
             raise FileNotFoundError()
 
         with open(fpath) as f:
-            data = json.load(f)
+            obj = json.load(f)
             return obj
         
     

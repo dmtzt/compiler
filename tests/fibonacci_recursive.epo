@@ -1,0 +1,21 @@
+funkcio ent fibonacci(ent n)
+{
+   se (n <= 1) {
+      redonu n;
+   }
+   alie {
+      redonu fibonacci(n - 1) + fibonacci(n - 2);
+   }
+}
+
+komenco()
+lokaj variabloj:
+   ent nterms, i;
+{
+    presi("Enter n terms:");
+    nterms = legi();
+
+    ekde (i = 0; i < nterms; i = i + 1) {
+        presi(fibonacci(i));
+    }
+}

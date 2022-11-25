@@ -9,11 +9,18 @@ from compiler.execution import FunctionParameterStack
 from compiler.execution import GlobalScope
 from compiler.execution import GlobalMemory
 from compiler.execution import ProgramCounterStack
+from compiler.execution import Quadruple
 from compiler.execution import QuadrupleList
+from compiler.execution import ResolvedVariable
+from compiler.execution import VariableScope
 from compiler.execution import VirtualMemoryAddressResolver
 from compiler.files import IntermediateCodeFileReader
 from compiler.operators import Operator
 from compiler.variables import Type
+
+global_scope = None
+function_directory = None
+quadruple_list = None
 
 class InvalidFileExtensionError(RuntimeError):
     pass
@@ -29,6 +36,91 @@ def resolve_base_virtual_memory_address(base_virtual_memory_address: int) -> tup
 
 def get_variable_index(virtual_memory_address: int) -> int:
     return VirtualMemoryAddressResolver.get_index(virtual_memory_address)
+
+
+def resolve_virtual_memory_address(virtual_memory_address: int) -> ResolvedVariable:
+    # Get variable index
+    index = get_variable_index(virtual_memory_address)
+    # Extract variable scope and type from base virtual memory address
+    scope, type = resolve_base_virtual_memory_address(virtual_memory_address)
+
+    return ResolvedVariable(scope, type, index)
+
+
+def dispatch_read(quadruple: Quadruple) -> None:
+    # Get variable virtual memory address
+    variable_virtual_memory_address = int(quadruple.get_q4())
+    # Resolve virtual memory address
+    resolved_variable = resolve_virtual_memory_address(variable_virtual_memory_address)
+
+    # Read value from console
+    reading_value = input()
+
+    # Cast value to target type
+    casted_value = cast_constant(reading_value, resolved_variable.type)
+
+    if resolved_variable.scope == VariableScope.GLOBAL:
+        global_memory.set_value(
+            resolved_variable.type,
+            resolved_variable.index,
+            casted_value
+        )
+    else:
+        execution_stack.set_value_top_function_call(
+            resolved_variable.scope,
+            resolved_variable.type,
+            resolved_variable.index,
+            casted_value
+        )
+
+
+def dispatch_print(quadruple: Quadruple) -> None:
+    # Get variable virtual memory address
+    variable_virtual_memory_address = int(quadruple.get_q4())
+    # Resolve virtual memory address
+    resolved_variable = resolve_virtual_memory_address(variable_virtual_memory_address)
+
+    # Lookup in either global or local scope
+    if resolved_variable.scope == VariableScope.GLOBAL:
+        printed_value = global_memory.get_value(
+            resolved_variable.type,
+            resolved_variable.index
+        )
+    else:
+        printed_value = execution_stack.get_value_top_function_call(
+            resolved_variable.scope,
+            resolved_variable.type,
+            resolved_variable.index
+        )
+
+    # Print value
+    print(printed_value)
+
+
+def dispatch_store_constant(quadruple: Quadruple) -> None:
+    # Get variable virtual memory address
+    raw_constant = quadruple.get_q2()
+    variable_virtual_memory_address = int(quadruple.get_q4())
+
+    # Resolve virtual memory address
+    resolved_variable = resolve_virtual_memory_address(variable_virtual_memory_address)
+
+    # Cast constant
+    casted_constant = cast_constant(raw_constant, resolved_variable.type)
+
+    if resolved_variable.scope == VariableScope.GLOBAL:
+        global_memory.set_value(
+            resolved_variable.type,
+            resolved_variable.index,
+            casted_constant
+        )
+    else:
+        execution_stack.set_value_top_function_call(
+            resolved_variable.scope,
+            resolved_variable.type,
+            resolved_variable.index,
+            casted_constant
+        )
 
 
 def cast_constant(value: str, type: type) -> Union[int, float, bool, str]:
@@ -97,7 +189,6 @@ operator = quadruple.get_operator()
 while operator != Operator.END:
     match operator:
         case Operator.ASGMT:
-            
             result_address = int(quadruple.get_q2())
             result_base_address = get_base_virtual_memory_address(result_address)
             result_index = get_variable_index(result_address)
@@ -261,39 +352,13 @@ while operator != Operator.END:
             
             program_counter += 1
         case Operator.READ:
-            
-            storage_address = int(quadruple.get_q4())
-            storage_base_address = get_base_virtual_memory_address(storage_address)
-            storage_index = get_variable_index(storage_address)
-            storage_memory, storage_type = resolve_base_virtual_memory_address(storage_base_address)
-
-            reading_value = input()
-            storage_value = cast_constant(reading_value, storage_type)
-
-            execution_stack.set_value_top_function_call(storage_memory, storage_type, storage_index, storage_value)
+            dispatch_read(quadruple)
             program_counter += 1
         case Operator.PRINT:
-            # 
-            address = int(quadruple.get_q4())
-            base_address = get_base_virtual_memory_address(address)
-            index = get_variable_index(address)
-
-            memory, type = resolve_base_virtual_memory_address(base_address)
-            value = execution_stack.get_value_top_function_call(memory, type, index)
-            
-            print(value)
-
+            dispatch_print(quadruple)
             program_counter += 1
         case Operator.STORE_CONSTANT:
-            # 
-            address = int(quadruple.get_q4())
-            base_address = get_base_virtual_memory_address(address)
-            index = get_variable_index(address)
-
-            memory, type = resolve_base_virtual_memory_address(base_address)
-            constant = cast_constant(quadruple.get_q2(), type)
-            execution_stack.set_value_top_function_call(memory, type, index, constant)
-            
+            dispatch_store_constant(quadruple)
             program_counter += 1
         case Operator.GOTO:
             jumped_to_program_counter = int(quadruple.get_q4())

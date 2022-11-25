@@ -1,3 +1,4 @@
+from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Union
@@ -9,27 +10,38 @@ from compiler.memory import BaseVirtualMemoryAddressEnum
 class Limit(Enum):
     EXECUTION_STACK_LIMIT = 1000
 
+    
+class VariableScope(Enum):
+    GLOBAL = 'global'
+    VARIABLE = 'variable'
+    TEMPORAL = 'temporal'
+    CONSTANT = 'constant'
+    POINTER = 'pointer'
+
 
 class VirtualMemoryAddressResolver:
     _address_dict = {
-        BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_INT: ('global', Type.INT),
-        BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_REAL: ('global', Type.REAL),
-        BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_CHAR: ('global', Type.CHAR),
-        BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_BOOL: ('global', Type.BOOL),
-        BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_INT: ('variable', Type.INT),
-        BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_REAL: ('variable', Type.REAL),
-        BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_CHAR: ('variable', Type.CHAR),
-        BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_BOOL: ('variable', Type.BOOL),
-        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_INT: ('temporal', Type.INT),
-        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_REAL: ('temporal', Type.REAL),
-        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_CHAR: ('temporal', Type.CHAR),
-        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_BOOL: ('temporal', Type.BOOL),
-        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_POINTER: ('temporal', Type.POINTER),
-        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_INT: ('constant', Type.INT),
-        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_REAL: ('constant', Type.REAL),
-        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_CHAR: ('constant', Type.CHAR),
-        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_BOOL: ('constant', Type.BOOL),
-        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_STRING: ('constant', Type.STRING),
+        BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_INT: (VariableScope.GLOBAL, Type.INT),
+        BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_REAL: (VariableScope.GLOBAL, Type.REAL),
+        BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_CHAR: (VariableScope.GLOBAL, Type.CHAR),
+        BaseVirtualMemoryAddressEnum.GLOBAL_VARIABLE_BOOL: (VariableScope.GLOBAL, Type.BOOL),
+
+        BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_INT: (VariableScope.VARIABLE, Type.INT),
+        BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_REAL: (VariableScope.VARIABLE, Type.REAL),
+        BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_CHAR: (VariableScope.VARIABLE, Type.CHAR),
+        BaseVirtualMemoryAddressEnum.LOCAL_VARIABLE_BOOL: (VariableScope.VARIABLE, Type.BOOL),
+
+        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_INT: (VariableScope.TEMPORAL, Type.INT),
+        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_REAL: (VariableScope.TEMPORAL, Type.REAL),
+        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_CHAR: (VariableScope.TEMPORAL, Type.CHAR),
+        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_BOOL: (VariableScope.TEMPORAL, Type.BOOL),
+        BaseVirtualMemoryAddressEnum.LOCAL_TEMPORAL_POINTER: (VariableScope.TEMPORAL, Type.POINTER),
+
+        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_INT: (VariableScope.CONSTANT, Type.INT),
+        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_REAL: (VariableScope.CONSTANT, Type.REAL),
+        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_CHAR: (VariableScope.CONSTANT, Type.CHAR),
+        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_BOOL: (VariableScope.CONSTANT, Type.BOOL),
+        BaseVirtualMemoryAddressEnum.LOCAL_CONSTANT_STRING: (VariableScope.CONSTANT, Type.STRING),
     }
 
     @staticmethod
@@ -50,6 +62,9 @@ class VirtualMemoryAddressResolver:
         return cls._address_dict[BaseVirtualMemoryAddressEnum(base_virtual_memory_address)]
 
 
+ResolvedVariable = namedtuple("ResolvedVariable", ["scope", "type", "index"])
+
+
 class Variable:
     def __init__(self, variable_dict: dict) -> None:
         self._id = variable_dict['id']
@@ -67,7 +82,7 @@ class GlobalScope:
         self.id = global_scope_dict['id']
 
         self._activation_record = {
-            'variable': {Type(int(type)): global_scope_dict['activation_record']['variable'][type]
+            VariableScope.GLOBAL: {Type(int(type)): global_scope_dict['activation_record']['variable'][type]
                          for type in global_scope_dict['activation_record']['variable']},
         }
 
@@ -78,7 +93,7 @@ class GlobalScope:
 
 
     def get_variable_activation_record(self) -> dict:
-        return self._activation_record['variable']
+        return self._activation_record[VariableScope.GLOBAL]
 
 
 
@@ -89,11 +104,11 @@ class Function:
         self._return_type = Type(int(function_dict['return_type']))
 
         self._activation_record = {
-            'variable': {Type(int(type)): function_dict['activation_record']['variable'][type]
+            VariableScope.VARIABLE: {Type(int(type)): function_dict['activation_record']['variable'][type]
                          for type in function_dict['activation_record']['variable']},
-            'temporal': {Type(int(type)): function_dict['activation_record']['temporal'][type]
+            VariableScope.TEMPORAL: {Type(int(type)): function_dict['activation_record']['temporal'][type]
                          for type in function_dict['activation_record']['temporal']},
-            'constant': {Type(int(type)): function_dict['activation_record']['constant'][type]
+            VariableScope.CONSTANT: {Type(int(type)): function_dict['activation_record']['constant'][type]
                          for type in function_dict['activation_record']['constant']},
         }
 
@@ -112,15 +127,15 @@ class Function:
     
 
     def get_variable_activation_record(self) -> dict:
-        return self._activation_record['variable']
+        return self._activation_record[VariableScope.VARIABLE]
     
 
     def get_temporal_activation_record(self) -> dict:
-        return self._activation_record['temporal']
+        return self._activation_record[VariableScope.TEMPORAL]
 
 
     def get_constant_activation_record(self) -> dict:
-        return self._activation_record['constant']
+        return self._activation_record[VariableScope.CONSTANT]
 
 
     def __str__(self) -> str:
@@ -165,11 +180,31 @@ class GlobalMemory:
         variable_activation_record = global_scope.get_variable_activation_record()
 
         self._memory = {
-            'variable': {
-                type : [None] * variable_activation_record[type]
-                for type in variable_activation_record
-            },
+            type : [None] * variable_activation_record[type]
+            for type in variable_activation_record
         }
+
+    
+    def set_value(
+            self,
+            type: Type,
+            index: int,
+            value: Union[int, float, bool, str],
+    ) -> None:
+        self._memory[type][index] = value
+
+    
+    def get_value(
+            self,
+            type: Type,
+            index: int,
+    ) -> Union[int, float, bool, str]:
+        value = self._memory[type][index]
+
+        if value is None:
+            raise VariableNotInitializedError()
+
+        return value
     
 
 class FunctionCall:
@@ -181,15 +216,15 @@ class FunctionCall:
         constant_activation_record = function.get_constant_activation_record()
 
         self._memory = {
-            'variable': {
+            VariableScope.VARIABLE: {
                 type : [None] * variable_activation_record[type]
                 for type in variable_activation_record
             },
-            'temporal': {
+            VariableScope.TEMPORAL: {
                 type : [None] * temporal_activation_record[type]
                 for type in temporal_activation_record
             },
-            'constant': {
+            VariableScope.CONSTANT: {
                 type : [None] * constant_activation_record[type]
                 for type in constant_activation_record
             },

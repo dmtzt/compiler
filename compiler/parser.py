@@ -259,7 +259,7 @@ class Parser(object):
 
     
     def get_global_variable(self, variable_id: str) -> Variable:
-        return self.function_directory.get_global_variable(variable_id)
+        return self.global_scope.get_variable(variable_id)
 
 
     def insert_global_variable(self, variable_id: str, variable: Variable) -> None:

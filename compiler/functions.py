@@ -148,15 +148,6 @@ class FunctionDirectory:
 
         self._directory[id] = function
 
-    
-    def get_global_variable(self, variable_id: str) -> Variable:
-        return self._directory[ScopeNames.GLOBAL.value].get_variable(variable_id)
-
-    
-    def insert_global_variable(self, variable_id: str, variable: Variable) -> None:
-        self._directory[ScopeNames.GLOBAL.value].insert_variable(variable_id, variable)
-
-    
     def get_function_local_variable(self, function_id: str, variable_id: str) -> Variable:
         if function_id not in self._directory:
             raise FunctionUndefinedException(function_id)

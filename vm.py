@@ -177,6 +177,177 @@ def dispatch_modulo(quadruple: Quadruple) -> None:
     set_variable_value(result_resolved_variable, result_value)
 
 
+def dispatch_equal(quadruple: Quadruple) -> None:
+    left_operand_virtual_memory_address = int(quadruple.get_q2())
+    right_operand_virtual_memory_address = int(quadruple.get_q3())
+    result_virtual_memory_address = int(quadruple.get_q4())
+
+    left_operand_resolved_variable = resolve_virtual_memory_address(
+        left_operand_virtual_memory_address
+    )
+    right_operand_resolved_variable = resolve_virtual_memory_address(
+        right_operand_virtual_memory_address
+    )
+    result_resolved_variable = resolve_virtual_memory_address(
+        result_virtual_memory_address
+    )
+
+    left_value = get_variable_value(left_operand_resolved_variable)
+    right_value = get_variable_value(right_operand_resolved_variable)
+    result_value = (left_value == right_value)
+    
+    set_variable_value(result_resolved_variable, result_value)
+    
+
+def dispatch_nequal(quadruple: Quadruple) -> None:
+    left_operand_virtual_memory_address = int(quadruple.get_q2())
+    right_operand_virtual_memory_address = int(quadruple.get_q3())
+    result_virtual_memory_address = int(quadruple.get_q4())
+
+    left_operand_resolved_variable = resolve_virtual_memory_address(
+        left_operand_virtual_memory_address
+    )
+    right_operand_resolved_variable = resolve_virtual_memory_address(
+        right_operand_virtual_memory_address
+    )
+    result_resolved_variable = resolve_virtual_memory_address(
+        result_virtual_memory_address
+    )
+
+    left_value = get_variable_value(left_operand_resolved_variable)
+    right_value = get_variable_value(right_operand_resolved_variable)
+    result_value = (left_value != right_value)
+    
+    set_variable_value(result_resolved_variable, result_value)
+
+
+def dispatch_lthan_equal(quadruple: Quadruple) -> None:
+    left_operand_virtual_memory_address = int(quadruple.get_q2())
+    right_operand_virtual_memory_address = int(quadruple.get_q3())
+    result_virtual_memory_address = int(quadruple.get_q4())
+
+    left_operand_resolved_variable = resolve_virtual_memory_address(
+        left_operand_virtual_memory_address
+    )
+    right_operand_resolved_variable = resolve_virtual_memory_address(
+        right_operand_virtual_memory_address
+    )
+    result_resolved_variable = resolve_virtual_memory_address(
+        result_virtual_memory_address
+    )
+
+    left_value = get_variable_value(left_operand_resolved_variable)
+    right_value = get_variable_value(right_operand_resolved_variable)
+    result_value = (left_value <= right_value)
+    
+    set_variable_value(result_resolved_variable, result_value)
+
+
+def dispatch_gthan_equal(quadruple: Quadruple) -> None:
+    left_operand_virtual_memory_address = int(quadruple.get_q2())
+    right_operand_virtual_memory_address = int(quadruple.get_q3())
+    result_virtual_memory_address = int(quadruple.get_q4())
+
+    left_operand_resolved_variable = resolve_virtual_memory_address(
+        left_operand_virtual_memory_address
+    )
+    right_operand_resolved_variable = resolve_virtual_memory_address(
+        right_operand_virtual_memory_address
+    )
+    result_resolved_variable = resolve_virtual_memory_address(
+        result_virtual_memory_address
+    )
+
+    left_value = get_variable_value(left_operand_resolved_variable)
+    right_value = get_variable_value(right_operand_resolved_variable)
+    result_value = (left_value >= right_value)
+    
+    set_variable_value(result_resolved_variable, result_value)
+
+
+def dispatch_lthan(quadruple: Quadruple) -> None:
+    left_operand_virtual_memory_address = int(quadruple.get_q2())
+    right_operand_virtual_memory_address = int(quadruple.get_q3())
+    result_virtual_memory_address = int(quadruple.get_q4())
+
+    left_operand_resolved_variable = resolve_virtual_memory_address(
+        left_operand_virtual_memory_address
+    )
+    right_operand_resolved_variable = resolve_virtual_memory_address(
+        right_operand_virtual_memory_address
+    )
+    result_resolved_variable = resolve_virtual_memory_address(
+        result_virtual_memory_address
+    )
+
+    left_value = get_variable_value(left_operand_resolved_variable)
+    right_value = get_variable_value(right_operand_resolved_variable)
+    result_value = (left_value < right_value)
+    
+    set_variable_value(result_resolved_variable, result_value)
+
+
+def dispatch_gthan(quadruple: Quadruple) -> None:
+    left_operand_virtual_memory_address = int(quadruple.get_q2())
+    right_operand_virtual_memory_address = int(quadruple.get_q3())
+    result_virtual_memory_address = int(quadruple.get_q4())
+
+    left_operand_resolved_variable = resolve_virtual_memory_address(
+        left_operand_virtual_memory_address
+    )
+    right_operand_resolved_variable = resolve_virtual_memory_address(
+        right_operand_virtual_memory_address
+    )
+    result_resolved_variable = resolve_virtual_memory_address(
+        result_virtual_memory_address
+    )
+
+    left_value = get_variable_value(left_operand_resolved_variable)
+    right_value = get_variable_value(right_operand_resolved_variable)
+    result_value = (left_value > right_value)
+    
+    set_variable_value(result_resolved_variable, result_value)
+
+
+def dispatch_goto(quadruple: Quadruple) -> None:
+    jumped_to_program_counter = int(quadruple.get_q4())
+
+    global program_counter
+    program_counter = jumped_to_program_counter
+
+
+def dispatch_gotof(quadruple: Quadruple) -> int:
+    boolean_variable_virtual_memory_address = int(quadruple.get_q2())
+    jumped_to_program_counter = int(quadruple.get_q4())
+
+    resolved_boolean_variable = resolve_virtual_memory_address(boolean_variable_virtual_memory_address)
+
+    boolean_value = get_variable_value(resolved_boolean_variable)
+
+    global program_counter
+
+    if not boolean_value:
+        program_counter = jumped_to_program_counter
+    else:
+        program_counter += 1
+
+
+def dispatch_gotot(quadruple: Quadruple) -> int:
+    boolean_variable_virtual_memory_address = int(quadruple.get_q2())
+    jumped_to_program_counter = int(quadruple.get_q4())
+
+    resolved_boolean_variable = resolve_virtual_memory_address(boolean_variable_virtual_memory_address)
+
+    boolean_value = get_variable_value(resolved_boolean_variable)
+
+    global program_counter
+
+    if boolean_value:
+        program_counter = jumped_to_program_counter
+    else:
+        program_counter += 1
+
+
 def dispatch_read(quadruple: Quadruple) -> None:
     # Get variable virtual memory address
     variable_virtual_memory_address = int(quadruple.get_q4())
@@ -228,11 +399,6 @@ def dispatch_store_constant(quadruple: Quadruple) -> None:
             resolved_variable.index,
             casted_constant
         )
-
-
-def dispatch_goto(quadruple: Quadruple) -> int:
-    jumped_to_program_counter = int(quadruple.get_q4())
-    return jumped_to_program_counter
 
 
 def dispatch_param(quadruple: Quadruple) -> None:
@@ -396,22 +562,22 @@ while operator != Operator.END:
             
             program_counter += 1
         case Operator.EQUAL:
-            
+            dispatch_equal(quadruple)
             program_counter += 1
         case Operator.NEQUAL:
-            
+            dispatch_nequal(quadruple)
             program_counter += 1
         case Operator.LTHAN_EQUAL:
-            
+            dispatch_lthan_equal(quadruple)
             program_counter += 1
         case Operator.GTHAN_EQUAL:
-            
+            dispatch_gthan_equal(quadruple)
             program_counter += 1
         case Operator.LTHAN:
-            
+            dispatch_lthan(quadruple)
             program_counter += 1
         case Operator.GTHAN:
-            
+            dispatch_gthan(quadruple)
             program_counter += 1
         case Operator.AND:
             
@@ -432,9 +598,11 @@ while operator != Operator.END:
             dispatch_store_constant(quadruple)
             program_counter += 1
         case Operator.GOTO:
-            program_counter = dispatch_goto(quadruple)
+            dispatch_goto(quadruple)
         case Operator.GOTOF:
-            program_counter += 1
+            dispatch_gotof(quadruple)
+        case Operator.GOTOT:
+            dispatch_gotot(quadruple)
         case Operator.ERA:
             function_id = quadruple.get_q4()
             function = function_directory.get_function(function_id)

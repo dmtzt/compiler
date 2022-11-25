@@ -1,0 +1,27 @@
+komenco()
+lokaj variabloj:
+   ent n1, n2, nth, count, nterms;
+{
+    n1 = 0;
+    n2 = 1;
+    count = 0;
+
+    presi("Enter n terms:");
+    nterms = legi();
+
+    presi("Fibonacci sequence:");
+    se (nterms == 1) {
+        presi(n1);
+    }
+    alie {
+        dum (count < nterms) {
+            presi(n1);
+            
+            nth = n1 + n2;
+            n1 = n2;
+            n2 = nth;
+
+            count = count + 1;
+        }
+    }
+}

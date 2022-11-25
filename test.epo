@@ -1,0 +1,14 @@
+funkcio ent pelos(ent n)
+{
+    redonu n * 2 + 2;
+}
+
+funkcio ent patito(ent n)
+{
+    redonu pelos(n * 2) + 3;
+}
+
+komenco()
+{
+    presi(patito(4));
+}

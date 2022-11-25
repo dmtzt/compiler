@@ -1,0 +1,28 @@
+komenco()
+lokaj variabloj:
+    ent arr[5], x, i;
+    bul found;
+{
+    presi("Enter 5 values in sorted order:");
+    ekde(i = 0; i < 5; i = i + 1) {
+        arr[i] = legi();
+    }
+
+    presi("Enter value to find:");
+    x = legi();
+
+    found = malvera;
+
+    ekde(i = 0; i < 5; i = i + 1) {
+        se (x == arr[i]) {
+            found = vera;
+        }
+    }
+
+    se (found) {
+        presi("Value was found");
+    }
+    alie {
+        presi("Value was not found");
+    }
+}

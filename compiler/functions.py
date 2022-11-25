@@ -135,7 +135,7 @@ class Function(Scope):
 
 
     def __str__(self) -> str:
-        return f'Function({self._id} {self._activation_record.__str__()} {self._variable_table.__str__()} {self._parameter_table.__str__()}'
+        return f'Function({self._id} {self._return_type} {self._activation_record.__str__()} {self._variable_table.__str__()} {self._parameter_table.__str__()}'
 
 
 @dataclass

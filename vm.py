@@ -260,6 +260,17 @@ def dispatch_param(quadruple: Quadruple) -> None:
     )
 
 
+def dispatch_return_value(quadruple: Quadruple) -> None:
+    returned_variable_virtual_memory_address = int(quadruple.get_q2())
+    global_function_virtual_memory_address = int(quadruple.get_q4())
+
+    resolved_returned_variable = resolve_virtual_memory_address(returned_variable_virtual_memory_address)
+    resolved_global_function_variable = resolve_virtual_memory_address(global_function_virtual_memory_address)
+
+    value = get_variable_value(resolved_returned_variable)
+    set_variable_value(resolved_global_function_variable, value)
+
+
 def get_variable_value(
         resolved_variable: ResolvedVariable,
     ) -> Union[int, float, bool, str]:

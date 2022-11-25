@@ -894,7 +894,6 @@ class Parser(object):
         result_type = self.get_operation_result_type(storage_variable, value_variable, operator)
 
         if result_type == Type.ERROR:
-            print(storage_variable.get_type(), value_variable.get_type(), result_type)
             raise TypeMismatchError()
 
         quadruple = self.generate_assignment_quadruple(value_variable, storage_variable)
@@ -1018,7 +1017,6 @@ class Parser(object):
         
         # If dimension number is 2nd or greater
         if dimension_number > 0:
-            print('Summation')
             # Get summation variable
             summation_variable = self.pop_operand_stack()
 

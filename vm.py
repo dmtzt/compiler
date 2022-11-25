@@ -47,6 +47,60 @@ def resolve_virtual_memory_address(virtual_memory_address: int) -> ResolvedVaria
     return ResolvedVariable(scope, type, index)
 
 
+def dispatch_assignment(quadruple: Quadruple) -> None:
+    result_virtual_memory_address = int(quadruple.get_q2())
+    storage_virtual_memory_address = int(quadruple.get_q4())
+
+    resolved_result_variable = resolve_virtual_memory_address(result_virtual_memory_address)
+    resolved_storage_variable = resolve_virtual_memory_address(storage_virtual_memory_address)
+
+    if resolved_result_variable.type == VariableScope.GLOBAL:
+        value = global_memory.get_value(
+            resolved_result_variable.type,
+            resolved_result_variable.index
+        )
+    else:
+        value = execution_stack.get_value_top_function_call(
+            resolved_result_variable.scope,
+            resolved_result_variable.type,
+            resolved_result_variable.index
+        )
+
+    if resolved_storage_variable.type == VariableScope.GLOBAL:
+        global_memory.set_value(
+            resolved_storage_variable.type,
+            resolved_storage_variable.index,
+            value
+        )
+    else:
+        execution_stack.set_value_top_function_call(
+            resolved_storage_variable.scope,
+            resolved_storage_variable.type,
+            resolved_storage_variable.index,
+            value
+        )
+
+
+def dispatch_addition(quadruple: Quadruple) -> None:
+    pass
+
+
+def dispatch_subtraction(quadruple: Quadruple) -> None:
+    pass
+
+
+def dispatch_multiplication(quadruple: Quadruple) -> None:
+    pass
+
+
+def dispatch_division(quadruple: Quadruple) -> None:
+    pass
+
+
+def dispatch_modulo(quadruple: Quadruple) -> None:
+    pass
+
+
 def dispatch_read(quadruple: Quadruple) -> None:
     # Get variable virtual memory address
     variable_virtual_memory_address = int(quadruple.get_q4())
@@ -189,19 +243,7 @@ operator = quadruple.get_operator()
 while operator != Operator.END:
     match operator:
         case Operator.ASGMT:
-            result_address = int(quadruple.get_q2())
-            result_base_address = get_base_virtual_memory_address(result_address)
-            result_index = get_variable_index(result_address)
-            result_memory, result_type = resolve_base_virtual_memory_address(result_base_address)
-            result_value = execution_stack.get_value_top_function_call(result_memory, result_type, result_index)
-
-            storage_address = int(quadruple.get_q4())
-            storage_base_address = get_base_virtual_memory_address(storage_address)
-            storage_index = get_variable_index(storage_address)
-            storage_memory, storage_type = resolve_base_virtual_memory_address(storage_base_address)
-
-            execution_stack.set_value_top_function_call(storage_memory, storage_type, storage_index, result_value)
-
+            dispatch_assignment(quadruple)
             program_counter += 1
         case Operator.PLUS:
             

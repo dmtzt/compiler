@@ -125,7 +125,6 @@ class GlobalActivationRecord:
 
     def increment_variable_counter_array(self, type: Type, array_size: int) -> None:
         self._variable[type] += array_size
-        print(self._variable[type])
 
     
     def get_json_obj(self) -> dict:
@@ -155,7 +154,6 @@ class FunctionActivationRecord:
 
     def increment_variable_counter_array(self, type: Type, array_size: int) -> None:
         self._variable[type] += array_size
-        print(self._variable[type])
 
 
     def get_temporal_counter(self, type: Type) -> int:

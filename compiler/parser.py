@@ -924,8 +924,12 @@ class Parser(object):
         # Get global/local variable reference
         if self.function_variable_exists(function_id, variable_id):
             variable = self.get_function_variable(function_id, variable_id)
+            variable_type = variable.get_type()
+            base_virtual_memory_address = self.get_local_base_virtual_memory_address(variable_type)
         else:
             variable = self.get_global_variable(variable_id)
+            variable_type = variable.get_type()
+            base_virtual_memory_address = self.get_global_base_virtual_memory_address(variable_type)
         
         if variable.has_dims():
             # Get summation variable
@@ -934,9 +938,6 @@ class Parser(object):
             # Create pointer variable
             pointer_variable = self.create_function_pointer_variable(function_id)
             self.increment_function_pointer_counter(function_id)
-
-            # Get pointer base virtual memory address
-            base_virtual_memory_address = self.get_pointer_base_virtual_memory_address()
 
             # Store memory address in temporal variable
             memory_address_constant_storage_variable = self.create_function_constant_variable(function_id, Type.INT)
@@ -1365,6 +1366,7 @@ class Parser(object):
 
             result_type = self.get_operation_result_type(left_operand, right_operand, operator)
             if (result_type == Type.ERROR):
+                print(left_operand, right_operand, operator, result_type)
                 raise TypeMismatchError()
 
             temporal_storage_variable = self.create_function_temporal_variable(function_id, result_type)
@@ -1788,12 +1790,12 @@ class Parser(object):
     
     def p_constant_bool_1(self, p):
         '''constant_bool : TRUE'''
-        p[0] = Boolean.TRUE
+        p[0] = Boolean.TRUE.value
 
     
     def p_constant_bool_2(self, p):
         '''constant_bool : FALSE'''
-        p[0] = Boolean.FALSE
+        p[0] = Boolean.FALSE.value
 
     
     def p_type_1(self, p):

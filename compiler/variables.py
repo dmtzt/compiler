@@ -18,8 +18,8 @@ class Type(Enum):
 
 
 class Boolean(Enum):
-    FALSE = 'False'
-    TRUE = 'True'
+    FALSE = 0
+    TRUE = 1
 
 
 @dataclass
@@ -118,7 +118,6 @@ class Variable:
 
     
     def __str__(self) -> str:
-        print(self.get_json_obj())
         return f'Variable({self._id} {self._type} {self._virtual_memory_address} {self._dimension_nodes})'
 
 
@@ -335,8 +334,8 @@ class SemanticTable():
             self._table[Type.INT.value][Type.INT.value][operator.value] = Type.BOOL.value
             self._table[Type.INT.value][Type.REAL.value][operator.value] = Type.BOOL.value
             self._table[Type.INT.value][Type.CHAR.value][operator.value] = Type.BOOL.value
+            self._table[Type.INT.value][Type.POINTER.value][operator.value] = Type.BOOL.value
             self._table[Type.INT.value][Type.BOOL.value][operator.value] = Type.ERROR.value
-            self._table[Type.INT.value][Type.POINTER.value][operator.value] = Type.ERROR.value
 
     
     def fill_integer_assignment_operations(self):
@@ -452,6 +451,7 @@ class SemanticTable():
     def _fill_pointer_operations(self):
         self._fill_pointer_arithmetic_operations()
         self._fill_pointer_assignment_operations()
+        self._fill_pointer_relational_operations()
 
     
     def _fill_pointer_arithmetic_operations(self):
@@ -469,6 +469,21 @@ class SemanticTable():
         self._table[Type.POINTER.value][Type.CHAR.value][Operator.ASGMT.value] = Type.POINTER.value
         self._table[Type.POINTER.value][Type.BOOL.value][Operator.ASGMT.value] = Type.POINTER.value
         self._table[Type.POINTER.value][Type.POINTER.value][Operator.ASGMT.value] = Type.POINTER.value
+
+    
+    def _fill_pointer_relational_operations(self):
+        for operator in Operator.relational_operators():
+            self._table[Type.POINTER.value][Type.INT.value][operator.value] = Type.BOOL.value
+            self._table[Type.POINTER.value][Type.REAL.value][operator.value] = Type.BOOL.value
+            self._table[Type.POINTER.value][Type.CHAR.value][operator.value] = Type.BOOL.value
+            self._table[Type.POINTER.value][Type.POINTER.value][operator.value] = Type.BOOL.value
+
+        self._table[Type.POINTER.value][Type.BOOL.value][Operator.EQUAL.value] = Type.ERROR.value
+        self._table[Type.POINTER.value][Type.BOOL.value][Operator.NEQUAL.value] = Type.ERROR.value
+        self._table[Type.POINTER.value][Type.BOOL.value][Operator.LTHAN_EQUAL.value] = Type.ERROR.value
+        self._table[Type.POINTER.value][Type.BOOL.value][Operator.LTHAN.value] = Type.ERROR.value
+        self._table[Type.POINTER.value][Type.BOOL.value][Operator.GTHAN_EQUAL.value] = Type.ERROR.value
+        self._table[Type.POINTER.value][Type.BOOL.value][Operator.GTHAN.value] = Type.ERROR.value
 
     
     def __str__(self) -> str:

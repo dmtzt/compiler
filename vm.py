@@ -9,6 +9,7 @@ from compiler.execution import FunctionDirectory
 from compiler.execution import FunctionParameterStack
 from compiler.execution import GlobalScope
 from compiler.execution import GlobalMemory
+from compiler.execution import IndexOutOfBoundsError
 from compiler.execution import ProgramCounterStack
 from compiler.execution import Quadruple
 from compiler.execution import QuadrupleList
@@ -63,8 +64,8 @@ def dispatch_assignment(quadruple: Quadruple) -> None:
     resolved_result_variable = resolve_virtual_memory_address(result_virtual_memory_address)
     resolved_storage_variable = resolve_virtual_memory_address(storage_virtual_memory_address)
 
-    value = get_variable_value(resolved_result_variable)
-    set_variable_value(resolved_storage_variable, value)
+    value = get_recursive_variable_value(resolved_result_variable)
+    set_recursive_variable_value(resolved_storage_variable, value)
 
 
 def dispatch_addition(quadruple: Quadruple) -> None:            
@@ -82,8 +83,8 @@ def dispatch_addition(quadruple: Quadruple) -> None:
         result_virtual_memory_address
     )
 
-    left_value = get_variable_value(left_operand_resolved_variable)
-    right_value = get_variable_value(right_operand_resolved_variable)
+    left_value = get_recursive_variable_value(left_operand_resolved_variable)
+    right_value = get_recursive_variable_value(right_operand_resolved_variable)
     result_value = left_value + right_value
 
     set_variable_value(result_resolved_variable, result_value)
@@ -104,8 +105,8 @@ def dispatch_subtraction(quadruple: Quadruple) -> None:
         result_virtual_memory_address
     )
 
-    left_value = get_variable_value(left_operand_resolved_variable)
-    right_value = get_variable_value(right_operand_resolved_variable)
+    left_value = get_recursive_variable_value(left_operand_resolved_variable)
+    right_value = get_recursive_variable_value(right_operand_resolved_variable)
     result_value = left_value - right_value
 
     set_variable_value(result_resolved_variable, result_value)
@@ -126,8 +127,8 @@ def dispatch_multiplication(quadruple: Quadruple) -> None:
         result_virtual_memory_address
     )
 
-    left_value = get_variable_value(left_operand_resolved_variable)
-    right_value = get_variable_value(right_operand_resolved_variable)
+    left_value = get_recursive_variable_value(left_operand_resolved_variable)
+    right_value = get_recursive_variable_value(right_operand_resolved_variable)
     result_value = left_value * right_value
 
     set_variable_value(result_resolved_variable, result_value)
@@ -148,8 +149,8 @@ def dispatch_division(quadruple: Quadruple) -> None:
         result_virtual_memory_address
     )
 
-    left_value = get_variable_value(left_operand_resolved_variable)
-    right_value = get_variable_value(right_operand_resolved_variable)
+    left_value = get_recursive_variable_value(left_operand_resolved_variable)
+    right_value = get_recursive_variable_value(right_operand_resolved_variable)
     result_value = left_value // right_value
 
     set_variable_value(result_resolved_variable, result_value)
@@ -170,8 +171,8 @@ def dispatch_modulo(quadruple: Quadruple) -> None:
         result_virtual_memory_address
     )
 
-    left_value = get_variable_value(left_operand_resolved_variable)
-    right_value = get_variable_value(right_operand_resolved_variable)
+    left_value = get_recursive_variable_value(left_operand_resolved_variable)
+    right_value = get_recursive_variable_value(right_operand_resolved_variable)
     result_value = left_value % right_value
 
     set_variable_value(result_resolved_variable, result_value)
@@ -192,8 +193,8 @@ def dispatch_equal(quadruple: Quadruple) -> None:
         result_virtual_memory_address
     )
 
-    left_value = get_variable_value(left_operand_resolved_variable)
-    right_value = get_variable_value(right_operand_resolved_variable)
+    left_value = get_recursive_variable_value(left_operand_resolved_variable)
+    right_value = get_recursive_variable_value(right_operand_resolved_variable)
     result_value = (left_value == right_value)
     
     set_variable_value(result_resolved_variable, result_value)
@@ -214,8 +215,8 @@ def dispatch_nequal(quadruple: Quadruple) -> None:
         result_virtual_memory_address
     )
 
-    left_value = get_variable_value(left_operand_resolved_variable)
-    right_value = get_variable_value(right_operand_resolved_variable)
+    left_value = get_recursive_variable_value(left_operand_resolved_variable)
+    right_value = get_recursive_variable_value(right_operand_resolved_variable)
     result_value = (left_value != right_value)
     
     set_variable_value(result_resolved_variable, result_value)
@@ -236,8 +237,8 @@ def dispatch_lthan_equal(quadruple: Quadruple) -> None:
         result_virtual_memory_address
     )
 
-    left_value = get_variable_value(left_operand_resolved_variable)
-    right_value = get_variable_value(right_operand_resolved_variable)
+    left_value = get_recursive_variable_value(left_operand_resolved_variable)
+    right_value = get_recursive_variable_value(right_operand_resolved_variable)
     result_value = (left_value <= right_value)
     
     set_variable_value(result_resolved_variable, result_value)
@@ -258,8 +259,8 @@ def dispatch_gthan_equal(quadruple: Quadruple) -> None:
         result_virtual_memory_address
     )
 
-    left_value = get_variable_value(left_operand_resolved_variable)
-    right_value = get_variable_value(right_operand_resolved_variable)
+    left_value = get_recursive_variable_value(left_operand_resolved_variable)
+    right_value = get_recursive_variable_value(right_operand_resolved_variable)
     result_value = (left_value >= right_value)
     
     set_variable_value(result_resolved_variable, result_value)
@@ -280,8 +281,8 @@ def dispatch_lthan(quadruple: Quadruple) -> None:
         result_virtual_memory_address
     )
 
-    left_value = get_variable_value(left_operand_resolved_variable)
-    right_value = get_variable_value(right_operand_resolved_variable)
+    left_value = get_recursive_variable_value(left_operand_resolved_variable)
+    right_value = get_recursive_variable_value(right_operand_resolved_variable)
     result_value = (left_value < right_value)
     
     set_variable_value(result_resolved_variable, result_value)
@@ -302,8 +303,8 @@ def dispatch_gthan(quadruple: Quadruple) -> None:
         result_virtual_memory_address
     )
 
-    left_value = get_variable_value(left_operand_resolved_variable)
-    right_value = get_variable_value(right_operand_resolved_variable)
+    left_value = get_recursive_variable_value(left_operand_resolved_variable)
+    right_value = get_recursive_variable_value(right_operand_resolved_variable)
     result_value = (left_value > right_value)
     
     set_variable_value(result_resolved_variable, result_value)
@@ -322,7 +323,7 @@ def dispatch_gotof(quadruple: Quadruple) -> int:
 
     resolved_boolean_variable = resolve_virtual_memory_address(boolean_variable_virtual_memory_address)
 
-    boolean_value = get_variable_value(resolved_boolean_variable)
+    boolean_value = get_recursive_variable_value(resolved_boolean_variable)
 
     global program_counter
 
@@ -338,7 +339,7 @@ def dispatch_gotot(quadruple: Quadruple) -> int:
 
     resolved_boolean_variable = resolve_virtual_memory_address(boolean_variable_virtual_memory_address)
 
-    boolean_value = get_variable_value(resolved_boolean_variable)
+    boolean_value = get_recursive_variable_value(resolved_boolean_variable)
 
     global program_counter
 
@@ -360,7 +361,7 @@ def dispatch_read(quadruple: Quadruple) -> None:
     # Cast value to target type
     casted_value = cast_constant(reading_value, resolved_variable.type)
 
-    set_variable_value(resolved_variable, casted_value)
+    set_recursive_variable_value(resolved_variable, casted_value)
 
 
 def dispatch_print(quadruple: Quadruple) -> None:
@@ -368,8 +369,7 @@ def dispatch_print(quadruple: Quadruple) -> None:
     variable_virtual_memory_address = int(quadruple.get_q4())
     # Resolve virtual memory address
     resolved_variable = resolve_virtual_memory_address(variable_virtual_memory_address)
-
-    printed_value = get_variable_value(resolved_variable)
+    printed_value = get_recursive_variable_value(resolved_variable)
 
     # Print value
     print(printed_value)
@@ -400,13 +400,24 @@ def dispatch_store_constant(quadruple: Quadruple) -> None:
             casted_constant
         )
 
+def dispatch_ver(quadruple: Quadruple) -> None:
+    index_variable_virtual_memory_address = int(quadruple.get_q2())
+    lower_bound_value = int(quadruple.get_q3())
+    upper_bound_value = int(quadruple.get_q4())
+
+    resolved_index_variable = resolve_virtual_memory_address(index_variable_virtual_memory_address)
+    index_value = get_recursive_variable_value(resolved_index_variable)
+
+    if index_value < lower_bound_value or index_value >= upper_bound_value:
+        raise IndexOutOfBoundsError()
+
 
 def dispatch_param(quadruple: Quadruple) -> None:
     input_variable_virtual_address = int(quadruple.get_q2())
     parameter_number = int(quadruple.get_q4())
 
     input_resolved_variable = resolve_virtual_memory_address(input_variable_virtual_address)
-    value = get_variable_value(input_resolved_variable)
+    value = get_recursive_variable_value(input_resolved_variable)
 
     global function
     parameter_virtual_memory_address = function.get_parameter_virtual_memory_address(
@@ -433,13 +444,52 @@ def dispatch_return_value(quadruple: Quadruple) -> None:
     resolved_returned_variable = resolve_virtual_memory_address(returned_variable_virtual_memory_address)
     resolved_global_function_variable = resolve_virtual_memory_address(global_function_virtual_memory_address)
 
-    value = get_variable_value(resolved_returned_variable)
+    value = get_recursive_variable_value(resolved_returned_variable)
     set_variable_value(resolved_global_function_variable, value)
 
 
-def get_variable_value(
-        resolved_variable: ResolvedVariable,
+def dispatch_return_none(quadruple: Quadruple) -> None:
+    global program_counter
+    program_counter = program_counter_stack.pop_counter()
+
+
+def get_recursive_variable_value(resolved_variable: ResolvedVariable,
     ) -> Union[int, float, bool, str]:
+    if resolved_variable.type == Type.POINTER:
+        # Get memory address
+        referenced_variable_virtual_memory_address = get_variable_value(resolved_variable)
+        # Get referenced variable
+        resolved_referenced_variable = resolve_virtual_memory_address(referenced_variable_virtual_memory_address)
+
+        global program_counter
+        # print('Resolved GET', program_counter, resolved_referenced_variable)
+        # print()
+        # Return referenced value
+        return get_variable_value(resolved_referenced_variable)
+    else:
+        return get_variable_value(resolved_variable)
+
+
+def set_recursive_variable_value(
+        resolved_variable: ResolvedVariable,
+        value: Union[int, float, bool, str],
+    ) -> None:
+    # Pointer
+    if resolved_variable.type == Type.POINTER:
+        # Get memory address
+        referenced_variable_virtual_memory_address = get_variable_value(resolved_variable)
+        # print('Reference', referenced_variable_virtual_memory_address)
+        # Get referenced variable
+        resolved_referenced_variable = resolve_virtual_memory_address(referenced_variable_virtual_memory_address)
+        # print('Resolved SET', resolved_referenced_variable)
+        
+        # Return referenced value
+        set_variable_value(resolved_referenced_variable, value)
+    else:
+        set_variable_value(resolved_variable, value)
+
+
+def get_variable_value(resolved_variable: ResolvedVariable):
     if resolved_variable.scope == VariableScope.GLOBAL:
         value = global_memory.get_value(
             resolved_variable.type,
@@ -451,14 +501,13 @@ def get_variable_value(
             resolved_variable.type,
             resolved_variable.index
         )
-
     return value
 
 
 def set_variable_value(
         resolved_variable: ResolvedVariable,
         value: Union[int, float, bool, str],
-    ) -> None:
+    ):
     if resolved_variable.scope == VariableScope.GLOBAL:
         global_memory.set_value(
             resolved_variable.type,
@@ -481,7 +530,7 @@ def cast_constant(value: str, type: type) -> Union[int, float, bool, str]:
         case Type.REAL:
             return float(value)
         case Type.BOOL:
-            return bool(value)
+            return bool(int(value))
         case Type.CHAR:
             return str(value)
         case Type.STRING:
@@ -556,10 +605,8 @@ while operator != Operator.END:
             dispatch_modulo(quadruple)
             program_counter += 1
         case Operator.UNARY_PLUS:
-            
             program_counter += 1
         case Operator.UNARY_MINUS:
-            
             program_counter += 1
         case Operator.EQUAL:
             dispatch_equal(quadruple)
@@ -580,13 +627,10 @@ while operator != Operator.END:
             dispatch_gthan(quadruple)
             program_counter += 1
         case Operator.AND:
-            
             program_counter += 1
         case Operator.OR:
-            
             program_counter += 1
         case Operator.NOT:
-            
             program_counter += 1
         case Operator.READ:
             dispatch_read(quadruple)
@@ -603,6 +647,9 @@ while operator != Operator.END:
             dispatch_gotof(quadruple)
         case Operator.GOTOT:
             dispatch_gotot(quadruple)
+        case Operator.VER:
+            dispatch_ver(quadruple)
+            program_counter += 1
         case Operator.ERA:
             function_id = quadruple.get_q4()
             function = function_directory.get_function(function_id)
@@ -611,7 +658,6 @@ while operator != Operator.END:
             program_counter += 1
         case Operator.GOSUB:
             execution_stack.push_function_call(function_call)
-
             program_counter_stack.push_counter(program_counter)
             program_counter = function_start_quadruple_number
         case Operator.PARAM:
@@ -621,11 +667,9 @@ while operator != Operator.END:
             dispatch_return_value(quadruple)
             program_counter += 1
         case Operator.RETURN_VOID:
-            
             program_counter += 1
         case Operator.ENDFUNC:
             execution_stack.pop_function_call()
-
             program_counter = program_counter_stack.pop_counter()
             program_counter += 1
 

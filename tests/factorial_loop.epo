@@ -1,0 +1,19 @@
+komenco()
+lokaj variabloj:
+   ent i, num, factorial;
+{
+   presi("Please enter number: ");
+   num = legi();
+   factorial = 1;
+
+   presi("The factorial is:");
+   se (num == 0) {
+      presi(factorial);
+   }
+   alie {
+      ekde(i = 1; i <= num; i = i + 1) {
+         factorial = factorial * i;
+      }
+      presi(factorial);
+   }
+}

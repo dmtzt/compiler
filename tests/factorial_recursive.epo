@@ -1,0 +1,25 @@
+funkcio ent fact(ent n) {
+   se (n == 1) {
+      redonu n;
+   }
+   alie {
+      redonu n * fact(n - 1);
+   }
+}
+
+komenco()
+lokaj variabloj:
+   ent num;
+{
+   presi("Please enter number: ");
+   num = legi();
+
+   presi("The factorial is:");
+   se (num == 0) {
+      presi(0);
+   }
+   alie {
+      fact(num);
+      presi(fact(num));
+   }
+}

@@ -279,8 +279,8 @@ class ParameterTable:
 
     def get_json_obj(self) -> list:
         return [
-                {"number": number + 1, "virtual_memory_address": param.get_virtual_memory_address()}
-                for number, param in enumerate(self._table)
+            param.get_virtual_memory_address()
+            for param in self._table
         ]
 
 

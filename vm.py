@@ -27,6 +27,9 @@ execution_stack = None
 program_counter_stack = None
 function_parameter_stack = None
 
+function = None
+function_call = None
+
 program_counter = 0
 
 class InvalidFileExtensionError(RuntimeError):
@@ -38,7 +41,7 @@ def get_base_virtual_memory_address(virtual_memory_address: int) -> int:
 
 
 def resolve_base_virtual_memory_address(base_virtual_memory_address: int) -> tuple[str, Type]:
-    return VirtualMemoryAddressResolver.resolve_base_virtual_memory_address(base_virtual_memory_address)
+    return VirtualMemoryAddressResolver.resolve_virtual_memory_address(base_virtual_memory_address)
 
 
 def get_variable_index(virtual_memory_address: int) -> int:
@@ -47,9 +50,8 @@ def get_variable_index(virtual_memory_address: int) -> int:
 
 def resolve_virtual_memory_address(virtual_memory_address: int) -> ResolvedVariable:
     # Get variable index
-    index = get_variable_index(virtual_memory_address)
     # Extract variable scope and type from base virtual memory address
-    scope, type = resolve_base_virtual_memory_address(virtual_memory_address)
+    scope, type, index = resolve_base_virtual_memory_address(virtual_memory_address)
 
     return ResolvedVariable(scope, type, index)
 
@@ -233,6 +235,31 @@ def dispatch_goto(quadruple: Quadruple) -> int:
     return jumped_to_program_counter
 
 
+def dispatch_param(quadruple: Quadruple) -> None:
+    input_variable_virtual_address = int(quadruple.get_q2())
+    parameter_number = int(quadruple.get_q4())
+
+    input_resolved_variable = resolve_virtual_memory_address(input_variable_virtual_address)
+    value = get_variable_value(input_resolved_variable)
+
+    global function
+    parameter_virtual_memory_address = function.get_parameter_virtual_memory_address(
+            parameter_number
+    )
+
+    resolved_parameter_variable = resolve_virtual_memory_address(
+        parameter_virtual_memory_address
+    )
+
+    global function_call
+    function_call.set_value(
+        resolved_parameter_variable.scope,
+        resolved_parameter_variable.type,
+        resolved_parameter_variable.index,
+        value
+    )
+
+
 def get_variable_value(
         resolved_variable: ResolvedVariable,
     ) -> Union[int, float, bool, str]:
@@ -409,9 +436,10 @@ while operator != Operator.END:
             program_counter_stack.push_counter(program_counter)
             program_counter = function_start_quadruple_number
         case Operator.PARAM:
+            dispatch_param(quadruple)
             program_counter += 1
         case Operator.RETURN_VALUE:
-            
+            dispatch_return_value(quadruple)
             program_counter += 1
         case Operator.RETURN_VOID:
             

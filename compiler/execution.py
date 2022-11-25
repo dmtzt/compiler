@@ -50,16 +50,16 @@ class VirtualMemoryAddressResolver:
         base *= 1000
 
         return base
-    
-
-    @staticmethod
-    def get_index(virtual_memory_address: int) -> int:
-        return virtual_memory_address % 1000
 
 
     @classmethod
-    def resolve_base_virtual_memory_address(cls, base_virtual_memory_address: BaseVirtualMemoryAddressEnum) -> tuple[str, Type]:
-        return cls._address_dict[BaseVirtualMemoryAddressEnum(base_virtual_memory_address)]
+    def resolve_virtual_memory_address(cls, virtual_memory_address: BaseVirtualMemoryAddressEnum) -> tuple[str, Type, int]:
+        base_virtual_memory_address = int(virtual_memory_address / 1000) * 1000
+
+        scope, type = cls._address_dict[BaseVirtualMemoryAddressEnum(base_virtual_memory_address)]
+        index = virtual_memory_address % 1000
+
+        return scope, type, index
 
 
 ResolvedVariable = namedtuple("ResolvedVariable", ["scope", "type", "index"])
@@ -117,6 +117,11 @@ class Function:
             for variable_id in function_dict['variable_table']
         }
 
+        self._parameter_table = [
+            param_virtual_memory_address
+            for param_virtual_memory_address in function_dict['parameter_table']
+        ]
+
 
     def get_id(self) -> str:
         return self._id
@@ -124,6 +129,10 @@ class Function:
 
     def get_start_quadruple_number(self) -> int:
         return self._start_quadruple_number
+    
+
+    def get_parameter_virtual_memory_address(self, number: int) -> int:
+        return self._parameter_table[number - 1]
     
 
     def get_variable_activation_record(self) -> dict:

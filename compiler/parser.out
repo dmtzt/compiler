@@ -53,7 +53,7 @@ Rule 47    assignment -> variable_access ASGMT expr SEMI
 Rule 48    assignment -> variable_access ASGMT READ LPAREN RPAREN SEMI
 Rule 49    variable_access -> ID parsed_id_variable_access dims_access
 Rule 50    parsed_id_variable_access -> <empty>
-Rule 51    dims_access -> dim_access dim_access
+Rule 51    dims_access -> dims_access dim_access
 Rule 52    dims_access -> dim_access
 Rule 53    dims_access -> empty
 Rule 54    dim_access -> LBRACKET expr RBRACKET
@@ -200,8 +200,8 @@ assignment           : 41
 conditional          : 44
 constant             : 124
 constant_bool        : 129
-dim_access           : 51 51 52
-dims_access          : 49
+dim_access           : 51 52
+dims_access          : 49 51
 distinct_type_variables_declaration : 25 26
 empty                : 5 13 24 53
 entry_point_definition : 3
@@ -2191,12 +2191,13 @@ state 116
 state 117
 
     (49) variable_access -> ID parsed_id_variable_access . dims_access
-    (51) dims_access -> . dim_access dim_access
+    (51) dims_access -> . dims_access dim_access
     (52) dims_access -> . dim_access
     (53) dims_access -> . empty
     (54) dim_access -> . LBRACKET expr RBRACKET
     (136) empty -> .
 
+  ! shift/reduce conflict for LBRACKET resolved as shift
     LBRACKET        shift and go to state 155
     ASGMT           reduce using rule 136 (empty -> .)
     TIMES           reduce using rule 136 (empty -> .)
@@ -2216,6 +2217,8 @@ state 117
     RPAREN          reduce using rule 136 (empty -> .)
     COMMA           reduce using rule 136 (empty -> .)
     RBRACKET        reduce using rule 136 (empty -> .)
+
+  ! LBRACKET        [ reduce using rule 136 (empty -> .) ]
 
     dims_access                    shift and go to state 152
     dim_access                     shift and go to state 153
@@ -2786,6 +2789,8 @@ state 151
 state 152
 
     (49) variable_access -> ID parsed_id_variable_access dims_access .
+    (51) dims_access -> dims_access . dim_access
+    (54) dim_access -> . LBRACKET expr RBRACKET
 
     ASGMT           reduce using rule 49 (variable_access -> ID parsed_id_variable_access dims_access .)
     TIMES           reduce using rule 49 (variable_access -> ID parsed_id_variable_access dims_access .)
@@ -2805,14 +2810,15 @@ state 152
     RPAREN          reduce using rule 49 (variable_access -> ID parsed_id_variable_access dims_access .)
     COMMA           reduce using rule 49 (variable_access -> ID parsed_id_variable_access dims_access .)
     RBRACKET        reduce using rule 49 (variable_access -> ID parsed_id_variable_access dims_access .)
+    LBRACKET        shift and go to state 155
 
+    dim_access                     shift and go to state 182
 
 state 153
 
-    (51) dims_access -> dim_access . dim_access
     (52) dims_access -> dim_access .
-    (54) dim_access -> . LBRACKET expr RBRACKET
 
+    LBRACKET        reduce using rule 52 (dims_access -> dim_access .)
     ASGMT           reduce using rule 52 (dims_access -> dim_access .)
     TIMES           reduce using rule 52 (dims_access -> dim_access .)
     DIVIDE          reduce using rule 52 (dims_access -> dim_access .)
@@ -2831,14 +2837,13 @@ state 153
     RPAREN          reduce using rule 52 (dims_access -> dim_access .)
     COMMA           reduce using rule 52 (dims_access -> dim_access .)
     RBRACKET        reduce using rule 52 (dims_access -> dim_access .)
-    LBRACKET        shift and go to state 155
 
-    dim_access                     shift and go to state 182
 
 state 154
 
     (53) dims_access -> empty .
 
+    LBRACKET        reduce using rule 53 (dims_access -> empty .)
     ASGMT           reduce using rule 53 (dims_access -> empty .)
     TIMES           reduce using rule 53 (dims_access -> empty .)
     DIVIDE          reduce using rule 53 (dims_access -> empty .)
@@ -3788,26 +3793,27 @@ state 181
 
 state 182
 
-    (51) dims_access -> dim_access dim_access .
+    (51) dims_access -> dims_access dim_access .
 
-    ASGMT           reduce using rule 51 (dims_access -> dim_access dim_access .)
-    TIMES           reduce using rule 51 (dims_access -> dim_access dim_access .)
-    DIVIDE          reduce using rule 51 (dims_access -> dim_access dim_access .)
-    MODULO          reduce using rule 51 (dims_access -> dim_access dim_access .)
-    LTHAN_EQUAL     reduce using rule 51 (dims_access -> dim_access dim_access .)
-    LTHAN           reduce using rule 51 (dims_access -> dim_access dim_access .)
-    GTHAN_EQUAL     reduce using rule 51 (dims_access -> dim_access dim_access .)
-    GTHAN           reduce using rule 51 (dims_access -> dim_access dim_access .)
-    PLUS            reduce using rule 51 (dims_access -> dim_access dim_access .)
-    MINUS           reduce using rule 51 (dims_access -> dim_access dim_access .)
-    EQUAL           reduce using rule 51 (dims_access -> dim_access dim_access .)
-    NEQUAL          reduce using rule 51 (dims_access -> dim_access dim_access .)
-    AND             reduce using rule 51 (dims_access -> dim_access dim_access .)
-    SEMI            reduce using rule 51 (dims_access -> dim_access dim_access .)
-    OR              reduce using rule 51 (dims_access -> dim_access dim_access .)
-    RPAREN          reduce using rule 51 (dims_access -> dim_access dim_access .)
-    COMMA           reduce using rule 51 (dims_access -> dim_access dim_access .)
-    RBRACKET        reduce using rule 51 (dims_access -> dim_access dim_access .)
+    LBRACKET        reduce using rule 51 (dims_access -> dims_access dim_access .)
+    ASGMT           reduce using rule 51 (dims_access -> dims_access dim_access .)
+    TIMES           reduce using rule 51 (dims_access -> dims_access dim_access .)
+    DIVIDE          reduce using rule 51 (dims_access -> dims_access dim_access .)
+    MODULO          reduce using rule 51 (dims_access -> dims_access dim_access .)
+    LTHAN_EQUAL     reduce using rule 51 (dims_access -> dims_access dim_access .)
+    LTHAN           reduce using rule 51 (dims_access -> dims_access dim_access .)
+    GTHAN_EQUAL     reduce using rule 51 (dims_access -> dims_access dim_access .)
+    GTHAN           reduce using rule 51 (dims_access -> dims_access dim_access .)
+    PLUS            reduce using rule 51 (dims_access -> dims_access dim_access .)
+    MINUS           reduce using rule 51 (dims_access -> dims_access dim_access .)
+    EQUAL           reduce using rule 51 (dims_access -> dims_access dim_access .)
+    NEQUAL          reduce using rule 51 (dims_access -> dims_access dim_access .)
+    AND             reduce using rule 51 (dims_access -> dims_access dim_access .)
+    SEMI            reduce using rule 51 (dims_access -> dims_access dim_access .)
+    OR              reduce using rule 51 (dims_access -> dims_access dim_access .)
+    RPAREN          reduce using rule 51 (dims_access -> dims_access dim_access .)
+    COMMA           reduce using rule 51 (dims_access -> dims_access dim_access .)
+    RBRACKET        reduce using rule 51 (dims_access -> dims_access dim_access .)
 
 
 state 183
@@ -4523,3 +4529,4 @@ WARNING:
 WARNING: shift/reduce conflict for FUNCTION in state 4 resolved as shift
 WARNING: shift/reduce conflict for START in state 7 resolved as shift
 WARNING: shift/reduce conflict for FUNCTION in state 7 resolved as shift
+WARNING: shift/reduce conflict for LBRACKET in state 117 resolved as shift

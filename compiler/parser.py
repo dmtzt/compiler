@@ -125,6 +125,26 @@ class Parser(object):
         temporal_storage_variable: Variable
     ) -> ArithmeticQuadruple:
         return ArithmeticQuadruple(operator, left_operand, right_operand, temporal_storage_variable)
+    
+
+    def generate_addition_quadruple(
+        self,
+        left_operand: Variable,
+        right_operand: Variable,
+        temporal_storage_variable: Variable
+    ) -> ArithmeticQuadruple:
+        operator = Operator.PLUS
+        return self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
+    
+
+    def generate_product_quadruple(
+        self,
+        left_operand: Variable,
+        right_operand: Variable,
+        temporal_storage_variable: Variable
+    ) -> ArithmeticQuadruple:
+        operator = Operator.TIMES
+        return self.generate_arithmetic_quadruple(operator, left_operand, right_operand, temporal_storage_variable)
 
     
     def generate_unary_arithmetic_quadruple(
@@ -322,11 +342,12 @@ class Parser(object):
         return variable
 
     
-    def create_function_pointer_variable(self, function_id: str, variable_type: Type) -> Variable:
-        pointer_counter = self.get_function_pointer_counter(function_id, variable_type)
-        base_virtual_address = self.get_pointer_base_virtual_memory_address(variable_type)
+    def create_function_pointer_variable(self, function_id: str) -> Variable:
+        pointer_counter = self.get_function_pointer_counter(function_id)
+        base_virtual_address = self.get_pointer_base_virtual_memory_address()
 
-        variable_id = self.get_pointer_variable_name(variable_type, pointer_counter)
+        variable_id = self.get_pointer_variable_name(pointer_counter)
+        variable_type = Type.POINTER
         variable_virtual_memory_address = base_virtual_address + pointer_counter
         variable = self.build_variable(variable_id, variable_type, variable_virtual_memory_address)
 
@@ -358,8 +379,8 @@ class Parser(object):
         return f'c_{variable_type.name}_{count}'
 
     
-    def get_pointer_variable_name(self, variable_type: Type, count: int) -> str:
-        return f'p_{variable_type.name}_{count}'
+    def get_pointer_variable_name(self, count: int) -> str:
+        return f'p_{count}'
 
     
     def get_global_base_virtual_memory_address(self, variable_type: Type) -> int:
@@ -378,8 +399,8 @@ class Parser(object):
         return BaseVirtualMemoryAddress.get_temporal_base_virtual_memory_address(variable_type)
 
     
-    def get_pointer_base_virtual_memory_address(self, variable_type: Type) -> int:
-        return BaseVirtualMemoryAddress.get_pointer_base_virtual_memory_address(variable_type)
+    def get_pointer_base_virtual_memory_address(self) -> int:
+        return BaseVirtualMemoryAddress.get_pointer_base_virtual_memory_address()
 
 
     def push_operand_stack(self, operand: Variable) -> None:
@@ -496,12 +517,12 @@ class Parser(object):
         self.function_directory.increment_function_temporal_counter(function_id, variable_type)
 
     
-    def get_function_pointer_counter(self, function_id: str, variable_type: Type) -> int:
-        return self.function_directory.get_function_pointer_counter(function_id, variable_type)
+    def get_function_pointer_counter(self, function_id: str) -> int:
+        return self.function_directory.get_function_pointer_counter(function_id)
 
     
-    def increment_function_pointer_counter(self, function_id: str, variable_type: Type) -> None:
-        self.function_directory.increment_function_pointer_counter(function_id, variable_type)
+    def increment_function_pointer_counter(self, function_id: str) -> None:
+        self.function_directory.increment_function_pointer_counter(function_id)
 
 
     def push_count_function_parameter_count_stack(self, function_id: str) -> None:
@@ -869,9 +890,11 @@ class Parser(object):
         value_variable = self.pop_operand_stack()
         storage_variable = self.pop_operand_stack()
 
+        
         result_type = self.get_operation_result_type(storage_variable, value_variable, operator)
 
         if result_type == Type.ERROR:
+            print(storage_variable.get_type(), value_variable.get_type(), result_type)
             raise TypeMismatchError()
 
         quadruple = self.generate_assignment_quadruple(value_variable, storage_variable)
@@ -890,7 +913,48 @@ class Parser(object):
 
     def p_variable_access(self, p):
         '''variable_access : ID parsed_id_variable_access dims_access'''
-        self.pop_dimensioned_variable_access_stack()
+        function_id = self.get_function_scope()
+        variable_id = p[1]
+
+        # Get global/local variable reference
+        if self.function_variable_exists(function_id, variable_id):
+            variable = self.get_function_variable(function_id, variable_id)
+        else:
+            variable = self.get_global_variable(variable_id)
+        
+        if variable.has_dims():
+            # Get summation variable
+            summation_variable = self.pop_operand_stack()
+
+            # Create pointer variable
+            pointer_variable = self.create_function_pointer_variable(function_id)
+            self.increment_function_pointer_counter(function_id)
+
+            # Get pointer base virtual memory address
+            base_virtual_memory_address = self.get_pointer_base_virtual_memory_address()
+
+            # Store memory address in temporal variable
+            memory_address_constant_storage_variable = self.create_function_constant_variable(function_id, Type.INT)
+            self.increment_function_constant_counter(function_id, Type.INT)
+            memory_address_constant_storage_quadruple = self.generate_constant_storage_quadruple(
+                base_virtual_memory_address,
+                memory_address_constant_storage_variable,
+            )
+            self.insert_quadruple(memory_address_constant_storage_quadruple)
+            self.increment_program_counter()
+
+            # Add 
+            addition_quadruple = self.generate_addition_quadruple(
+                    summation_variable,
+                    memory_address_constant_storage_variable,
+                    pointer_variable
+            )
+            self.insert_quadruple(addition_quadruple)
+            self.increment_program_counter()
+
+            self.push_operand_stack(pointer_variable)
+        else:
+            self.push_operand_stack(variable)
 
     
     def p_parsed_id_variable_access(self, p):
@@ -903,35 +967,69 @@ class Parser(object):
         else:
             variable = self.get_global_variable(variable_id)
 
-        self.push_dimensioned_variable_access_stack(variable_id)
-        self.push_operand_stack(variable)
+        if variable.has_dims():
+            self.push_dimensioned_variable_access_stack(variable_id)
 
 
-    def p_dims_access_1(self, p):
-        '''dims_access : dim_access dim_access'''
+    def p_dims_access(self, p):
+        '''dims_access : dims_access dim_access
+                       | dim_access
+                       | empty'''
 
-
-    def p_dims_access_2(self, p):
-        '''dims_access : dim_access'''
-
-    
-    def p_dims_access_3(self, p):
-        '''dims_access : empty'''
-
-
+        
     def p_dim_access(self, p):
         '''dim_access : LBRACKET expr RBRACKET'''
         function_id = self.get_function_scope()
-        variable_id, dim = self.top_dimensioned_variable_access_stack()
-
-        dimensioned_variable = self.get_function_variable(function_id, variable_id)
-        upper_bound = dimensioned_variable.get_dimension_size(dim)
         
+        # Get index variable
         index_variable = self.pop_operand_stack()
+        
+        # Get dimensioned variable ID and current dimension number
+        variable_id, dimension_number = self.top_dimensioned_variable_access_stack()
+        
+        # Get dimensioned variable reference
+        dimensioned_variable = self.get_function_variable(function_id, variable_id)
+        # Get dimension size
+        dimension_size = dimensioned_variable.get_dimension_size(dimension_number)
+        # Get dimension m
+        dimension_m  = dimensioned_variable.get_dimension_m(dimension_number)
 
-        limits_verification_quadruple = self.generate_limits_verification_quadruple(index_variable, upper_bound)
+        # Store dimension m in a constant variable
+        dimension_m_constant_variable = self.create_function_constant_variable(function_id, Type.INT)
+        self.increment_function_constant_counter(function_id, Type.INT)
+        dimension_m_constant_storage_quadruple = self.generate_constant_storage_quadruple(dimension_m, dimension_m_constant_variable)
+        self.insert_quadruple(dimension_m_constant_storage_quadruple)
+        self.increment_program_counter()
+        
+        # Generate limits verification quadruple
+        limits_verification_quadruple = self.generate_limits_verification_quadruple(index_variable, dimension_size)
         self.insert_quadruple(limits_verification_quadruple)
         self.increment_program_counter()
+
+        # Multiply index variable and dimension size to get step
+        product_variable = self.create_function_temporal_variable(function_id, Type.INT)
+        self.increment_function_temporal_counter(function_id, Type.INT)
+        product_quadruple = self.generate_product_quadruple(index_variable, dimension_m_constant_variable, product_variable)
+        self.insert_quadruple(product_quadruple)
+        self.increment_program_counter()
+
+        if dimension_number == 0:
+            self.push_operand_stack(product_variable)
+        
+        # If dimension number is 2nd or greater
+        if dimension_number > 0:
+            print('Summation')
+            # Get summation variable
+            summation_variable = self.pop_operand_stack()
+
+            addition_variable = self.create_function_temporal_variable(function_id, Type.INT)
+            self.increment_function_temporal_counter(function_id, Type.INT)
+
+            addition_quadruple = self.generate_addition_quadruple(summation_variable, product_variable, addition_variable)
+            self.insert_quadruple(addition_quadruple)
+            self.increment_program_counter()
+
+            self.push_operand_stack(addition_variable)
 
         self.increment_top_dimensioned_variable_access_stack()
 

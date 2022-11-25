@@ -305,13 +305,14 @@ class LimitsVerificationQuadruple(Quadruple):
 
     def get_debug_repr(self) -> str:
         operator_name = self.operator.name
-        index_variable_address = self.index_variable.get_id()
+        index_variable_id = self.index_variable.get_id()
+        index_variable_address = self.index_variable.get_virtual_memory_address()
         lower_bound = self.lower_bound
         upper_bound = self.upper_bound
 
         return self._generate_debug_repr(
             operator_name,
-            index_variable_address,
+            f'{index_variable_id}({index_variable_address})',
             lower_bound,
             upper_bound,
         )

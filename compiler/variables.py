@@ -31,6 +31,10 @@ class DimensionNode:
         return self._size
 
 
+    def get_m(self) -> int:
+        return self._m
+
+
     def set_m(self, m: int) -> None:
         self._m = m
 
@@ -70,6 +74,14 @@ class Variable:
         self._virtual_memory_address = virtual_memory_address
 
     
+    def has_dims(self) -> bool:
+        return bool(self._dimension_nodes)
+    
+
+    def num_dims(self) -> int:
+        return len(self._dimension_nodes)
+
+    
     def create_dimension_node_list(self) -> None:
         self._dimension_nodes = deque()
 
@@ -80,6 +92,10 @@ class Variable:
 
     def get_dimension_size(self, dimension: int) -> int:
         return self._dimension_nodes[dimension].get_size()
+    
+
+    def get_dimension_m(self, dimension: int) -> int:
+        return self._dimension_nodes[dimension].get_m()
 
 
     def set_dimension_node_m(self, dimension: int, m: int) -> None:
@@ -287,6 +303,7 @@ class SemanticTable():
         self._fill_real_operations()
         self._fill_char_operations()
         self._fill_bool_operations()
+        self._fill_pointer_operations()
 
     
     def search_operation_result_type(
@@ -310,6 +327,7 @@ class SemanticTable():
             self._table[Type.INT.value][Type.REAL.value][operator.value] = Type.REAL.value
             self._table[Type.INT.value][Type.CHAR.value][operator.value] = Type.INT.value
             self._table[Type.INT.value][Type.BOOL.value][operator.value] = Type.ERROR.value
+            self._table[Type.INT.value][Type.POINTER.value][operator.value] = Type.INT.value
 
     
     def fill_integer_relational_operations(self):
@@ -318,6 +336,7 @@ class SemanticTable():
             self._table[Type.INT.value][Type.REAL.value][operator.value] = Type.BOOL.value
             self._table[Type.INT.value][Type.CHAR.value][operator.value] = Type.BOOL.value
             self._table[Type.INT.value][Type.BOOL.value][operator.value] = Type.ERROR.value
+            self._table[Type.INT.value][Type.POINTER.value][operator.value] = Type.ERROR.value
 
     
     def fill_integer_assignment_operations(self):
@@ -325,6 +344,7 @@ class SemanticTable():
         self._table[Type.INT.value][Type.REAL.value][Operator.ASGMT.value] = Type.INT.value
         self._table[Type.INT.value][Type.CHAR.value][Operator.ASGMT.value] = Type.INT.value
         self._table[Type.INT.value][Type.BOOL.value][Operator.ASGMT.value] = Type.ERROR.value
+        self._table[Type.INT.value][Type.POINTER.value][Operator.ASGMT.value] = Type.INT.value
 
 
     def _fill_real_operations(self):
@@ -339,6 +359,7 @@ class SemanticTable():
             self._table[Type.REAL.value][Type.REAL.value][operator.value] = Type.REAL.value
             self._table[Type.REAL.value][Type.CHAR.value][operator.value] = Type.REAL.value
             self._table[Type.REAL.value][Type.BOOL.value][operator.value] = Type.ERROR.value
+            self._table[Type.REAL.value][Type.POINTER.value][operator.value] = Type.REAL.value
 
     
     def fill_real_relational_operations(self):
@@ -347,6 +368,7 @@ class SemanticTable():
             self._table[Type.REAL.value][Type.REAL.value][operator.value] = Type.BOOL.value
             self._table[Type.REAL.value][Type.CHAR.value][operator.value] = Type.BOOL.value
             self._table[Type.REAL.value][Type.BOOL.value][operator.value] = Type.ERROR.value
+            self._table[Type.REAL.value][Type.POINTER.value][operator.value] = Type.ERROR.value
 
 
     def fill_real_assignment_operations(self):
@@ -354,6 +376,7 @@ class SemanticTable():
             self._table[Type.REAL.value][Type.REAL.value][Operator.ASGMT.value] = Type.REAL.value
             self._table[Type.REAL.value][Type.CHAR.value][Operator.ASGMT.value] = Type.REAL.value
             self._table[Type.REAL.value][Type.BOOL.value][Operator.ASGMT.value] = Type.ERROR.value
+            self._table[Type.REAL.value][Type.POINTER.value][Operator.ASGMT.value] = Type.REAL.value
 
     
     def _fill_char_operations(self):
@@ -368,14 +391,16 @@ class SemanticTable():
             self._table[Type.CHAR.value][Type.REAL.value][operator.value] = Type.CHAR.value
             self._table[Type.CHAR.value][Type.CHAR.value][operator.value] = Type.CHAR.value
             self._table[Type.CHAR.value][Type.BOOL.value][operator.value] = Type.ERROR.value
+            self._table[Type.CHAR.value][Type.POINTER.value][operator.value] = Type.CHAR.value
 
     
     def fill_char_relational_operations(self):
         for operator in Operator.relational_operators():
-            self._table[Type.REAL.value][Type.INT.value][operator.value] = Type.BOOL.value
-            self._table[Type.REAL.value][Type.REAL.value][operator.value] = Type.BOOL.value
-            self._table[Type.REAL.value][Type.CHAR.value][operator.value] = Type.BOOL.value
-            self._table[Type.REAL.value][Type.BOOL.value][operator.value] = Type.ERROR.value
+            self._table[Type.CHAR.value][Type.INT.value][operator.value] = Type.BOOL.value
+            self._table[Type.CHAR.value][Type.REAL.value][operator.value] = Type.BOOL.value
+            self._table[Type.CHAR.value][Type.CHAR.value][operator.value] = Type.BOOL.value
+            self._table[Type.CHAR.value][Type.BOOL.value][operator.value] = Type.ERROR.value
+            self._table[Type.CHAR.value][Type.POINTER.value][operator.value] = Type.ERROR.value
 
 
     def fill_char_assignment_operations(self):
@@ -383,6 +408,7 @@ class SemanticTable():
             self._table[Type.CHAR.value][Type.REAL.value][Operator.ASGMT.value] = Type.CHAR.value
             self._table[Type.CHAR.value][Type.CHAR.value][Operator.ASGMT.value] = Type.CHAR.value
             self._table[Type.CHAR.value][Type.BOOL.value][Operator.ASGMT.value] = Type.ERROR.value
+            self._table[Type.CHAR.value][Type.POINTER.value][Operator.ASGMT.value] = Type.CHAR.value
 
     
     def _fill_bool_operations(self):
@@ -397,6 +423,7 @@ class SemanticTable():
             self._table[Type.BOOL.value][Type.REAL.value][operator.value] = Type.ERROR.value
             self._table[Type.BOOL.value][Type.CHAR.value][operator.value] = Type.ERROR.value
             self._table[Type.BOOL.value][Type.BOOL.value][operator.value] = Type.ERROR.value
+            self._table[Type.BOOL.value][Type.POINTER.value][operator.value] = Type.POINTER.value
 
     
     def fill_bool_relational_operations(self):
@@ -404,6 +431,7 @@ class SemanticTable():
             self._table[Type.BOOL.value][Type.INT.value][operator.value] = Type.ERROR.value
             self._table[Type.BOOL.value][Type.REAL.value][operator.value] = Type.ERROR.value
             self._table[Type.BOOL.value][Type.CHAR.value][operator.value] = Type.ERROR.value
+            self._table[Type.BOOL.value][Type.POINTER.value][operator.value] = Type.ERROR.value
 
         self._table[Type.BOOL.value][Type.BOOL.value][Operator.EQUAL.value] = Type.BOOL.value
         self._table[Type.BOOL.value][Type.BOOL.value][Operator.NEQUAL.value] = Type.BOOL.value
@@ -411,6 +439,7 @@ class SemanticTable():
         self._table[Type.BOOL.value][Type.BOOL.value][Operator.LTHAN.value] = Type.ERROR.value
         self._table[Type.BOOL.value][Type.BOOL.value][Operator.GTHAN_EQUAL.value] = Type.ERROR.value
         self._table[Type.BOOL.value][Type.BOOL.value][Operator.GTHAN.value] = Type.ERROR.value
+        self._table[Type.BOOL.value][Type.POINTER.value][operator.value] = Type.POINTER.value
 
     
     def fill_bool_assignment_operations(self):
@@ -418,6 +447,28 @@ class SemanticTable():
         self._table[Type.BOOL.value][Type.REAL.value][Operator.ASGMT.value] = Type.ERROR.value
         self._table[Type.BOOL.value][Type.CHAR.value][Operator.ASGMT.value] = Type.ERROR.value
         self._table[Type.BOOL.value][Type.BOOL.value][Operator.ASGMT.value] = Type.BOOL.value
+
+    
+    def _fill_pointer_operations(self):
+        self._fill_pointer_arithmetic_operations()
+        self._fill_pointer_assignment_operations()
+
+    
+    def _fill_pointer_arithmetic_operations(self):
+        for operator in Operator.arithmetic_operators():
+            self._table[Type.POINTER.value][Type.INT.value][operator.value] = Type.POINTER.value
+            self._table[Type.POINTER.value][Type.REAL.value][operator.value] = Type.POINTER.value
+            self._table[Type.POINTER.value][Type.CHAR.value][operator.value] = Type.POINTER.value
+            self._table[Type.POINTER.value][Type.BOOL.value][operator.value] = Type.POINTER.value
+            self._table[Type.POINTER.value][Type.POINTER.value][operator.value] = Type.ERROR.value
+
+    
+    def _fill_pointer_assignment_operations(self):
+        self._table[Type.POINTER.value][Type.INT.value][Operator.ASGMT.value] = Type.POINTER.value
+        self._table[Type.POINTER.value][Type.REAL.value][Operator.ASGMT.value] = Type.POINTER.value
+        self._table[Type.POINTER.value][Type.CHAR.value][Operator.ASGMT.value] = Type.POINTER.value
+        self._table[Type.POINTER.value][Type.BOOL.value][Operator.ASGMT.value] = Type.POINTER.value
+        self._table[Type.POINTER.value][Type.POINTER.value][Operator.ASGMT.value] = Type.POINTER.value
 
     
     def __str__(self) -> str:

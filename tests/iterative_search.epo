@@ -1,19 +1,20 @@
 komenco()
 lokaj variabloj:
-    ent arr[5], x, i;
+    ent arr[5], x, i, n;
     bul found;
 {
+    n = 5;
+    found = malvera;
+
     presi("Enter 5 values in sorted order:");
-    ekde(i = 0; i < 5; i = i + 1) {
+    ekde(i = 0; i < n; i = i + 1) {
         arr[i] = legi();
     }
 
     presi("Enter value to find:");
     x = legi();
 
-    found = malvera;
-
-    ekde(i = 0; i < 5; i = i + 1) {
+    ekde(i = 0; i < n; i = i + 1) {
         se (x == arr[i]) {
             found = vera;
         }

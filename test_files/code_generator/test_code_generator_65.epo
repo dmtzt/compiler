@@ -1,0 +1,10 @@
+komenco()
+lokaj variabloj:
+   ent i, j;
+{
+   j = 0;
+   ekde(i = 10; i > j; i = i - 1)
+   {
+      presi(i);
+   }  
+}

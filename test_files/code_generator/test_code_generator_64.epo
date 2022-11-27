@@ -1,0 +1,11 @@
+komenco()
+lokaj variabloj:
+   ent i, j;
+{
+   i = 2;
+   j = 2;
+
+   se(i <= j) {
+      presi("Lthan equal");
+   }
+}

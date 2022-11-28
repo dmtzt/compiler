@@ -67,9 +67,9 @@ Rule 61    function_call_params -> single_function_call_param
 Rule 62    single_function_call_param -> expr
 Rule 63    print -> PRINT LPAREN print_params RPAREN SEMI
 Rule 64    print -> PRINT LPAREN RPAREN SEMI
-Rule 65    print_params -> print_params COMMA single_print_param
-Rule 66    print_params -> single_print_param
-Rule 67    single_print_param -> expr
+Rule 65    print_params -> print_params COMMA print_param
+Rule 66    print_params -> print_param
+Rule 67    print_param -> expr
 Rule 68    conditional -> IF LPAREN expr RPAREN parsed_if_expr instruction_block ELSE parsed_else instruction_block
 Rule 69    conditional -> IF LPAREN expr RPAREN parsed_if_expr instruction_block
 Rule 70    parsed_if_expr -> <empty>
@@ -247,6 +247,7 @@ parsed_while         : 74
 parsed_while_expr    : 74
 postfix_expr         : 113 114 115 116
 print                : 43
+print_param          : 65 66
 print_params         : 63 65
 program              : 0
 relational_expr      : 87 87 89 89 91
@@ -254,7 +255,6 @@ return               : 46
 shared_type_variables_declaration : 26 27
 shared_type_variables_declaration_list : 28 30
 single_function_call_param : 60 61
-single_print_param   : 65 66
 single_statement     : 39 40
 start                : 1
 statements           : 37 39
@@ -1514,9 +1514,9 @@ state 94
 
     (63) print -> PRINT LPAREN . print_params RPAREN SEMI
     (64) print -> PRINT LPAREN . RPAREN SEMI
-    (65) print_params -> . print_params COMMA single_print_param
-    (66) print_params -> . single_print_param
-    (67) single_print_param -> . expr
+    (65) print_params -> . print_params COMMA print_param
+    (66) print_params -> . print_param
+    (67) print_param -> . expr
     (83) expr -> . expr OR and_expr
     (84) expr -> . and_expr
     (85) and_expr -> . equality_expr AND equality_expr
@@ -1569,7 +1569,7 @@ state 94
     FALSE           shift and go to state 118
 
     print_params                   shift and go to state 131
-    single_print_param             shift and go to state 133
+    print_param                    shift and go to state 133
     expr                           shift and go to state 134
     and_expr                       shift and go to state 98
     equality_expr                  shift and go to state 99
@@ -2342,7 +2342,7 @@ state 130
 state 131
 
     (63) print -> PRINT LPAREN print_params . RPAREN SEMI
-    (65) print_params -> print_params . COMMA single_print_param
+    (65) print_params -> print_params . COMMA print_param
 
     RPAREN          shift and go to state 167
     COMMA           shift and go to state 168
@@ -2357,19 +2357,19 @@ state 132
 
 state 133
 
-    (66) print_params -> single_print_param .
+    (66) print_params -> print_param .
 
-    RPAREN          reduce using rule 66 (print_params -> single_print_param .)
-    COMMA           reduce using rule 66 (print_params -> single_print_param .)
+    RPAREN          reduce using rule 66 (print_params -> print_param .)
+    COMMA           reduce using rule 66 (print_params -> print_param .)
 
 
 state 134
 
-    (67) single_print_param -> expr .
+    (67) print_param -> expr .
     (83) expr -> expr . OR and_expr
 
-    RPAREN          reduce using rule 67 (single_print_param -> expr .)
-    COMMA           reduce using rule 67 (single_print_param -> expr .)
+    RPAREN          reduce using rule 67 (print_param -> expr .)
+    COMMA           reduce using rule 67 (print_param -> expr .)
     OR              shift and go to state 137
 
 
@@ -3152,8 +3152,8 @@ state 167
 
 state 168
 
-    (65) print_params -> print_params COMMA . single_print_param
-    (67) single_print_param -> . expr
+    (65) print_params -> print_params COMMA . print_param
+    (67) print_param -> . expr
     (83) expr -> . expr OR and_expr
     (84) expr -> . and_expr
     (85) and_expr -> . equality_expr AND equality_expr
@@ -3204,7 +3204,7 @@ state 168
     TRUE            shift and go to state 117
     FALSE           shift and go to state 118
 
-    single_print_param             shift and go to state 196
+    print_param                    shift and go to state 196
     expr                           shift and go to state 134
     and_expr                       shift and go to state 98
     equality_expr                  shift and go to state 99
@@ -4064,10 +4064,10 @@ state 195
 
 state 196
 
-    (65) print_params -> print_params COMMA single_print_param .
+    (65) print_params -> print_params COMMA print_param .
 
-    RPAREN          reduce using rule 65 (print_params -> print_params COMMA single_print_param .)
-    COMMA           reduce using rule 65 (print_params -> print_params COMMA single_print_param .)
+    RPAREN          reduce using rule 65 (print_params -> print_params COMMA print_param .)
+    COMMA           reduce using rule 65 (print_params -> print_params COMMA print_param .)
 
 
 state 197

@@ -125,6 +125,38 @@ class RelationalQuadruple(Quadruple):
         q4 = str(self.temporal_storage_variable.get_virtual_memory_address())
         return self._generate_intermediate_code_representation(q1, q2, q3, q4)
 
+    
+@dataclass
+class LogicalQuadruple(Quadruple):
+    operator: Operator
+    left_operand: Variable
+    right_operand: Variable
+    temporal_storage_variable: Variable
+    
+    def get_debug_repr(self) -> str:
+        operator_name = self.operator.name
+        left_id = self.left_operand.get_id()
+        left_address = self.left_operand.get_virtual_memory_address()
+        right_id = self.right_operand.get_id()
+        right_address = self.right_operand.get_virtual_memory_address()
+        temp_id = self.temporal_storage_variable.get_id()
+        temp_address = self.temporal_storage_variable.get_virtual_memory_address()
+
+        return self._generate_debug_repr(
+            operator_name,
+            f'{left_id}({left_address})',
+            f'{right_id}({right_address})',
+            f'{temp_id}({temp_address})',
+        )
+
+
+    def get_json_obj(self) -> str:
+        q1 = str(self.operator.value)
+        q2 = str(self.left_operand.get_virtual_memory_address())
+        q3 = str(self.right_operand.get_virtual_memory_address())
+        q4 = str(self.temporal_storage_variable.get_virtual_memory_address())
+        return self._generate_intermediate_code_representation(q1, q2, q3, q4)
+
 
 @dataclass
 class AssignmentQuadruple(Quadruple):
@@ -297,7 +329,7 @@ class PrintQuadruple(Quadruple):
     
 
 @dataclass
-class LimitsVerificationQuadruple(Quadruple):
+class AccessIndexVerificationQuadruple(Quadruple):
     index_variable: Variable
     upper_bound: int
     lower_bound: int = field(init=False, default=0)

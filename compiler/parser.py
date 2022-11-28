@@ -19,7 +19,8 @@ from compiler.quadruples import ConstantStorageQuadruple
 from compiler.quadruples import ConditionalControlTransferQuadruple
 from compiler.quadruples import EndFunctionQuadruple
 from compiler.quadruples import EndProgramQuadruple
-from compiler.quadruples import LimitsVerificationQuadruple
+from compiler.quadruples import AccessIndexVerificationQuadruple
+from compiler.quadruples import LogicalQuadruple
 from compiler.quadruples import ParameterPassingQuadruple
 from compiler.quadruples import PrintQuadruple
 from compiler.quadruples import ReadQuadruple
@@ -164,6 +165,36 @@ class Parser(object):
         temporal_storage_variable: Variable
     ) -> RelationalQuadruple:
         return RelationalQuadruple(operator, left_operand, right_operand, temporal_storage_variable)
+    
+
+    def generate_and_logical_quadruple(
+        self,
+        left_operand: Variable,
+        right_operand: Variable,
+        temporal_storage_variable: Variable
+    ) -> LogicalQuadruple:
+        operator = Operator.AND
+        return LogicalQuadruple(operator, left_operand, right_operand, temporal_storage_variable)
+    
+
+    def generate_or_logical_quadruple(
+        self,
+        left_operand: Variable,
+        right_operand: Variable,
+        temporal_storage_variable: Variable
+    ) -> LogicalQuadruple:
+        operator = Operator.OR
+        return LogicalQuadruple(operator, left_operand, right_operand, temporal_storage_variable)
+    
+
+    def generate_not_logical_quadruple(
+        self,
+        left_operand: Variable,
+        right_operand: Variable,
+        temporal_storage_variable: Variable
+    ) -> LogicalQuadruple:
+        operator = Operator.NOT
+        return LogicalQuadruple(operator, left_operand, right_operand, temporal_storage_variable)
 
 
     def generate_empty_conditional_control_transfer_quadruple(
@@ -207,8 +238,8 @@ class Parser(object):
         return ReadQuadruple(storage_variable)
 
     
-    def generate_limits_verification_quadruple(self, index_variable: Variable, upper_bound: int) -> LimitsVerificationQuadruple:
-        return LimitsVerificationQuadruple(index_variable, upper_bound)
+    def generate_access_index_verification_quadruple(self, index_variable: Variable, upper_bound: int) -> AccessIndexVerificationQuadruple:
+        return AccessIndexVerificationQuadruple(index_variable, upper_bound)
 
     
     def generate_parameter_passing_quadruple(self, variable: Variable, parameter_number: int) -> ParameterPassingQuadruple:
@@ -1008,7 +1039,7 @@ class Parser(object):
         self.increment_program_counter()
         
         # Generate limits verification quadruple
-        limits_verification_quadruple = self.generate_limits_verification_quadruple(index_variable, dimension_size)
+        limits_verification_quadruple = self.generate_access_index_verification_quadruple(index_variable, dimension_size)
         self.insert_quadruple(limits_verification_quadruple)
         self.increment_program_counter()
 
@@ -1148,16 +1179,13 @@ class Parser(object):
         '''print : PRINT LPAREN RPAREN SEMI'''
 
 
-    def p_print_params_1(self, p):
-        '''print_params : print_params COMMA single_print_param'''
+    def p_print_params(self, p):
+        '''print_params : print_params COMMA print_param
+                        | print_param'''
 
     
-    def p_print_params_2(self, p):
-        '''print_params : single_print_param'''
-
-    
-    def p_single_print_param_1(self, p):
-        '''single_print_param : expr'''
+    def p_print_param_1(self, p):
+        '''print_param : expr'''
         print_param = self.pop_operand_stack()
         quadruple = self.generate_print_quadruple(print_param)
 
